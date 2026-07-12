@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+title: Starshine Geo
+type: software
+message: "If you use Starshine Geo in research or teaching, please cite this software."
+authors:
+  - family-names: Liu
+    given-names: Lexin
+repository-code: "https://github.com/liu2024whu-bit/starshine"
+license: Apache-2.0
+version: 0.1.0
+date-released: 2026-07-13
+keywords:
+  - GIS
+  - geospatial workflow
+  - spatial analysis
