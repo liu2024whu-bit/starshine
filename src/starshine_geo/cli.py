@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .errors import StarshineError
 from .io import read_json, write_json
+from .manifest import build_manifest
 from .workflow import run_workflow
 
 
@@ -17,6 +18,11 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--layer", action="append", default=[], metavar="NAME=PATH")
     run_parser.add_argument("--output-layer", required=True)
     run_parser.add_argument("--output", type=Path, required=True)
+    run_parser.add_argument(
+        "--manifest",
+        type=Path,
+        help="Optionally write a path-free reproducibility manifest",
+    )
     return parser
 
 
@@ -35,11 +41,21 @@ def _parse_layers(values: list[str]) -> dict[str, dict]:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
+        workflow = read_json(args.workflow)
         layers = _parse_layers(args.layer)
-        results = run_workflow(read_json(args.workflow), layers)
+        results = run_workflow(workflow, layers)
         if args.output_layer not in results:
             raise StarshineError(f"workflow did not produce layer: {args.output_layer}")
-        write_json(results[args.output_layer], args.output)
+        output_layer = results[args.output_layer]
+        write_json(output_layer, args.output)
+        if args.manifest is not None:
+            manifest = build_manifest(
+                workflow,
+                layers,
+                output_layer_name=args.output_layer,
+                output_layer=output_layer,
+            )
+            write_json(manifest, args.manifest)
     except StarshineError as exc:
         print(f"starshine: {exc}", file=sys.stderr)
         return 2
