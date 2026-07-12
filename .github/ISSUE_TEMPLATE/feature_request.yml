@@ -1,0 +1,26 @@
+name: Feature request
+description: Propose a focused, testable geospatial capability
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Geospatial use case
+      description: Describe the real problem and expected users.
+    validations:
+      required: true
+  - type: textarea
+    id: contract
+    attributes:
+      label: Proposed operator contract
+      description: Inputs, outputs, geometry types, CRS requirements, units, and failure cases.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Reproducibility evidence
+      description: Synthetic/open data, references, and expected results.
+    validations:
+      required: true
