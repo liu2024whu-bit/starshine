@@ -75,6 +75,13 @@ def _sanitize(value: Any, *, key: str | None = None) -> Any:
     return deepcopy(value)
 
 
+def _safe_layer_name(name: str, *, kind: str, index: int) -> str:
+    safe_name = _sanitize(name)
+    if safe_name in {"<redacted>", "<redacted-path>"}:
+        return f"<redacted-{kind}-layer-{index}>"
+    return str(safe_name)
+
+
 def _package_version() -> str:
     try:
         return version("starshine-geo")
@@ -98,24 +105,25 @@ def build_manifest(
     """Build a deterministic, path-free reproducibility manifest.
 
     Raw feature content and CLI file paths are never copied into the manifest. Sensitive
-    parameter values and path-like parameters are redacted before workflow hashing and
-    step reporting.
+    parameter values, path-like parameters, and unsafe layer names are redacted before
+    workflow hashing and reporting.
     """
     safe_workflow = _sanitize(workflow)
     steps = safe_workflow.get("steps", [])
+    safe_input_layers = {
+        _safe_layer_name(name, kind="input", index=index): {
+            "digest": digest_json(layer),
+            "crs": _declared_crs(layer),
+        }
+        for index, (name, layer) in enumerate(sorted(input_layers.items()))
+    }
 
     return {
         "manifest_version": 1,
         "starshine_version": starshine_version or _package_version(),
         "workflow_version": safe_workflow.get("version"),
         "workflow_digest": digest_json(safe_workflow),
-        "input_layers": {
-            name: {
-                "digest": digest_json(layer),
-                "crs": _declared_crs(layer),
-            }
-            for name, layer in sorted(input_layers.items())
-        },
+        "input_layers": safe_input_layers,
         "executed_steps": [
             {
                 "index": index,
@@ -128,7 +136,7 @@ def build_manifest(
             if isinstance(step, dict)
         ],
         "output_layer": {
-            "name": output_layer_name,
+            "name": _safe_layer_name(output_layer_name, kind="output", index=0),
             "digest": digest_json(output_layer),
             "crs": _declared_crs(output_layer),
         },
