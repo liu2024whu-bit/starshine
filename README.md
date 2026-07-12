@@ -17,8 +17,10 @@ The initial public release provides:
 - validated GeoJSON FeatureCollection input;
 - projected-CRS checks for distance-based work;
 - buffer, dissolve, and point-within-polygon summary operators;
-- a versioned JSON workflow format;
+- a versioned JSON workflow format and machine-readable schema;
+- structured preflight diagnostics before execution;
 - an explicit operator registry with no dynamic `eval`;
+- optional path-free reproducibility manifests;
 - self-created sample data and a reproducible command-line demo;
 - tests across supported Python versions.
 
@@ -39,8 +41,13 @@ starshine run examples/workflow.json \
   --layer zones=examples/data/zones.geojson \
   --layer sites=examples/data/sites.geojson \
   --output-layer zone_summary \
-  --output examples/output/zone_summary.geojson
+  --output examples/output/zone_summary.geojson \
+  --manifest examples/output/zone_summary.manifest.json
 ```
+
+The `--manifest` option is optional. When supplied, it records deterministic workflow, input,
+step, output, version, and CRS evidence without copying feature content or CLI file paths. See
+[Reproducibility manifests](docs/REPRODUCIBILITY.md).
 
 Or:
 
@@ -66,7 +73,7 @@ The output preserves each study-zone polygon and adds a `site_count` property. T
 }
 ```
 
-Only registered operators can run. Each step must write to a new layer name, so input data cannot be overwritten accidentally.
+Only registered operators can run. Each step must write to a new layer name, so input data cannot be overwritten accidentally. See the [workflow schema](schemas/workflow-v1.schema.json) and [validation contract](docs/WORKFLOW_VALIDATION.md).
 
 ## Project status
 

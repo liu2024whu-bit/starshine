@@ -8,7 +8,9 @@ All notable public changes are documented here.
 
 - machine-readable JSON Schema for workflow version 1;
 - structured workflow diagnostics with stable codes, paths, step indexes, and operation names;
-- complete structural preflight validation before the first workflow operator executes.
+- complete structural preflight validation before the first workflow operator executes;
+- opt-in reproducibility manifests with deterministic workflow, input, and output digests;
+- CRS reporting and redaction of credentials, absolute paths, and path-like parameters.
 
 ## [0.1.0] - 2026-07-13
 
