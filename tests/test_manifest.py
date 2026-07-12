@@ -104,6 +104,22 @@ def test_manifest_redacts_credentials_and_paths():
     assert "<redacted-path>" in serialized
 
 
+def test_manifest_redacts_absolute_layer_names():
+    manifest = build_manifest(
+        WORKFLOW,
+        {"C:\\Users\\maintainer\\sites.geojson": POINTS},
+        output_layer_name="/home/maintainer/summary.geojson",
+        output_layer=ZONES,
+        starshine_version="test-version",
+    )
+    serialized = json.dumps(manifest, ensure_ascii=False)
+
+    assert "C:\\Users\\maintainer" not in serialized
+    assert "/home/maintainer" not in serialized
+    assert "<redacted-input-layer-0>" in manifest["input_layers"]
+    assert manifest["output_layer"]["name"] == "<redacted-output-layer-0>"
+
+
 def test_cli_writes_manifest_only_when_requested(tmp_path):
     workflow_path = tmp_path / "workflow.json"
     zones_path = tmp_path / "zones.geojson"
