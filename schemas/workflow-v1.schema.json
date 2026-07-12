@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/liu2024whu-bit/starshine/schemas/workflow-v1.schema.json",
+  "title": "Starshine Geo workflow version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "steps"],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/step"
+      }
+    }
+  },
+  "$defs": {
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operation", "inputs", "output"],
+      "properties": {
+        "operation": {
+          "enum": ["buffer", "dissolve", "summarize_points_within"]
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "input": {"type": "string", "minLength": 1},
+            "polygons": {"type": "string", "minLength": 1},
+            "points": {"type": "string", "minLength": 1}
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "default": {}
+        },
+        "output": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operation": {"enum": ["buffer", "dissolve"]}
+            },
+            "required": ["operation"]
+          },
+          "then": {
+            "properties": {
+              "inputs": {"required": ["input"]}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {"const": "summarize_points_within"}
+            },
+            "required": ["operation"]
+          },
+          "then": {
+            "properties": {
+              "inputs": {"required": ["polygons", "points"]}
+            }
+          }
+        }
+      ]
+    }
+  }
+}
