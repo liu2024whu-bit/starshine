@@ -2,6 +2,14 @@
 
 All notable public changes are documented here.
 
+## [Unreleased]
+
+### Added
+
+- machine-readable JSON Schema for workflow version 1;
+- structured workflow diagnostics with stable codes, paths, step indexes, and operation names;
+- complete structural preflight validation before the first workflow operator executes.
+
 ## [0.1.0] - 2026-07-13
 
 ### Added
