@@ -1,0 +1,16 @@
+{
+  "type": "FeatureCollection",
+  "starshine:crs": "EPSG:4326",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"id": "west", "name": "West study zone"},
+      "geometry": {"type": "Polygon", "coordinates": [[[114.28,30.52],[114.34,30.52],[114.34,30.58],[114.28,30.58],[114.28,30.52]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {"id": "east", "name": "East study zone"},
+      "geometry": {"type": "Polygon", "coordinates": [[[114.34,30.52],[114.40,30.52],[114.40,30.58],[114.34,30.58],[114.34,30.52]]]}
+    }
+  ]
+}
