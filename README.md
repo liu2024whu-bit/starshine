@@ -17,12 +17,12 @@ The initial public release provides:
 - validated GeoJSON FeatureCollection input;
 - projected-CRS checks for distance-based work;
 - buffer, dissolve, and point-within-polygon summary operators;
-- a versioned JSON workflow format and machine-readable schema;
-- structured preflight diagnostics before execution;
+- a versioned JSON workflow format and operator-specific machine-readable schema;
+- structured preflight diagnostics for structure, inputs, parameters, and CRS rules;
 - an explicit operator registry with no dynamic `eval`;
 - optional path-free reproducibility manifests;
 - an optional GeoPackage adapter contract with explicit layer, CRS, and overwrite rules;
-- self-created sample data and a reproducible command-line demo;
+- self-created sample data and reproducible command-line examples;
 - tests across supported Python versions.
 
 ## Install
@@ -40,6 +40,25 @@ GeoPackage support is kept outside the base dependency set:
 ```bash
 python -m pip install -e ".[geopackage]"
 ```
+
+## Validate a workflow without running it
+
+The validation command needs only the workflow JSON and the names of layers that will be available. It does not read private data or execute spatial operators.
+
+```bash
+starshine validate tests/fixtures/workflows/valid-buffer.json \
+  --layer-name source
+```
+
+For automation, request a stable JSON diagnostic envelope:
+
+```bash
+starshine validate tests/fixtures/workflows/invalid-buffer-missing-work-crs.json \
+  --layer-name source \
+  --diagnostic-format json
+```
+
+See the [workflow validation contract](docs/WORKFLOW_VALIDATION.md).
 
 ## Run the demo
 
@@ -97,7 +116,7 @@ See [ROADMAP.md](ROADMAP.md), [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](
 
 ## Scope and data
 
-All sample GeoJSON in this repository was created specifically for this public project. No private database dump, credential, textbook PDF, OCR derivative, proprietary dataset, or machine-specific path is included. See [Open-source scope](docs/OPEN_SOURCE_SCOPE.md).
+All sample GeoJSON and workflow fixtures in this repository were created specifically for this public project. No private database dump, credential, textbook PDF, OCR derivative, proprietary dataset, machine-specific path, or unreleased private source module is included. See [Open-source scope](docs/OPEN_SOURCE_SCOPE.md).
 
 ## License
 
