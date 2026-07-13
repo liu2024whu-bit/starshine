@@ -1,9 +1,13 @@
 import re
-import tomllib
 from importlib.metadata import version
 from pathlib import Path
 
 import pytest
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - exercised only on Python 3.10
+    import tomli as tomllib
 
 import starshine_geo
 from starshine_geo.cli import main
