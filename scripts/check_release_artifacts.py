@@ -2,9 +2,13 @@ from __future__ import annotations
 
 import argparse
 import tarfile
-import tomllib
 import zipfile
 from pathlib import Path, PurePosixPath
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - exercised only on Python 3.10
+    import tomli as tomllib
 
 _MAX_MEMBER_BYTES = 5 * 1024 * 1024
 _FORBIDDEN_MEMBER_PARTS = {
