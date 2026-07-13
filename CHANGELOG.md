@@ -8,7 +8,10 @@ All notable public changes are documented here.
 
 - machine-readable JSON Schema for workflow version 1;
 - structured workflow diagnostics with stable codes, paths, step indexes, and operation names;
-- complete structural preflight validation before the first workflow operator executes;
+- complete structural and operator-parameter preflight validation before execution;
+- operator-specific schemas for buffer, dissolve, and point-within-polygon summary workflows;
+- public valid and invalid workflow fixtures checked by an external JSON Schema validator;
+- standalone `starshine validate` command with stable JSON diagnostic output;
 - opt-in reproducibility manifests with deterministic workflow, input, and output digests;
 - CRS reporting and redaction of credentials, absolute paths, and path-like parameters;
 - optional GeoPackage adapter contract with explicit layer selection, CRS preservation, and
