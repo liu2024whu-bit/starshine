@@ -32,7 +32,21 @@ jobs:
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -e ".[dev]"
       - run: ruff check .
-      - run: pytest
+      - name: Run tests
+        run: >-
+          pytest -q --tb=short
+          --junitxml=pytest-${{ matrix.python-version }}.xml
+          2>&1 | tee pytest-${{ matrix.python-version }}.log
+      - name: Upload test diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-failure-${{ matrix.python-version }}
+          path: |
+            pytest-${{ matrix.python-version }}.xml
+            pytest-${{ matrix.python-version }}.log
+          if-no-files-found: error
+          retention-days: 7
 
   geopackage:
     runs-on: ubuntu-latest
@@ -45,7 +59,21 @@ jobs:
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -e ".[dev,geopackage]"
       - run: ruff check .
-      - run: pytest
+      - name: Run GeoPackage tests
+        run: >-
+          pytest -q --tb=short
+          --junitxml=pytest-geopackage.xml
+          2>&1 | tee pytest-geopackage.log
+      - name: Upload GeoPackage test diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-failure-geopackage
+          path: |
+            pytest-geopackage.xml
+            pytest-geopackage.log
+          if-no-files-found: error
+          retention-days: 7
 
   benchmark:
     needs: [repository-audit]
