@@ -1,0 +1,16 @@
+{
+  "type": "FeatureCollection",
+  "starshine:crs": "EPSG:4326",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"id": "origin"},
+      "geometry": {"type": "Point", "coordinates": [0.0, 0.0]}
+    },
+    {
+      "type": "Feature",
+      "properties": {"id": "east"},
+      "geometry": {"type": "Point", "coordinates": [0.01, 0.0]}
+    }
+  ]
+}
