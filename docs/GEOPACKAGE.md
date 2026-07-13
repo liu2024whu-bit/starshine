@@ -53,9 +53,13 @@ Rules:
 - parent directories may be created, but no second workflow engine or private database access is
   introduced.
 
-## Current validation scope
+## Validation coverage
 
-The first adapter PR tests dependency isolation, explicit layer selection, CRS preservation,
-invalid layer handling, and overwrite guards without installing the optional GIS stack in the
-base CI matrix. A follow-up change will add self-created GeoPackage fixtures and real round-trip
-tests in an optional-dependency CI job before Issue #2 is considered complete.
+The base CI matrix runs on Python 3.10, 3.11, and 3.12 without installing the optional GIS stack.
+It verifies lazy dependency loading, explicit layer selection, CRS validation, invalid layer
+handling, and overwrite guards.
+
+A dedicated Python 3.11 GeoPackage job installs `.[dev,geopackage]` and uses self-created point
+features to perform real write, layer-list, read, CRS, geometry, property, and explicit-overwrite
+round-trip checks. No private dataset, external service, database credential, or checked-in binary
+fixture is required.
