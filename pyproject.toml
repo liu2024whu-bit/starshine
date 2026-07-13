@@ -23,7 +23,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8,<9", "ruff>=0.5,<1"]
+dev = ["jsonschema>=4.23,<5", "pytest>=8,<9", "ruff>=0.5,<1"]
 geopackage = ["geopandas>=1.0,<2", "pyogrio>=0.9,<1"]
 
 [project.scripts]
