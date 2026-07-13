@@ -2,17 +2,25 @@
 
 [![CI](https://github.com/liu2024whu-bit/starshine/actions/workflows/ci.yml/badge.svg)](https://github.com/liu2024whu-bit/starshine/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/status-research%20preview-orange.svg)](ROADMAP.md)
+[![Status](https://img.shields.io/badge/status-0.2.0%20research%20preview-orange.svg)](ROADMAP.md)
 
-Starshine Geo is a small, auditable open-source core for reproducible spatial-analysis workflows. It focuses on the parts that must remain explicit in GIS automation: coordinate-reference-system handling, geometry validation, bounded operator registries, parameter checks, reproducible examples, and testable results.
+Starshine Geo is a small, auditable open-source core for reproducible spatial-analysis workflows.
+It focuses on the parts that must remain explicit in GIS automation: coordinate-reference-system
+handling, geometry validation, bounded operator registries, parameter checks, reproducible
+examples, and testable results.
 
-This repository is **not a temporary application-only demo**. It is the independently maintained public core extracted from a longer-running private spatial-intelligence research project. The full research system contains unreleased datasets and experimental modules; this public repository contains only code and self-created sample data that can be safely maintained in the open. See [Project history and provenance](docs/PROJECT_HISTORY.md).
+This repository is not a temporary application-only demo. It is a permanently public project with
+its own issues, pull requests, CI, release process, and synthetic fixtures. Historical provenance is
+documented separately, but current Starshine development is based on this public repository rather
+than private source code or datasets.
 
 ## Why this project exists
 
-Spatial workflows often fail silently when geographic coordinates are treated as metres, invalid geometries enter overlays, output names overwrite inputs, or natural-language planners call unregistered functions. Starshine makes those boundaries visible and executable.
+Spatial workflows often fail silently when geographic coordinates are treated as metres, invalid
+geometries enter overlays, output names overwrite inputs, or planners call unregistered functions.
+Starshine makes those boundaries visible, machine-readable, and executable.
 
-The initial public release provides:
+The public 0.2 line provides:
 
 - validated GeoJSON FeatureCollection input;
 - projected-CRS checks for distance-based work;
@@ -21,11 +29,11 @@ The initial public release provides:
 - structured preflight diagnostics for structure, inputs, parameters, and CRS rules;
 - an explicit operator registry with no dynamic `eval`;
 - optional path-free reproducibility manifests;
-- an optional GeoPackage adapter contract with explicit layer, CRS, and overwrite rules;
+- optional GeoPackage input/output with explicit layer, CRS, and overwrite rules;
 - self-created sample data and reproducible command-line examples;
-- tests across supported Python versions.
+- public-boundary, package-build, and Python 3.10–3.12 CI checks.
 
-## Install
+## Install for development
 
 ```bash
 python -m venv .venv
@@ -41,9 +49,16 @@ GeoPackage support is kept outside the base dependency set:
 python -m pip install -e ".[geopackage]"
 ```
 
+Check the installed version:
+
+```bash
+starshine --version
+```
+
 ## Validate a workflow without running it
 
-The validation command needs only the workflow JSON and the names of layers that will be available. It does not read private data or execute spatial operators.
+The validation command needs only the workflow JSON and the names of layers that will be available.
+It does not read feature data or execute spatial operators.
 
 ```bash
 starshine validate tests/fixtures/workflows/valid-buffer.json \
@@ -71,8 +86,8 @@ starshine run examples/workflow.json \
   --manifest examples/output/zone_summary.manifest.json
 ```
 
-The `--manifest` option is optional. When supplied, it records deterministic workflow, input,
-step, output, version, and CRS evidence without copying feature content or CLI file paths. See
+The `--manifest` option is optional. When supplied, it records deterministic workflow, input, step,
+output, version, and CRS evidence without copying feature content or CLI file paths. See
 [Reproducibility manifests](docs/REPRODUCIBILITY.md).
 
 Or:
@@ -81,7 +96,8 @@ Or:
 python examples/run_demo.py
 ```
 
-The output preserves each study-zone polygon and adds a `site_count` property. The included sample should produce `2` for the west zone and `1` for the east zone.
+The output preserves each study-zone polygon and adds a `site_count` property. The included sample
+should produce `2` for the west zone and `1` for the east zone.
 
 ## Workflow format
 
@@ -99,24 +115,43 @@ The output preserves each study-zone polygon and adds a `site_count` property. T
 }
 ```
 
-Only registered operators can run. Each step must write to a new layer name, so input data cannot be overwritten accidentally. See the [workflow schema](schemas/workflow-v1.schema.json) and [validation contract](docs/WORKFLOW_VALIDATION.md).
+Only registered operators can run. Each step must write to a new layer name, so input data cannot
+be overwritten accidentally. See the [workflow schema](schemas/workflow-v1.schema.json) and
+[validation contract](docs/WORKFLOW_VALIDATION.md).
 
 ## Optional GeoPackage boundary
 
 The public adapter converts selected GeoPackage layers to and from the same validated in-memory
-GeoJSON contract used by the workflow engine. Multi-layer packages require an explicit layer,
-CRS metadata is preserved and validated, and existing or input-file destinations require an
-explicit overwrite flag. See [GeoPackage adapter contract](docs/GEOPACKAGE.md).
+GeoJSON contract used by the workflow engine. Multi-layer packages require an explicit layer, CRS
+metadata is preserved and validated, and existing or input-file destinations require an explicit
+overwrite flag. See [GeoPackage adapter contract](docs/GEOPACKAGE.md).
+
+## Public development boundary
+
+All tracked sample GeoJSON, workflow fixtures, and GeoPackage round-trip data are created for this
+repository. Current changes must be specified through public issues and implemented from public
+code. Private databases, credentials, unpublished modules, personal paths, textbook/OCR material,
+and research-delivery artifacts are excluded.
+
+CI runs `scripts/audit_public_repository.py` on every pull request and separately inspects wheel and
+source-distribution members. See [Open-source scope](docs/OPEN_SOURCE_SCOPE.md) and
+[project provenance](docs/PROJECT_HISTORY.md).
+
+## Releases
+
+Version metadata is sourced from `pyproject.toml`, while runtime code reads the installed package
+metadata. CI builds and checks one wheel and one source distribution before a release can be tagged.
+See the [release process](docs/RELEASE_PROCESS.md), [0.2.0 release notes](docs/releases/0.2.0.md),
+and [changelog](CHANGELOG.md).
 
 ## Project status
 
-Starshine Geo is an alpha-quality research preview. The API is intentionally small while the maintainers establish stable contracts, external reproduction, issue triage, and release discipline. The public core will remain open and maintained independently from unreleased private research modules.
+Starshine Geo 0.2.0 is an alpha-quality research preview. The API is intentionally small while the
+maintainers establish stable contracts, external reproduction, issue triage, release discipline,
+and independent community use.
 
-See [ROADMAP.md](ROADMAP.md), [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and [architecture notes](docs/ARCHITECTURE.md).
-
-## Scope and data
-
-All sample GeoJSON and workflow fixtures in this repository were created specifically for this public project. No private database dump, credential, textbook PDF, OCR derivative, proprietary dataset, machine-specific path, or unreleased private source module is included. See [Open-source scope](docs/OPEN_SOURCE_SCOPE.md).
+See [ROADMAP.md](ROADMAP.md), [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and
+[architecture notes](docs/ARCHITECTURE.md).
 
 ## License
 
