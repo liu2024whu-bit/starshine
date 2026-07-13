@@ -29,9 +29,18 @@ Issues = "https://github.com/liu2024whu-bit/starshine/issues"
 Changelog = "https://github.com/liu2024whu-bit/starshine/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
-dev = ["jsonschema>=4.23,<5", "pytest>=8,<9", "ruff>=0.5,<1"]
+dev = [
+  "jsonschema>=4.23,<5",
+  "pytest>=8,<9",
+  "ruff>=0.5,<1",
+  "tomli>=2,<3; python_version < '3.11'",
+]
 geopackage = ["geopandas>=1.0,<2", "pyogrio>=0.9,<1"]
-release = ["build>=1.2,<2", "twine>=5,<7"]
+release = [
+  "build>=1.2,<2",
+  "tomli>=2,<3; python_version < '3.11'",
+  "twine>=5,<7",
+]
 
 [project.scripts]
 starshine = "starshine_geo.cli:main"
