@@ -46,17 +46,21 @@ def test_benchmark_report_matches_public_schema_with_deterministic_clock():
     schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
     Draft202012Validator(schema).validate(report)
 
+    cases = build_cases()
     assert report["repeat_count"] == 2
     assert [case["output_feature_count"] for case in report["cases"]] == [64, 4, 16, 1]
+    assert [case["semantic_digest"] for case in report["cases"]] == [
+        digest_json(case.expected_signature) for case in cases
+    ]
     for case in report["cases"]:
         assert case["timing"]["validation_only"]["samples_seconds"] == [0.001, 0.001]
         assert case["timing"]["validated_run"]["samples_seconds"] == [0.001, 0.001]
 
 
-def test_benchmark_output_digests_repeat_in_the_same_environment():
+def test_benchmark_semantic_digests_repeat_in_the_same_environment():
     first = build_report(repeats=1)
     second = build_report(repeats=1)
 
-    assert [case["output_digest"] for case in first["cases"]] == [
-        case["output_digest"] for case in second["cases"]
+    assert [case["semantic_digest"] for case in first["cases"]] == [
+        case["semantic_digest"] for case in second["cases"]
     ]
