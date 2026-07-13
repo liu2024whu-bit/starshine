@@ -1,0 +1,18 @@
+{
+  "bbox": [
+    0.0,
+    0.0,
+    200.0,
+    100.0
+  ],
+  "collection_digest": "sha256:93a793d4975f8fd6d40a731239c71eb9890f2c13cf642e1c244abd0c0bfdc863",
+  "declared_crs": "EPSG:3857",
+  "feature_count": 3,
+  "geometry_counts": {
+    "Point": 3
+  },
+  "property_fields": [
+    "id"
+  ],
+  "schema_version": 1
+}
