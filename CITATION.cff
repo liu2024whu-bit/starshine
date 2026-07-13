@@ -7,7 +7,7 @@ authors:
     given-names: Lexin
 repository-code: "https://github.com/liu2024whu-bit/starshine"
 license: Apache-2.0
-version: 0.1.0
+version: 0.2.0
 date-released: 2026-07-13
 keywords:
   - GIS
