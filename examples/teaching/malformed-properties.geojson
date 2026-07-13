@@ -1,0 +1,11 @@
+{
+  "type": "FeatureCollection",
+  "starshine:crs": "EPSG:3857",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": "this should be an object or null",
+      "geometry": {"type": "Point", "coordinates": [5, 5]}
+    }
+  ]
+}
