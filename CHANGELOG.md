@@ -4,7 +4,14 @@ All notable public changes are documented here.
 
 ## [Unreleased]
 
-No unreleased changes yet.
+### Added
+
+- deterministic synthetic small-vector cases for buffer, dissolve, point summary, and multi-step
+  workflows;
+- a machine-readable benchmark report schema with corpus, case, output, environment, and timing
+  fields;
+- separate semantic verification, report checking, CI execution, and benchmark artifact upload;
+- public reproduction guidance that avoids fragile wall-clock pass/fail thresholds.
 
 ## [0.2.0] - 2026-07-13
 
