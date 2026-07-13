@@ -31,6 +31,7 @@ The public 0.2 line provides:
 - optional path-free reproducibility manifests;
 - optional GeoPackage input/output with explicit layer, CRS, and overwrite rules;
 - deterministic GeoJSON inspection reports with counts, bounds, CRS, fields, and digests;
+- synthetic teaching cases for CRS misuse, invalid geometry, and malformed properties;
 - a deterministic synthetic small-vector benchmark corpus with schema-checked JSON reports;
 - self-created sample data and reproducible command-line examples;
 - public-boundary, package-build, and Python 3.10–3.12 source and built-wheel CI checks.
@@ -94,6 +95,23 @@ Reports include feature and geometry counts, sorted property fields, declared CR
 bounds, and a deterministic collection digest. See the
 [inspection contract](docs/INSPECTION.md) and
 [inspection report schema](schemas/inspection-report-v1.schema.json).
+
+## Learn from intentional CRS and geometry failures
+
+The files under `examples/teaching/` are deliberately small and several are intentionally invalid.
+They demonstrate geographic coordinates incorrectly used as a buffer working CRS, a corrected
+projected workflow, a self-intersecting polygon, an empty geometry, and malformed Feature
+properties.
+
+Run the complete documented check set:
+
+```bash
+python scripts/verify_teaching_examples.py
+```
+
+Each failure has an exact command, expected exit code, and stable message fragment or diagnostic path.
+The corrected examples use only synthetic data and produce reviewable inspection or workflow
+summaries. See [synthetic failure examples](docs/TEACHING_FAILURES.md).
 
 ## Validate a workflow without running it
 
