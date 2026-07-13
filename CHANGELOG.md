@@ -11,7 +11,11 @@ All notable public changes are documented here.
 - a machine-readable benchmark report schema with corpus, case, output, environment, and timing
   fields;
 - separate semantic verification, report checking, CI execution, and benchmark artifact upload;
-- public reproduction guidance that avoids fragile wall-clock pass/fail thresholds.
+- public reproduction guidance that avoids fragile wall-clock pass/fail thresholds;
+- clean Python 3.10–3.12 jobs that install the exact CI-built wheel without an editable checkout;
+- an installed-wheel smoke script covering package location, public imports, CLI versioning,
+  structured validation diagnostics, synthetic workflow execution, and manifest metadata;
+- concise installation and smoke logs retained only when a wheel matrix job fails.
 
 ## [0.2.0] - 2026-07-13
 
