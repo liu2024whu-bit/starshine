@@ -13,7 +13,8 @@ All notable public changes are documented here.
 - CRS reporting and redaction of credentials, absolute paths, and path-like parameters;
 - optional GeoPackage adapter contract with explicit layer selection, CRS preservation, and
   overwrite guards;
-- isolated `geopackage` dependency extra so base GeoJSON workflows remain lightweight.
+- isolated `geopackage` dependency extra so base GeoJSON workflows remain lightweight;
+- dedicated optional-dependency CI with self-created GeoPackage round-trip and overwrite tests.
 
 ## [0.1.0] - 2026-07-13
 
