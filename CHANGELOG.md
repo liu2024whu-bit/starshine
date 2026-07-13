@@ -4,6 +4,10 @@ All notable public changes are documented here.
 
 ## [Unreleased]
 
+No unreleased changes yet.
+
+## [0.2.0] - 2026-07-13
+
 ### Added
 
 - machine-readable JSON Schema for workflow version 1;
@@ -14,10 +18,18 @@ All notable public changes are documented here.
 - standalone `starshine validate` command with stable JSON diagnostic output;
 - opt-in reproducibility manifests with deterministic workflow, input, and output digests;
 - CRS reporting and redaction of credentials, absolute paths, and path-like parameters;
-- optional GeoPackage adapter contract with explicit layer selection, CRS preservation, and
-  overwrite guards;
-- isolated `geopackage` dependency extra so base GeoJSON workflows remain lightweight;
-- dedicated optional-dependency CI with self-created GeoPackage round-trip and overwrite tests.
+- optional GeoPackage adapter with explicit layer selection, CRS preservation, and overwrite guards;
+- isolated `geopackage` dependency extra and real round-trip CI with self-created fixtures;
+- public repository boundary auditing and release-archive inspection;
+- reproducible wheel and source-distribution builds uploaded as CI artifacts;
+- documented public release process and versioned release notes.
+
+### Changed
+
+- runtime and manifest versions now come from installed package metadata;
+- `dissolve_features` is included in the documented top-level public API;
+- README, roadmap, provenance, and open-source-scope language now distinguish historical lineage
+  from independent current development.
 
 ## [0.1.0] - 2026-07-13
 
@@ -28,4 +40,5 @@ All notable public changes are documented here.
 - buffer, dissolve, and point-within-polygon summary operators;
 - versioned bounded workflow engine;
 - synthetic example data and reproducible demo;
-- tests, CI, Apache-2.0 license, security policy, contribution rules, roadmap, and provenance documentation.
+- tests, CI, Apache-2.0 license, security policy, contribution rules, roadmap, and provenance
+  documentation.
