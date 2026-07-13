@@ -4,9 +4,9 @@ import hashlib
 import json
 import re
 from copy import deepcopy
-from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
+from ._version import package_version
 from .geojson import FeatureCollection
 
 _SENSITIVE_KEY_PARTS = (
@@ -82,13 +82,6 @@ def _safe_layer_name(name: str, *, kind: str, index: int) -> str:
     return str(safe_name)
 
 
-def _package_version() -> str:
-    try:
-        return version("starshine-geo")
-    except PackageNotFoundError:
-        return "0.1.0"
-
-
 def _declared_crs(layer: FeatureCollection) -> str | None:
     crs = layer.get("starshine:crs")
     return crs if isinstance(crs, str) and crs.strip() else None
@@ -120,7 +113,7 @@ def build_manifest(
 
     return {
         "manifest_version": 1,
-        "starshine_version": starshine_version or _package_version(),
+        "starshine_version": starshine_version or package_version(),
         "workflow_version": safe_workflow.get("version"),
         "workflow_digest": digest_json(safe_workflow),
         "input_layers": safe_input_layers,
