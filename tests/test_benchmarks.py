@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+import pytest
 from jsonschema import Draft202012Validator
 
 from benchmarks.corpus import build_cases
@@ -53,8 +54,12 @@ def test_benchmark_report_matches_public_schema_with_deterministic_clock():
         digest_json(case.expected_signature) for case in cases
     ]
     for case in report["cases"]:
-        assert case["timing"]["validation_only"]["samples_seconds"] == [0.001, 0.001]
-        assert case["timing"]["validated_run"]["samples_seconds"] == [0.001, 0.001]
+        assert case["timing"]["validation_only"]["samples_seconds"] == pytest.approx(
+            [0.001, 0.001], rel=0, abs=1e-12
+        )
+        assert case["timing"]["validated_run"]["samples_seconds"] == pytest.approx(
+            [0.001, 0.001], rel=0, abs=1e-12
+        )
 
 
 def test_benchmark_semantic_digests_repeat_in_the_same_environment():
