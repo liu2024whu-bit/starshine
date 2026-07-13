@@ -23,7 +23,7 @@ provenance does not make private source code or data part of the implementation 
 
 ## 0.2.x — Maintenance and external reproduction
 
-- [ ] small vector benchmark fixtures with machine-readable result summaries
+- [x] small vector benchmark fixtures with machine-readable result summaries
 - [ ] installation smoke tests from built wheels on all supported Python versions
 - [ ] third-party reproduction notes from an environment not used by the maintainer
 - [ ] additional examples for teaching CRS and geometry failure modes
