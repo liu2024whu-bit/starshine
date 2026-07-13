@@ -21,6 +21,7 @@ The initial public release provides:
 - structured preflight diagnostics before execution;
 - an explicit operator registry with no dynamic `eval`;
 - optional path-free reproducibility manifests;
+- an optional GeoPackage adapter contract with explicit layer, CRS, and overwrite rules;
 - self-created sample data and a reproducible command-line demo;
 - tests across supported Python versions.
 
@@ -32,6 +33,12 @@ python -m venv .venv
 # macOS/Linux: source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
+```
+
+GeoPackage support is kept outside the base dependency set:
+
+```bash
+python -m pip install -e ".[geopackage]"
 ```
 
 ## Run the demo
@@ -74,6 +81,13 @@ The output preserves each study-zone polygon and adds a `site_count` property. T
 ```
 
 Only registered operators can run. Each step must write to a new layer name, so input data cannot be overwritten accidentally. See the [workflow schema](schemas/workflow-v1.schema.json) and [validation contract](docs/WORKFLOW_VALIDATION.md).
+
+## Optional GeoPackage boundary
+
+The public adapter converts selected GeoPackage layers to and from the same validated in-memory
+GeoJSON contract used by the workflow engine. Multi-layer packages require an explicit layer,
+CRS metadata is preserved and validated, and existing or input-file destinations require an
+explicit overwrite flag. See [GeoPackage adapter contract](docs/GEOPACKAGE.md).
 
 ## Project status
 
