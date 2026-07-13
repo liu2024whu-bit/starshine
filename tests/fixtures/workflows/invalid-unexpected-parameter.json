@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "steps": [
+    {
+      "operation": "summarize_points_within",
+      "inputs": {"polygons": "zones", "points": "sites"},
+      "parameters": {"unsafe_mode": true},
+      "output": "summary"
+    }
+  ]
+}
