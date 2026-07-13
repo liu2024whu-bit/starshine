@@ -75,6 +75,7 @@
         "operation_count",
         "output_layer",
         "output_feature_count",
+        "semantic_digest",
         "output_digest",
         "timing"
       ],
@@ -87,6 +88,7 @@
         "operation_count": {"type": "integer", "minimum": 1},
         "output_layer": {"type": "string", "minLength": 1},
         "output_feature_count": {"type": "integer", "minimum": 1},
+        "semantic_digest": {"$ref": "#/$defs/digest"},
         "output_digest": {"$ref": "#/$defs/digest"},
         "timing": {
           "type": "object",
