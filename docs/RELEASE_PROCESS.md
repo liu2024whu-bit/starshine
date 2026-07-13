@@ -22,6 +22,7 @@ Before a release:
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev,geopackage,release]"
 python scripts/audit_public_repository.py
+python scripts/verify_teaching_examples.py
 ruff check .
 pytest
 python -m build
@@ -32,7 +33,8 @@ python scripts/check_release_artifacts.py dist
 The artifact inspector checks that exactly one wheel and one source distribution were produced,
 that their versions match package metadata, that expected public files are present, and that no
 unsafe archive paths, ignored caches, private-artifact directories, or unexpectedly large members
-were packaged.
+were packaged. The source distribution must include the synthetic teaching inputs, their expected
+inspection report, focused documentation, and the public verification script.
 
 ## Installed-wheel verification
 
