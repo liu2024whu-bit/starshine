@@ -34,6 +34,27 @@ that their versions match package metadata, that expected public files are prese
 unsafe archive paths, ignored caches, private-artifact directories, or unexpectedly large members
 were packaged.
 
+## Installed-wheel verification
+
+Source-checkout tests use an editable installation so contributors can iterate quickly. They do not,
+by themselves, prove that a built wheel contains every required module, declares every runtime
+dependency, or exposes the console entry point correctly.
+
+CI therefore builds the wheel once and passes that exact artifact to clean Python 3.10, 3.11, and
+3.12 jobs. Those jobs do not check out the repository and do not use `pip install -e`. They install
+the downloaded wheel and run `scripts/smoke_installed_wheel.py`, which verifies:
+
+- the package imports from the installed environment rather than the working tree;
+- `starshine --version` matches installed package metadata;
+- top-level public callables are available;
+- valid and invalid workflow diagnostics work through the installed console command;
+- a self-created point-within-polygon workflow runs through both the Python API and CLI;
+- the generated result and reproducibility manifest contain the expected public values.
+
+Installation and smoke output are retained as short CI artifacts when a matrix job fails. The smoke
+script is also required to be present in the source distribution so third parties can repeat the same
+check after building locally.
+
 ## GitHub release
 
 After the release commit is on `main` and CI is green:
