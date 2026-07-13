@@ -1,24 +1,36 @@
 import json
 from pathlib import Path
 
-
-SCHEMA_PATH = Path(__file__).parents[1] / "schemas" / "workflow-v1.schema.json"
-
-
-def test_workflow_schema_is_machine_readable_and_versioned():
-    schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
-
-    assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"
-    assert schema["properties"]["version"]["const"] == 1
-    assert schema["properties"]["steps"]["minItems"] == 1
-    assert schema["$defs"]["step"]["required"] == ["operation", "inputs", "output"]
+from jsonschema import Draft202012Validator
 
 
-def test_workflow_schema_lists_only_registered_public_operations():
-    schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+ROOT = Path(__file__).resolve().parents[1]
+SCHEMA_PATH = ROOT / "schemas" / "workflow-v1.schema.json"
+FIXTURE_DIR = ROOT / "tests" / "fixtures" / "workflows"
 
-    assert schema["$defs"]["step"]["properties"]["operation"]["enum"] == [
-        "buffer",
-        "dissolve",
-        "summarize_points_within",
-    ]
+
+def _load(path: Path):
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def test_workflow_schema_is_valid_draft_2020_12():
+    Draft202012Validator.check_schema(_load(SCHEMA_PATH))
+
+
+def test_valid_workflow_fixtures_pass_external_schema_validation():
+    validator = Draft202012Validator(_load(SCHEMA_PATH))
+    fixtures = sorted(FIXTURE_DIR.glob("valid-*.json"))
+
+    assert fixtures
+    for fixture in fixtures:
+        errors = sorted(validator.iter_errors(_load(fixture)), key=lambda error: list(error.path))
+        assert errors == [], f"{fixture.name}: {[error.message for error in errors]}"
+
+
+def test_invalid_workflow_fixtures_fail_external_schema_validation():
+    validator = Draft202012Validator(_load(SCHEMA_PATH))
+    fixtures = sorted(FIXTURE_DIR.glob("invalid-*.json"))
+
+    assert fixtures
+    for fixture in fixtures:
+        assert list(validator.iter_errors(_load(fixture))), fixture.name

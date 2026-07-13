@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "steps": [
+    {
+      "operation": "summarize_points_within",
+      "inputs": {"polygons": "zones", "points": "sites"},
+      "parameters": {
+        "polygon_id_field": "id",
+        "count_field": "site_count"
+      },
+      "output": "summary"
+    }
+  ]
+}

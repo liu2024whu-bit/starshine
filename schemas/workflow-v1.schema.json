@@ -6,72 +6,111 @@
   "additionalProperties": false,
   "required": ["version", "steps"],
   "properties": {
-    "version": {
-      "const": 1
-    },
+    "version": {"const": 1},
     "steps": {
       "type": "array",
       "minItems": 1,
       "items": {
-        "$ref": "#/$defs/step"
+        "oneOf": [
+          {"$ref": "#/$defs/bufferStep"},
+          {"$ref": "#/$defs/dissolveStep"},
+          {"$ref": "#/$defs/summarizePointsWithinStep"}
+        ]
       }
     }
   },
   "$defs": {
-    "step": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "layerReference": {"$ref": "#/$defs/nonEmptyString"},
+    "outputName": {"$ref": "#/$defs/nonEmptyString"},
+    "bufferStep": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["operation", "inputs", "output"],
+      "required": ["operation", "inputs", "parameters", "output"],
       "properties": {
-        "operation": {
-          "enum": ["buffer", "dissolve", "summarize_points_within"]
-        },
+        "operation": {"const": "buffer"},
         "inputs": {
           "type": "object",
           "additionalProperties": false,
+          "required": ["input"],
           "properties": {
-            "input": {"type": "string", "minLength": 1},
-            "polygons": {"type": "string", "minLength": 1},
-            "points": {"type": "string", "minLength": 1}
+            "input": {"$ref": "#/$defs/layerReference"}
           }
         },
         "parameters": {
           "type": "object",
+          "additionalProperties": false,
+          "required": ["distance", "source_crs", "work_crs"],
+          "properties": {
+            "distance": {"type": "number", "exclusiveMinimum": 0},
+            "source_crs": {"$ref": "#/$defs/nonEmptyString"},
+            "work_crs": {"$ref": "#/$defs/nonEmptyString"},
+            "segments": {"type": "integer", "minimum": 1, "maximum": 64}
+          }
+        },
+        "output": {"$ref": "#/$defs/outputName"}
+      }
+    },
+    "dissolveStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operation", "inputs", "output"],
+      "properties": {
+        "operation": {"const": "dissolve"},
+        "inputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["input"],
+          "properties": {
+            "input": {"$ref": "#/$defs/layerReference"}
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "group_field": {
+              "anyOf": [
+                {"$ref": "#/$defs/nonEmptyString"},
+                {"type": "null"}
+              ]
+            }
+          },
           "default": {}
         },
-        "output": {
-          "type": "string",
-          "minLength": 1
-        }
-      },
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "operation": {"enum": ["buffer", "dissolve"]}
-            },
-            "required": ["operation"]
-          },
-          "then": {
-            "properties": {
-              "inputs": {"required": ["input"]}
-            }
+        "output": {"$ref": "#/$defs/outputName"}
+      }
+    },
+    "summarizePointsWithinStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operation", "inputs", "output"],
+      "properties": {
+        "operation": {"const": "summarize_points_within"},
+        "inputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["polygons", "points"],
+          "properties": {
+            "polygons": {"$ref": "#/$defs/layerReference"},
+            "points": {"$ref": "#/$defs/layerReference"}
           }
         },
-        {
-          "if": {
-            "properties": {
-              "operation": {"const": "summarize_points_within"}
-            },
-            "required": ["operation"]
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "polygon_id_field": {"$ref": "#/$defs/nonEmptyString"},
+            "count_field": {"$ref": "#/$defs/nonEmptyString"}
           },
-          "then": {
-            "properties": {
-              "inputs": {"required": ["polygons", "points"]}
-            }
-          }
-        }
-      ]
+          "default": {}
+        },
+        "output": {"$ref": "#/$defs/outputName"}
+      }
     }
   }
 }
