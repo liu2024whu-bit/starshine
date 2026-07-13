@@ -1,6 +1,6 @@
 # Workflow validation
 
-Starshine validates the complete workflow structure before executing the first operator. This prevents a later malformed step from leaving a partially evaluated in-memory workflow.
+Starshine validates the complete workflow structure and operator parameters before executing the first operator. This prevents a malformed later step from leaving a partially evaluated in-memory workflow.
 
 ## Machine-readable schema
 
@@ -10,11 +10,20 @@ The public workflow version 1 contract is available at:
 schemas/workflow-v1.schema.json
 ```
 
-The schema documents the supported operations, required step fields, input references, optional parameters object, and output name. Runtime validation additionally checks layer availability and prevents output names from overwriting existing or earlier workflow layers.
+The schema uses JSON Schema draft 2020-12 and defines a separate contract for each public operator. It covers exact input names, required and optional parameters, numeric bounds, field-name rules, and output names. Public valid and invalid examples are stored in `tests/fixtures/workflows/` and are checked with an external JSON Schema validator in CI.
 
-## Structured diagnostics
+Runtime preflight additionally checks:
 
-`validate_workflow()` and `run_workflow()` raise `WorkflowValidationError` for structural failures. The exception contains a `diagnostic` value with stable fields:
+- referenced layer names are available in execution order;
+- output names do not overwrite inputs or earlier results;
+- unexpected workflow, step, input, and parameter fields are rejected;
+- buffer distances are positive and finite;
+- source CRS values are parseable and buffer working CRS values are projected;
+- buffer segment counts and optional field names meet their public contracts.
+
+## Python diagnostics
+
+`validate_workflow()` and `run_workflow()` raise `WorkflowValidationError` before execution when the workflow contract fails. The exception contains a stable, JSON-ready `diagnostic` value:
 
 ```python
 from starshine_geo import WorkflowValidationError, validate_workflow
@@ -25,16 +34,33 @@ except WorkflowValidationError as exc:
     print(exc.diagnostic.as_dict())
 ```
 
-Example result:
+Example parameter result:
 
 ```json
 {
-  "code": "unknown_input_layer",
-  "message": "unknown input layer: missing",
-  "path": "steps[0].inputs.polygons",
+  "code": "missing_parameter",
+  "message": "missing required parameter for buffer: work_crs",
+  "path": "steps[0].parameters.work_crs",
   "step_index": 0,
-  "operation": "summarize_points_within"
+  "operation": "buffer"
 }
 ```
 
-The dictionary format is intended for command-line adapters, future user interfaces, test assertions, and API error envelopes. Operator-specific data and parameter checks remain owned by the operators themselves.
+## Validate from the CLI
+
+Validation can run without loading feature data or executing spatial operators. Declare only the public layer names that the workflow may reference:
+
+```bash
+starshine validate tests/fixtures/workflows/valid-buffer.json \
+  --layer-name source
+```
+
+For automation and future UI adapters, request a stable JSON envelope:
+
+```bash
+starshine validate tests/fixtures/workflows/invalid-buffer-missing-work-crs.json \
+  --layer-name source \
+  --diagnostic-format json
+```
+
+The command exits with status `0` for a valid workflow and status `2` for a validation failure. The CLI reuses the canonical Python validator; it does not maintain a second ruleset and does not require private datasets.
