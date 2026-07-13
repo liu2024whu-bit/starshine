@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "steps": [
+    {
+      "operation": "buffer",
+      "inputs": {"input": "points"},
+      "parameters": {
+        "distance": 25,
+        "source_crs": "EPSG:3857",
+        "work_crs": "EPSG:3857",
+        "segments": 4
+      },
+      "output": "buffers"
+    }
+  ]
+}
