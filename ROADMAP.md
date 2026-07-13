@@ -27,7 +27,7 @@ provenance does not make private source code or data part of the implementation 
 - [x] installation smoke tests from built wheels on all supported Python versions
 - [x] deterministic GeoJSON inspection reports and installed-wheel CLI coverage
 - [ ] third-party reproduction notes from an environment not used by the maintainer
-- [ ] additional examples for teaching CRS and geometry failure modes
+- [x] synthetic teaching examples for CRS and geometry failure modes
 
 ## 0.3 — Community research preview
 
