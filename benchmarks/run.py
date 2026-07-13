@@ -12,6 +12,7 @@ import starshine_geo
 from starshine_geo import digest_json, run_workflow, validate_workflow
 
 from .corpus import CORPUS_VERSION, BenchmarkCase, build_cases
+from .verify import semantic_signature
 
 Clock = Callable[[], int]
 
@@ -73,6 +74,7 @@ def build_report(*, repeats: int = 3, clock: Clock = perf_counter_ns) -> dict[st
                 "operation_count": case.operation_count,
                 "output_layer": case.output_layer,
                 "output_feature_count": len(output["features"]),
+                "semantic_digest": digest_json(semantic_signature(case, output)),
                 "output_digest": digest_json(output),
                 "timing": {
                     "validation_only": _timing(validation_samples),
