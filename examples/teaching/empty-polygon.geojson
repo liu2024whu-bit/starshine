@@ -1,0 +1,11 @@
+{
+  "type": "FeatureCollection",
+  "starshine:crs": "EPSG:3857",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"id": "empty"},
+      "geometry": {"type": "Polygon", "coordinates": []}
+    }
+  ]
+}

@@ -18,3 +18,4 @@ The workflow layer does not import functions from arbitrary module names and doe
 3. **Explicit failure.** Invalid geometry, missing fields, and unsupported operations fail with actionable errors.
 4. **Reproducibility.** A workflow, named inputs, package version, and output layer are sufficient to repeat the included demo.
 5. **Public/private separation.** Experimental modules and unreleased data do not silently leak into the public core.
+6. **Teaching artifacts stay external to runtime.** Intentional failures live under `examples/teaching/` and exercise public contracts without becoming package dependencies.

@@ -1,0 +1,14 @@
+{
+  "type": "FeatureCollection",
+  "starshine:crs": "EPSG:3857",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"id": "bow-tie"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[0, 0], [2, 2], [0, 2], [2, 0], [0, 0]]]
+      }
+    }
+  ]
+}

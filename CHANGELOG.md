@@ -18,7 +18,9 @@ All notable public changes are documented here.
 - concise installation and smoke logs retained only when a wheel matrix job fails;
 - a deterministic `inspect_feature_collection()` API and `starshine inspect` command;
 - schema-checked inspection reports containing counts, property fields, declared CRS, bounds, and a
-  collection digest without copying feature content.
+  collection digest without copying feature content;
+- synthetic CRS and geometry teaching cases with exact CLI exit codes, stable diagnostic paths,
+  corrected projected-workflow checks, and a public verification script.
 
 ## [0.2.0] - 2026-07-13
 

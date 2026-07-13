@@ -7,10 +7,11 @@ public code, public issues, public reviews, and self-created fixtures.
 ## Included
 
 - source code designed, reviewed, and maintained in this public repository;
-- synthetic GeoJSON, workflow JSON, deterministic benchmark geometries, and runtime-generated
-  GeoPackage fixtures;
+- synthetic GeoJSON, workflow JSON, deterministic benchmark geometries, teaching failure cases,
+  and runtime-generated GeoPackage fixtures;
 - automated tests, schemas, reproducibility manifests, benchmark reports, and package-build checks;
-- public architecture, security, contribution, release, benchmark, and roadmap documents.
+- public architecture, security, contribution, release, benchmark, teaching, and roadmap
+  documents.
 
 ## Excluded
 
