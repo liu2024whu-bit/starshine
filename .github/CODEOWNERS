@@ -1,0 +1,9 @@
+# Default review responsibility for the public repository.
+* @liu2024whu-bit
+
+# Release and security-sensitive surfaces require the primary maintainer.
+/.github/ @liu2024whu-bit
+/SECURITY.md @liu2024whu-bit
+/docs/RELEASE_PROCESS.md @liu2024whu-bit
+/pyproject.toml @liu2024whu-bit
+/scripts/audit_public_repository.py @liu2024whu-bit
