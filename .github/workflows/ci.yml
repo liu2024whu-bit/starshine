@@ -47,8 +47,29 @@ jobs:
       - run: ruff check .
       - run: pytest
 
+  benchmark:
+    needs: [repository-audit]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[dev]"
+      - run: python -m benchmarks.verify
+      - run: python -m benchmarks.run --repeat 1 --output benchmark-report.json
+      - run: python scripts/check_benchmark_report.py benchmark-report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: starshine-vector-benchmark
+          path: benchmark-report.json
+          if-no-files-found: error
+          retention-days: 14
+
   build:
-    needs: [repository-audit, test, geopackage]
+    needs: [repository-audit, test, geopackage, benchmark]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
