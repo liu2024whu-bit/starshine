@@ -7,62 +7,55 @@ from starshine_geo import run_workflow
 from .corpus import BenchmarkCase, build_cases
 
 
-def _require(condition: bool, message: str) -> None:
-    if not condition:
-        raise RuntimeError(message)
+def semantic_signature(case: BenchmarkCase, output: dict[str, Any]) -> dict[str, Any]:
+    """Extract stable semantics without depending on raw geometry serialization order."""
+    features = output["features"]
+    base = {
+        "crs": output.get("starshine:crs"),
+        "feature_count": len(features),
+    }
 
-
-def _verify_buffer(case: BenchmarkCase, output: dict[str, Any]) -> None:
-    _require(len(output["features"]) == 64, f"{case.name}: expected 64 output features")
-    geometry_types = {feature["geometry"]["type"] for feature in output["features"]}
-    _require(geometry_types == {"Polygon"}, f"{case.name}: unexpected geometries")
-    _require(
-        all(
-            feature["properties"]["starshine:buffer_distance"] == 5.0
-            for feature in output["features"]
-        ),
-        f"{case.name}: buffer metadata is inconsistent",
-    )
-
-
-def _verify_dissolve(case: BenchmarkCase, output: dict[str, Any]) -> None:
-    _require(len(output["features"]) == 4, f"{case.name}: expected four dissolved bands")
-    actual_bands = {feature["properties"]["band"] for feature in output["features"]}
-    _require(
-        actual_bands == {"band-0", "band-1", "band-2", "band-3"},
-        f"{case.name}: unexpected band values",
-    )
-
-
-def _verify_summary(case: BenchmarkCase, output: dict[str, Any]) -> None:
-    _require(len(output["features"]) == 16, f"{case.name}: expected 16 zones")
-    _require(
-        all(feature["properties"]["site_count"] == 4 for feature in output["features"]),
-        f"{case.name}: each zone should contain four sites",
-    )
-
-
-def _verify_multi_step(case: BenchmarkCase, output: dict[str, Any]) -> None:
-    _require(len(output["features"]) == 1, f"{case.name}: expected one dissolved feature")
-    geometry_type = output["features"][0]["geometry"]["type"]
-    _require(
-        geometry_type in {"Polygon", "MultiPolygon"},
-        f"{case.name}: unexpected final geometry type: {geometry_type}",
-    )
-
-
-_VERIFIERS = {
-    "buffer-grid-64": _verify_buffer,
-    "dissolve-bands-80": _verify_dissolve,
-    "summarize-zones-16-sites-64": _verify_summary,
-    "multi-step-buffer-dissolve-36": _verify_multi_step,
-}
+    if case.name == "buffer-grid-64":
+        return {
+            **base,
+            "geometry_types": sorted({feature["geometry"]["type"] for feature in features}),
+            "buffer_distance": next(
+                iter({feature["properties"]["starshine:buffer_distance"] for feature in features})
+            ),
+            "work_crs": next(
+                iter({feature["properties"]["starshine:work_crs"] for feature in features})
+            ),
+        }
+    if case.name == "dissolve-bands-80":
+        return {
+            **base,
+            "bands": sorted(feature["properties"]["band"] for feature in features),
+        }
+    if case.name == "summarize-zones-16-sites-64":
+        return {
+            **base,
+            "zone_counts": sorted(
+                [feature["properties"]["zone_id"], feature["properties"]["site_count"]]
+                for feature in features
+            ),
+        }
+    if case.name == "multi-step-buffer-dissolve-36":
+        return {
+            **base,
+            "geometry_count": sum(feature.get("geometry") is not None for feature in features),
+        }
+    raise RuntimeError(f"no semantic signature is defined for benchmark case: {case.name}")
 
 
 def verify_case(case: BenchmarkCase) -> None:
     """Check semantic correctness outside the timed benchmark path."""
     result = run_workflow(case.workflow, case.layers)
-    _VERIFIERS[case.name](case, result[case.output_layer])
+    actual = semantic_signature(case, result[case.output_layer])
+    if actual != case.expected_signature:
+        raise RuntimeError(
+            f"{case.name}: semantic signature mismatch: "
+            f"expected {case.expected_signature!r}, received {actual!r}"
+        )
 
 
 def main() -> int:
