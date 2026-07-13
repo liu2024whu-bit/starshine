@@ -30,6 +30,7 @@ The public 0.2 line provides:
 - an explicit operator registry with no dynamic `eval`;
 - optional path-free reproducibility manifests;
 - optional GeoPackage input/output with explicit layer, CRS, and overwrite rules;
+- deterministic GeoJSON inspection reports with counts, bounds, CRS, fields, and digests;
 - a deterministic synthetic small-vector benchmark corpus with schema-checked JSON reports;
 - self-created sample data and reproducible command-line examples;
 - public-boundary, package-build, and Python 3.10–3.12 source and built-wheel CI checks.
@@ -72,6 +73,27 @@ python scripts/smoke_installed_wheel.py
 
 In CI, the wheel is built once and downloaded into clean Python 3.10, 3.11, and 3.12 jobs that do not
 check out the repository. See the [release process](docs/RELEASE_PROCESS.md) for the exact checks.
+
+## Inspect a GeoJSON collection without running a workflow
+
+The inspection command validates one `FeatureCollection` and reports structure without copying
+feature coordinates or property values into the report:
+
+```bash
+starshine inspect examples/data/zones.geojson
+```
+
+Write the same schema-checked report to a file:
+
+```bash
+starshine inspect examples/data/zones.geojson \
+  --output zones.inspection.json
+```
+
+Reports include feature and geometry counts, sorted property fields, declared CRS, collection
+bounds, and a deterministic collection digest. See the
+[inspection contract](docs/INSPECTION.md) and
+[inspection report schema](schemas/inspection-report-v1.schema.json).
 
 ## Validate a workflow without running it
 

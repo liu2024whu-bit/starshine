@@ -53,6 +53,7 @@ def _assert_public_imports() -> None:
         "build_manifest",
         "digest_json",
         "dissolve_features",
+        "inspect_feature_collection",
         "list_geopackage_layers",
         "read_geopackage",
         "run_workflow",
@@ -134,6 +135,14 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
     if direct_counts != {"east": 1, "west": 2}:
         raise RuntimeError(f"unexpected direct API result: {direct_counts}")
 
+    direct_inspection = starshine_geo.inspect_feature_collection(zones)
+    if direct_inspection.get("feature_count") != 2:
+        raise RuntimeError(f"unexpected direct inspection count: {direct_inspection}")
+    if direct_inspection.get("bbox") != [0.0, 0.0, 20.0, 10.0]:
+        raise RuntimeError(f"unexpected direct inspection bounds: {direct_inspection}")
+    if direct_inspection.get("property_fields") != ["id"]:
+        raise RuntimeError(f"unexpected direct inspection fields: {direct_inspection}")
+
     with tempfile.TemporaryDirectory(prefix="starshine-wheel-smoke-") as directory:
         root = Path(directory)
         workflow_path = root / "workflow.json"
@@ -141,6 +150,7 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
         sites_path = root / "sites.geojson"
         output_path = root / "summary.geojson"
         manifest_path = root / "summary.manifest.json"
+        inspection_path = root / "zones.inspection.json"
         invalid_path = root / "invalid-workflow.json"
 
         _write_json(workflow_path, workflow)
@@ -164,6 +174,25 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
         version_result = _run([starshine_command, "--version"])
         if version_result.stdout.strip() != f"starshine {installed_version}":
             raise RuntimeError(f"unexpected version output: {version_result.stdout!r}")
+
+        inspection_result = _run([starshine_command, "inspect", str(zones_path)])
+        cli_inspection = json.loads(inspection_result.stdout)
+        if cli_inspection != direct_inspection:
+            raise RuntimeError(
+                f"CLI and direct inspection reports differ: {cli_inspection} != {direct_inspection}"
+            )
+        _run(
+            [
+                starshine_command,
+                "inspect",
+                str(zones_path),
+                "--output",
+                str(inspection_path),
+            ]
+        )
+        file_inspection = json.loads(inspection_path.read_text(encoding="utf-8"))
+        if file_inspection != direct_inspection:
+            raise RuntimeError(f"written inspection report differs: {file_inspection}")
 
         valid_result = _run(
             [

@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/liu2024whu-bit/starshine/schemas/inspection-report-v1.schema.json",
+  "title": "Starshine Geo FeatureCollection inspection report version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "collection_digest",
+    "feature_count",
+    "geometry_counts",
+    "property_fields",
+    "declared_crs",
+    "bbox"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "collection_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "feature_count": {"type": "integer", "minimum": 0},
+    "geometry_counts": {
+      "type": "object",
+      "additionalProperties": {"type": "integer", "minimum": 1}
+    },
+    "property_fields": {
+      "type": "array",
+      "items": {"type": "string"},
+      "uniqueItems": true
+    },
+    "declared_crs": {
+      "anyOf": [
+        {"type": "string", "minLength": 1},
+        {"type": "null"}
+      ]
+    },
+    "bbox": {
+      "anyOf": [
+        {
+          "type": "array",
+          "prefixItems": [
+            {"type": "number"},
+            {"type": "number"},
+            {"type": "number"},
+            {"type": "number"}
+          ],
+          "items": false,
+          "minItems": 4,
+          "maxItems": 4
+        },
+        {"type": "null"}
+      ]
+    }
+  }
+}

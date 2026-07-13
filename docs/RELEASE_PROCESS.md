@@ -47,6 +47,7 @@ the downloaded wheel and run `scripts/smoke_installed_wheel.py`, which verifies:
 - the package imports from the installed environment rather than the working tree;
 - `starshine --version` matches installed package metadata;
 - top-level public callables are available;
+- the installed inspection API and `starshine inspect` command produce matching reports;
 - valid and invalid workflow diagnostics work through the installed console command;
 - a self-created point-within-polygon workflow runs through both the Python API and CLI;
 - the generated result and reproducibility manifest contain the expected public values.
