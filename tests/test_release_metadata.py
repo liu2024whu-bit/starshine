@@ -1,0 +1,58 @@
+import re
+from importlib.metadata import version
+from pathlib import Path
+
+import pytest
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - exercised only on Python 3.10
+    import tomli as tomllib
+
+import starshine_geo
+from starshine_geo.cli import main
+from starshine_geo.manifest import build_manifest
+
+ROOT = Path(__file__).parents[1]
+
+
+def _project_version() -> str:
+    metadata = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    return str(metadata["project"]["version"])
+
+
+def test_release_version_is_consistent_across_public_metadata():
+    project_version = _project_version()
+    citation = (ROOT / "CITATION.cff").read_text(encoding="utf-8")
+    changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+
+    citation_match = re.search(r"^version:\s*(\S+)\s*$", citation, flags=re.MULTILINE)
+    assert citation_match is not None
+    assert version("starshine-geo") == project_version
+    assert starshine_geo.__version__ == project_version
+    assert citation_match.group(1) == project_version
+    assert f"## [{project_version}]" in changelog
+
+
+def test_manifest_uses_installed_package_version_by_default():
+    collection = {"type": "FeatureCollection", "features": []}
+    manifest = build_manifest(
+        {"version": 1, "steps": []},
+        {},
+        output_layer_name="empty",
+        output_layer=collection,
+    )
+    assert manifest["starshine_version"] == _project_version()
+
+
+def test_cli_reports_installed_version(capsys):
+    with pytest.raises(SystemExit) as exc_info:
+        main(["--version"])
+
+    assert exc_info.value.code == 0
+    assert capsys.readouterr().out.strip() == f"starshine {_project_version()}"
+
+
+def test_top_level_api_exports_dissolve_operator():
+    assert callable(starshine_geo.dissolve_features)
+    assert "dissolve_features" in starshine_geo.__all__

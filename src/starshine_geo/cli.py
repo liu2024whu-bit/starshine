@@ -5,6 +5,7 @@ import json
 import sys
 from pathlib import Path
 
+from ._version import __version__
 from .errors import StarshineError, WorkflowValidationError
 from .io import read_json, write_json
 from .manifest import build_manifest
@@ -22,6 +23,11 @@ def _add_diagnostic_format(parser: argparse.ArgumentParser) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="starshine")
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     run_parser = subparsers.add_parser("run", help="Run a bounded JSON spatial workflow")
