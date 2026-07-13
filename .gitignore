@@ -7,7 +7,7 @@ dist/
 build/
 *.egg-info/
 examples/output/
-benchmark-report*.json
+/benchmark-report*.json
 .env
 .env.*
 !.env.example

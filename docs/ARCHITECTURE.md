@@ -3,6 +3,7 @@
 Starshine uses a deliberately small modular architecture.
 
 - `geojson.py` validates and normalizes the public data contract.
+- `inspection.py` produces deterministic collection-level reports after validation.
 - `crs.py` centralizes CRS parsing, projected-coordinate requirements, and transforms.
 - `operators.py` implements independently testable spatial operations.
 - `workflow.py` maps versioned JSON steps to an explicit operator registry.

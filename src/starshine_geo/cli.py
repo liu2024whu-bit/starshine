@@ -7,6 +7,7 @@ from pathlib import Path
 
 from ._version import __version__
 from .errors import StarshineError, WorkflowValidationError
+from .inspection import inspect_feature_collection
 from .io import read_json, write_json
 from .manifest import build_manifest
 from .workflow import run_workflow, validate_workflow
@@ -55,6 +56,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Declare an available in-memory layer name; repeat for multiple layers",
     )
     _add_diagnostic_format(validate_parser)
+
+    inspect_parser = subparsers.add_parser(
+        "inspect",
+        help="Validate and summarize one GeoJSON FeatureCollection",
+    )
+    inspect_parser.add_argument("source", type=Path)
+    inspect_parser.add_argument(
+        "--output",
+        type=Path,
+        help="Optionally write the inspection report instead of printing it",
+    )
+    _add_diagnostic_format(inspect_parser)
     return parser
 
 
@@ -113,6 +126,18 @@ def _validate_command(args: argparse.Namespace) -> int:
     return 0
 
 
+def _inspect_command(args: argparse.Namespace) -> int:
+    if args.output is not None and args.output.resolve() == args.source.resolve():
+        raise StarshineError("inspection output must not overwrite the source GeoJSON")
+    report = inspect_feature_collection(read_json(args.source))
+    if args.output is None:
+        print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
+    else:
+        write_json(report, args.output)
+        print(args.output)
+    return 0
+
+
 def _run_command(args: argparse.Namespace) -> int:
     workflow = read_json(args.workflow)
     layers = _parse_layers(args.layer)
@@ -138,6 +163,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "validate":
             return _validate_command(args)
+        if args.command == "inspect":
+            return _inspect_command(args)
         return _run_command(args)
     except StarshineError as exc:
         _print_error(exc, args.diagnostic_format)

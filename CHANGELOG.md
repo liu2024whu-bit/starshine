@@ -15,7 +15,10 @@ All notable public changes are documented here.
 - clean Python 3.10–3.12 jobs that install the exact CI-built wheel without an editable checkout;
 - an installed-wheel smoke script covering package location, public imports, CLI versioning,
   structured validation diagnostics, synthetic workflow execution, and manifest metadata;
-- concise installation and smoke logs retained only when a wheel matrix job fails.
+- concise installation and smoke logs retained only when a wheel matrix job fails;
+- a deterministic `inspect_feature_collection()` API and `starshine inspect` command;
+- schema-checked inspection reports containing counts, property fields, declared CRS, bounds, and a
+  collection digest without copying feature content.
 
 ## [0.2.0] - 2026-07-13
 
