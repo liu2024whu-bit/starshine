@@ -109,7 +109,20 @@ jobs:
       - run: python -m pip install -e ".[release]"
       - run: python -m build
       - run: python -m twine check dist/*
-      - run: python scripts/check_release_artifacts.py dist
+      - name: Inspect release artifacts
+        run: >-
+          python scripts/check_release_artifacts.py dist
+          2>&1 | tee release-artifact-check.log
+      - name: Upload release inspection diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifact-inspection-failure
+          path: |
+            release-artifact-check.log
+            dist/
+          if-no-files-found: error
+          retention-days: 7
       - uses: actions/upload-artifact@v4
         with:
           name: starshine-geo-dist
