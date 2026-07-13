@@ -129,3 +129,55 @@ jobs:
           path: dist/
           if-no-files-found: error
           retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: starshine-wheel-smoke-script
+          path: scripts/smoke_installed_wheel.py
+          if-no-files-found: error
+          retention-days: 14
+
+  wheel-smoke:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: starshine-geo-dist
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: starshine-wheel-smoke-script
+          path: smoke
+      - name: Install the built wheel
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m pip install --upgrade pip \
+            2>&1 | tee wheel-install-${{ matrix.python-version }}.log
+          python -m pip install dist/*.whl \
+            2>&1 | tee -a wheel-install-${{ matrix.python-version }}.log
+      - name: Run installed-wheel smoke checks
+        shell: bash
+        run: |
+          set -o pipefail
+          script="$(find smoke -name smoke_installed_wheel.py -print -quit)"
+          test -n "$script"
+          python "$script" \
+            2>&1 | tee wheel-smoke-${{ matrix.python-version }}.log
+      - name: Upload wheel-smoke diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheel-smoke-failure-${{ matrix.python-version }}
+          path: |
+            wheel-install-${{ matrix.python-version }}.log
+            wheel-smoke-${{ matrix.python-version }}.log
+          if-no-files-found: warn
+          retention-days: 7

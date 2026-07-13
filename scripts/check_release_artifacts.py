@@ -89,6 +89,7 @@ def _check_sdist(path: Path, version: str) -> None:
                 "/docs/BENCHMARKS.md",
                 "/schemas/benchmark-report-v1.schema.json",
                 "/schemas/workflow-v1.schema.json",
+                "/scripts/smoke_installed_wheel.py",
                 "/docs/releases/0.2.0.md",
             ),
             path.name,
