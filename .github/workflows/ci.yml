@@ -12,8 +12,8 @@ jobs:
   repository-audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
       - run: python scripts/audit_public_repository.py
@@ -24,8 +24,8 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
@@ -39,7 +39,7 @@ jobs:
           2>&1 | tee pytest-${{ matrix.python-version }}.log
       - name: Upload test diagnostics
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pytest-failure-${{ matrix.python-version }}
           path: |
@@ -51,8 +51,8 @@ jobs:
   geopackage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
           cache: pip
@@ -66,7 +66,7 @@ jobs:
           2>&1 | tee pytest-geopackage.log
       - name: Upload GeoPackage test diagnostics
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pytest-failure-geopackage
           path: |
@@ -79,8 +79,8 @@ jobs:
     needs: [repository-audit]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
           cache: pip
@@ -89,7 +89,7 @@ jobs:
       - run: python -m benchmarks.verify
       - run: python -m benchmarks.run --repeat 1 --output benchmark-report.json
       - run: python scripts/check_benchmark_report.py benchmark-report.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: starshine-vector-benchmark
           path: benchmark-report.json
@@ -100,8 +100,8 @@ jobs:
     needs: [repository-audit, test, geopackage, benchmark]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
           cache: pip
@@ -115,7 +115,7 @@ jobs:
           2>&1 | tee release-artifact-check.log
       - name: Upload release inspection diagnostics
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-artifact-inspection-failure
           path: |
@@ -123,7 +123,7 @@ jobs:
             dist/
           if-no-files-found: error
           retention-days: 7
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: starshine-geo-dist
           path: dist/
