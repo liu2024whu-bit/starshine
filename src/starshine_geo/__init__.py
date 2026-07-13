@@ -1,6 +1,7 @@
 """Public geospatial workflow core for Starshine."""
 
 from .errors import WorkflowDiagnostic, WorkflowValidationError
+from .geopackage import list_geopackage_layers, read_geopackage, write_geopackage
 from .manifest import build_manifest, digest_json
 from .operators import buffer_features, summarize_points_within, validate_feature_collection
 from .workflow import run_workflow, validate_workflow
@@ -11,10 +12,13 @@ __all__ = [
     "buffer_features",
     "build_manifest",
     "digest_json",
+    "list_geopackage_layers",
+    "read_geopackage",
     "run_workflow",
     "summarize_points_within",
     "validate_feature_collection",
     "validate_workflow",
+    "write_geopackage",
 ]
 
 __version__ = "0.1.0"

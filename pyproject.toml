@@ -24,6 +24,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<9", "ruff>=0.5,<1"]
+geopackage = ["geopandas>=1.0,<2", "pyogrio>=0.9,<1"]
 
 [project.scripts]
 starshine = "starshine_geo.cli:main"

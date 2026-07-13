@@ -10,7 +10,10 @@ All notable public changes are documented here.
 - structured workflow diagnostics with stable codes, paths, step indexes, and operation names;
 - complete structural preflight validation before the first workflow operator executes;
 - opt-in reproducibility manifests with deterministic workflow, input, and output digests;
-- CRS reporting and redaction of credentials, absolute paths, and path-like parameters.
+- CRS reporting and redaction of credentials, absolute paths, and path-like parameters;
+- optional GeoPackage adapter contract with explicit layer selection, CRS preservation, and
+  overwrite guards;
+- isolated `geopackage` dependency extra so base GeoJSON workflows remain lightweight.
 
 ## [0.1.0] - 2026-07-13
 
