@@ -32,7 +32,7 @@ The public 0.2 line provides:
 - optional GeoPackage input/output with explicit layer, CRS, and overwrite rules;
 - a deterministic synthetic small-vector benchmark corpus with schema-checked JSON reports;
 - self-created sample data and reproducible command-line examples;
-- public-boundary, package-build, and Python 3.10–3.12 CI checks.
+- public-boundary, package-build, and Python 3.10–3.12 source and built-wheel CI checks.
 
 ## Install for development
 
@@ -55,6 +55,23 @@ Check the installed version:
 ```bash
 starshine --version
 ```
+
+## Verify a built wheel
+
+Editable source tests and installed-wheel tests answer different questions. The source suite checks
+implementation behavior during development; the wheel smoke test proves that the published package
+contains its required modules, declares its runtime dependencies, and exposes the CLI correctly.
+
+After building a wheel, install it non-editably and run the public smoke script:
+
+```bash
+python -m build
+python -m pip install --force-reinstall dist/*.whl
+python scripts/smoke_installed_wheel.py
+```
+
+In CI, the wheel is built once and downloaded into clean Python 3.10, 3.11, and 3.12 jobs that do not
+check out the repository. See the [release process](docs/RELEASE_PROCESS.md) for the exact checks.
 
 ## Validate a workflow without running it
 
@@ -157,9 +174,10 @@ source-distribution members. See [Open-source scope](docs/OPEN_SOURCE_SCOPE.md) 
 ## Releases
 
 Version metadata is sourced from `pyproject.toml`, while runtime code reads the installed package
-metadata. CI builds and checks one wheel and one source distribution before a release can be tagged.
-See the [release process](docs/RELEASE_PROCESS.md), [0.2.0 release notes](docs/releases/0.2.0.md),
-and [changelog](CHANGELOG.md).
+metadata. CI builds and inspects one wheel and one source distribution, then installs the exact wheel
+in clean supported-Python jobs before a release can be tagged. See the
+[release process](docs/RELEASE_PROCESS.md), [0.2.0 release notes](docs/releases/0.2.0.md), and
+[changelog](CHANGELOG.md).
 
 ## Project status
 
