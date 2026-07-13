@@ -30,6 +30,7 @@ The public 0.2 line provides:
 - an explicit operator registry with no dynamic `eval`;
 - optional path-free reproducibility manifests;
 - optional GeoPackage input/output with explicit layer, CRS, and overwrite rules;
+- a deterministic synthetic small-vector benchmark corpus with schema-checked JSON reports;
 - self-created sample data and reproducible command-line examples;
 - public-boundary, package-build, and Python 3.10–3.12 CI checks.
 
@@ -99,6 +100,22 @@ python examples/run_demo.py
 The output preserves each study-zone polygon and adds a `site_count` property. The included sample
 should produce `2` for the west zone and `1` for the east zone.
 
+## Run deterministic public benchmarks
+
+The benchmark corpus is generated entirely from Starshine's public operators and synthetic
+geometries. Correctness verification is separate from timing observations:
+
+```bash
+python -m benchmarks.verify
+python -m benchmarks.run --repeat 5 --output benchmark-report.json
+python scripts/check_benchmark_report.py benchmark-report.json
+```
+
+Reports include corpus, case, and output digests; feature and operation counts; environment metadata;
+and validation and validated-run timing samples. CI validates the report schema and deterministic
+fields but deliberately does not impose fragile wall-clock thresholds. See
+[benchmark documentation](docs/BENCHMARKS.md).
+
 ## Workflow format
 
 ```json
@@ -128,10 +145,10 @@ overwrite flag. See [GeoPackage adapter contract](docs/GEOPACKAGE.md).
 
 ## Public development boundary
 
-All tracked sample GeoJSON, workflow fixtures, and GeoPackage round-trip data are created for this
-repository. Current changes must be specified through public issues and implemented from public
-code. Private databases, credentials, unpublished modules, personal paths, textbook/OCR material,
-and research-delivery artifacts are excluded.
+All tracked sample GeoJSON, workflow fixtures, generated benchmark geometries, and GeoPackage
+round-trip data are created for this repository. Current changes must be specified through public
+issues and implemented from public code. Private databases, credentials, unpublished modules,
+personal paths, textbook/OCR material, and research-delivery artifacts are excluded.
 
 CI runs `scripts/audit_public_repository.py` on every pull request and separately inspects wheel and
 source-distribution members. See [Open-source scope](docs/OPEN_SOURCE_SCOPE.md) and
