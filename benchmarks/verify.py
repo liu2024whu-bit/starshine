@@ -40,10 +40,7 @@ def semantic_signature(case: BenchmarkCase, output: dict[str, Any]) -> dict[str,
             ),
         }
     if case.name == "multi-step-buffer-dissolve-36":
-        return {
-            **base,
-            "geometry_count": sum(feature.get("geometry") is not None for feature in features),
-        }
+        return base
     raise RuntimeError(f"no semantic signature is defined for benchmark case: {case.name}")
 
 
