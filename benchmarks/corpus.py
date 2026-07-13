@@ -18,6 +18,7 @@ class BenchmarkCase:
     workflow: JsonObject
     layers: dict[str, FeatureCollection]
     output_layer: str
+    expected_signature: JsonObject
 
     @property
     def input_feature_count(self) -> int:
@@ -28,12 +29,13 @@ class BenchmarkCase:
         return len(self.workflow["steps"])
 
     def definition(self) -> JsonObject:
-        """Return the stable public inputs that identify this benchmark case."""
+        """Return the stable public inputs and expected semantics for this case."""
         return {
             "name": self.name,
             "workflow": self.workflow,
             "layers": self.layers,
             "output_layer": self.output_layer,
+            "expected_signature": self.expected_signature,
         }
 
 
@@ -95,6 +97,13 @@ def _buffer_case() -> BenchmarkCase:
         },
         layers={"sites": _collection(features)},
         output_layer="site_buffers",
+        expected_signature={
+            "crs": CRS,
+            "feature_count": 64,
+            "geometry_types": ["Polygon"],
+            "buffer_distance": 5.0,
+            "work_crs": CRS,
+        },
     )
 
 
@@ -126,6 +135,11 @@ def _dissolve_case() -> BenchmarkCase:
         },
         layers={"cells": _collection(features)},
         output_layer="bands",
+        expected_signature={
+            "crs": CRS,
+            "feature_count": 4,
+            "bands": ["band-0", "band-1", "band-2", "band-3"],
+        },
     )
 
 
@@ -170,6 +184,15 @@ def _summary_case() -> BenchmarkCase:
         },
         layers={"zones": _collection(zones), "sites": _collection(sites)},
         output_layer="zone_summary",
+        expected_signature={
+            "crs": CRS,
+            "feature_count": 16,
+            "zone_counts": [
+                [f"zone-{row}-{column}", 4]
+                for row in range(4)
+                for column in range(4)
+            ],
+        },
     )
 
 
@@ -206,6 +229,7 @@ def _multi_step_case() -> BenchmarkCase:
         },
         layers={"sites": _collection(features)},
         output_layer="coverage",
+        expected_signature={"crs": CRS, "feature_count": 1},
     )
 
 
