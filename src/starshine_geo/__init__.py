@@ -6,6 +6,7 @@ from .geopackage import list_geopackage_layers, read_geopackage, write_geopackag
 from .inspection import inspect_feature_collection
 from .manifest import build_manifest, digest_json
 from .operator_registry import OPERATOR_REGISTRY, operator_catalog
+from .planning import WORKFLOW_PLAN_VERSION, plan_workflow
 from .operators import (
     buffer_features,
     clip_features,
@@ -20,6 +21,7 @@ __all__ = [
     "WorkflowDiagnostic",
     "WorkflowValidationError",
     "OPERATOR_REGISTRY",
+    "WORKFLOW_PLAN_VERSION",
     "__version__",
     "buffer_features",
     "clip_features",
@@ -28,6 +30,7 @@ __all__ = [
     "dissolve_features",
     "inspect_feature_collection",
     "operator_catalog",
+    "plan_workflow",
     "list_geopackage_layers",
     "read_geopackage",
     "reproject_features",

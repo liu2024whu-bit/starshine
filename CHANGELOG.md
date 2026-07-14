@@ -10,7 +10,11 @@ All notable public changes are documented here.
   equivalent-CRS, property-preservation, feature-order, boundary-contact, and empty-result rules;
 - synthetic clip examples, Workflow Schema fixtures, installed-wheel coverage, and a fifth public
   benchmark case;
-- benchmark corpus version 2, which identifies reports containing the new clip case.
+- benchmark corpus version 2, which identifies reports containing the new clip case;
+- a deterministic `plan_workflow()` API and `starshine plan` command with schema-checked dependency,
+  layer-provenance, terminal-output, resolved-default, and digest reporting;
+- registry-level sensitive-parameter annotations so future plan reports can redact values before
+  serialization and hashing.
 
 ## [0.3.0] - 2026-07-14
 

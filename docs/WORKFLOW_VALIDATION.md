@@ -90,3 +90,12 @@ starshine operators
 
 The output conforms to `schemas/operator-catalog-v1.schema.json`. Catalog tests compare each input
 and parameter schema with `schemas/workflow-v1.schema.json`, preventing silent contract drift.
+
+
+## Plan after validation
+
+`plan_workflow()` and `starshine plan` reuse the canonical validator, then describe external and
+produced layers, direct step dependencies, registry-resolved defaults, parameter sources, terminal
+outputs, deterministic flags, and output-CRS behavior. Planning does not read feature data or execute
+operators, so data-dependent geometry and CRS checks still occur when inputs are loaded and the
+workflow runs. See `docs/WORKFLOW_PLANNING.md` and `schemas/workflow-plan-v1.schema.json`.

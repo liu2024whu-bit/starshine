@@ -11,6 +11,7 @@ from .inspection import inspect_feature_collection
 from .io import read_json, write_json
 from .manifest import build_manifest
 from .operator_registry import operator_catalog
+from .planning import plan_workflow
 from .workflow import run_workflow, validate_workflow
 
 
@@ -79,6 +80,25 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         help="Optionally write the operator catalog instead of printing it",
     )
+
+    plan_parser = subparsers.add_parser(
+        "plan",
+        help="Validate and describe workflow dependencies without reading feature data",
+    )
+    plan_parser.add_argument("workflow", type=Path)
+    plan_parser.add_argument(
+        "--layer-name",
+        action="append",
+        default=[],
+        metavar="NAME",
+        help="Declare an available external layer name; repeat for multiple layers",
+    )
+    plan_parser.add_argument(
+        "--output",
+        type=Path,
+        help="Optionally write the workflow plan instead of printing it",
+    )
+    _add_diagnostic_format(plan_parser)
     return parser
 
 
@@ -159,6 +179,19 @@ def _operators_command(args: argparse.Namespace) -> int:
     return 0
 
 
+def _plan_command(args: argparse.Namespace) -> int:
+    if args.output is not None and args.output.resolve() == args.workflow.resolve():
+        raise StarshineError("workflow plan output must not overwrite the workflow file")
+    workflow = read_json(args.workflow)
+    plan = plan_workflow(workflow, _parse_layer_names(args.layer_name))
+    if args.output is None:
+        print(json.dumps(plan, ensure_ascii=False, indent=2, sort_keys=True))
+    else:
+        write_json(plan, args.output)
+        print(args.output)
+    return 0
+
+
 def _run_command(args: argparse.Namespace) -> int:
     workflow = read_json(args.workflow)
     layers = _parse_layers(args.layer)
@@ -188,6 +221,8 @@ def main(argv: list[str] | None = None) -> int:
             return _inspect_command(args)
         if args.command == "operators":
             return _operators_command(args)
+        if args.command == "plan":
+            return _plan_command(args)
         return _run_command(args)
     except StarshineError as exc:
         _print_error(exc, getattr(args, "diagnostic_format", "text"))

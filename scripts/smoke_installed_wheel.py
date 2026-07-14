@@ -56,6 +56,7 @@ def _assert_public_imports() -> None:
         "dissolve_features",
         "inspect_feature_collection",
         "operator_catalog",
+        "plan_workflow",
         "list_geopackage_layers",
         "read_geopackage",
         "reproject_features",
@@ -146,6 +147,14 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
             f"installed operator catalog is missing operators {missing_operators}: {catalog_names}"
         )
 
+    direct_plan = starshine_geo.plan_workflow(workflow, {"zones", "sites", "unused"})
+    if direct_plan.get("required_external_layers") != ["sites", "zones"]:
+        raise RuntimeError(f"unexpected required workflow-plan layers: {direct_plan}")
+    if direct_plan.get("unused_external_layers") != ["unused"]:
+        raise RuntimeError(f"unexpected unused workflow-plan layers: {direct_plan}")
+    if direct_plan.get("terminal_layers") != ["summary"]:
+        raise RuntimeError(f"unexpected workflow-plan terminal layers: {direct_plan}")
+
     direct_reprojected = starshine_geo.reproject_features(sites, target_crs="EPSG:4326")
     if direct_reprojected.get("starshine:crs") != "EPSG:4326":
         raise RuntimeError(f"unexpected reprojected CRS: {direct_reprojected}")
@@ -192,6 +201,7 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
         output_path = root / "summary.geojson"
         manifest_path = root / "summary.manifest.json"
         inspection_path = root / "zones.inspection.json"
+        plan_path = root / "workflow.plan.json"
         invalid_path = root / "invalid-workflow.json"
         reproject_workflow_path = root / "reproject-workflow.json"
         reproject_output_path = root / "sites-wgs84.geojson"
@@ -253,6 +263,39 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
         catalog_result = _run([starshine_command, "operators"])
         if json.loads(catalog_result.stdout) != direct_catalog:
             raise RuntimeError("installed CLI operator catalog differs from the public API catalog")
+
+        plan_result = _run(
+            [
+                starshine_command,
+                "plan",
+                str(workflow_path),
+                "--layer-name",
+                "zones",
+                "--layer-name",
+                "sites",
+                "--layer-name",
+                "unused",
+            ]
+        )
+        if json.loads(plan_result.stdout) != direct_plan:
+            raise RuntimeError("installed CLI workflow plan differs from the public API plan")
+        _run(
+            [
+                starshine_command,
+                "plan",
+                str(workflow_path),
+                "--layer-name",
+                "zones",
+                "--layer-name",
+                "sites",
+                "--layer-name",
+                "unused",
+                "--output",
+                str(plan_path),
+            ]
+        )
+        if json.loads(plan_path.read_text(encoding="utf-8")) != direct_plan:
+            raise RuntimeError("written installed-wheel workflow plan differs from direct planning")
 
         inspection_result = _run([starshine_command, "inspect", str(zones_path)])
         cli_inspection = json.loads(inspection_result.stdout)

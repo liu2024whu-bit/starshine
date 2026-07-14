@@ -59,10 +59,14 @@ def test_top_level_api_exports_public_operator_surfaces():
     assert callable(starshine_geo.dissolve_features)
     assert callable(starshine_geo.reproject_features)
     assert callable(starshine_geo.operator_catalog)
+    assert callable(starshine_geo.plan_workflow)
+    assert starshine_geo.WORKFLOW_PLAN_VERSION == 1
     assert "clip_features" in starshine_geo.__all__
     assert "dissolve_features" in starshine_geo.__all__
     assert "reproject_features" in starshine_geo.__all__
     assert "operator_catalog" in starshine_geo.__all__
+    assert "plan_workflow" in starshine_geo.__all__
+    assert "WORKFLOW_PLAN_VERSION" in starshine_geo.__all__
 
 
 def test_release_readiness_check_matches_current_public_metadata():
