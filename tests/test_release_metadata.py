@@ -53,6 +53,10 @@ def test_cli_reports_installed_version(capsys):
     assert capsys.readouterr().out.strip() == f"starshine {_project_version()}"
 
 
-def test_top_level_api_exports_dissolve_operator():
+def test_top_level_api_exports_public_operator_surfaces():
     assert callable(starshine_geo.dissolve_features)
+    assert callable(starshine_geo.reproject_features)
+    assert callable(starshine_geo.operator_catalog)
     assert "dissolve_features" in starshine_geo.__all__
+    assert "reproject_features" in starshine_geo.__all__
+    assert "operator_catalog" in starshine_geo.__all__

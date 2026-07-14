@@ -4,17 +4,31 @@
   "title": "Starshine Geo workflow version 1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["version", "steps"],
+  "required": [
+    "version",
+    "steps"
+  ],
   "properties": {
-    "version": {"const": 1},
+    "version": {
+      "const": 1
+    },
     "steps": {
       "type": "array",
       "minItems": 1,
       "items": {
         "oneOf": [
-          {"$ref": "#/$defs/bufferStep"},
-          {"$ref": "#/$defs/dissolveStep"},
-          {"$ref": "#/$defs/summarizePointsWithinStep"}
+          {
+            "$ref": "#/$defs/bufferStep"
+          },
+          {
+            "$ref": "#/$defs/dissolveStep"
+          },
+          {
+            "$ref": "#/$defs/summarizePointsWithinStep"
+          },
+          {
+            "$ref": "#/$defs/reprojectStep"
+          }
         ]
       }
     }
@@ -25,48 +39,90 @@
       "minLength": 1,
       "pattern": "\\S"
     },
-    "layerReference": {"$ref": "#/$defs/nonEmptyString"},
-    "outputName": {"$ref": "#/$defs/nonEmptyString"},
+    "layerReference": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "outputName": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
     "bufferStep": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["operation", "inputs", "parameters", "output"],
+      "required": [
+        "operation",
+        "inputs",
+        "parameters",
+        "output"
+      ],
       "properties": {
-        "operation": {"const": "buffer"},
+        "operation": {
+          "const": "buffer"
+        },
         "inputs": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["input"],
+          "required": [
+            "input"
+          ],
           "properties": {
-            "input": {"$ref": "#/$defs/layerReference"}
+            "input": {
+              "$ref": "#/$defs/layerReference"
+            }
           }
         },
         "parameters": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["distance", "source_crs", "work_crs"],
+          "required": [
+            "distance",
+            "source_crs",
+            "work_crs"
+          ],
           "properties": {
-            "distance": {"type": "number", "exclusiveMinimum": 0},
-            "source_crs": {"$ref": "#/$defs/nonEmptyString"},
-            "work_crs": {"$ref": "#/$defs/nonEmptyString"},
-            "segments": {"type": "integer", "minimum": 1, "maximum": 64}
+            "distance": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "source_crs": {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            "work_crs": {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            "segments": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 64
+            }
           }
         },
-        "output": {"$ref": "#/$defs/outputName"}
+        "output": {
+          "$ref": "#/$defs/outputName"
+        }
       }
     },
     "dissolveStep": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["operation", "inputs", "output"],
+      "required": [
+        "operation",
+        "inputs",
+        "output"
+      ],
       "properties": {
-        "operation": {"const": "dissolve"},
+        "operation": {
+          "const": "dissolve"
+        },
         "inputs": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["input"],
+          "required": [
+            "input"
+          ],
           "properties": {
-            "input": {"$ref": "#/$defs/layerReference"}
+            "input": {
+              "$ref": "#/$defs/layerReference"
+            }
           }
         },
         "parameters": {
@@ -75,41 +131,118 @@
           "properties": {
             "group_field": {
               "anyOf": [
-                {"$ref": "#/$defs/nonEmptyString"},
-                {"type": "null"}
+                {
+                  "$ref": "#/$defs/nonEmptyString"
+                },
+                {
+                  "type": "null"
+                }
               ]
             }
           },
           "default": {}
         },
-        "output": {"$ref": "#/$defs/outputName"}
+        "output": {
+          "$ref": "#/$defs/outputName"
+        }
       }
     },
     "summarizePointsWithinStep": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["operation", "inputs", "output"],
+      "required": [
+        "operation",
+        "inputs",
+        "output"
+      ],
       "properties": {
-        "operation": {"const": "summarize_points_within"},
+        "operation": {
+          "const": "summarize_points_within"
+        },
         "inputs": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["polygons", "points"],
+          "required": [
+            "polygons",
+            "points"
+          ],
           "properties": {
-            "polygons": {"$ref": "#/$defs/layerReference"},
-            "points": {"$ref": "#/$defs/layerReference"}
+            "polygons": {
+              "$ref": "#/$defs/layerReference"
+            },
+            "points": {
+              "$ref": "#/$defs/layerReference"
+            }
           }
         },
         "parameters": {
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "polygon_id_field": {"$ref": "#/$defs/nonEmptyString"},
-            "count_field": {"$ref": "#/$defs/nonEmptyString"}
+            "polygon_id_field": {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            "count_field": {
+              "$ref": "#/$defs/nonEmptyString"
+            }
           },
           "default": {}
         },
-        "output": {"$ref": "#/$defs/outputName"}
+        "output": {
+          "$ref": "#/$defs/outputName"
+        }
+      }
+    },
+    "reprojectStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation",
+        "inputs",
+        "parameters",
+        "output"
+      ],
+      "properties": {
+        "operation": {
+          "const": "reproject"
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "input"
+          ],
+          "properties": {
+            "input": {
+              "$ref": "#/$defs/layerReference"
+            }
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "target_crs"
+          ],
+          "properties": {
+            "target_crs": {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            "source_crs": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/nonEmptyString"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "output": {
+          "$ref": "#/$defs/outputName"
+        }
       }
     }
   }

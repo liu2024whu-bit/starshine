@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-import math
 from copy import deepcopy
 from typing import Any, Callable, Iterable
 
-from .crs import parse_crs, require_projected_crs
 from .errors import (
     UnsupportedOperationError,
     ValidationError,
@@ -12,119 +10,29 @@ from .errors import (
     WorkflowValidationError,
 )
 from .geojson import FeatureCollection, validate_feature_collection
-from .operators import buffer_features, dissolve_features, summarize_points_within
+from .operator_registry import OPERATOR_REGISTRY, OperatorSpec
 
 Context = dict[str, FeatureCollection]
-Operator = Callable[..., FeatureCollection]
+Operator = Callable[[dict[str, FeatureCollection], dict[str, Any]], FeatureCollection]
 ParameterValidator = Callable[[Any], str | None]
 
 _STEP_FIELDS = {"operation", "inputs", "parameters", "output"}
 _ROOT_FIELDS = {"version", "steps"}
 
-
-def _buffer(context: Context, step: dict[str, Any]) -> FeatureCollection:
-    source = _layer(context, step, "input")
-    return buffer_features(source, **_parameters(step))
-
-
-def _dissolve(context: Context, step: dict[str, Any]) -> FeatureCollection:
-    source = _layer(context, step, "input")
-    return dissolve_features(source, **_parameters(step))
-
-
-def _summarize(context: Context, step: dict[str, Any]) -> FeatureCollection:
-    polygons = _layer(context, step, "polygons")
-    points = _layer(context, step, "points")
-    return summarize_points_within(polygons, points, **_parameters(step))
-
-
+# Compatibility-facing runtime maps are derived from one declarative registry rather than maintained
+# independently. Tests and advanced callers may replace an executor in OPERATORS temporarily.
 OPERATORS: dict[str, Operator] = {
-    "buffer": _buffer,
-    "dissolve": _dissolve,
-    "summarize_points_within": _summarize,
+    name: spec.executor for name, spec in OPERATOR_REGISTRY.items()
 }
-
 OPERATOR_INPUTS: dict[str, tuple[str, ...]] = {
-    "buffer": ("input",),
-    "dissolve": ("input",),
-    "summarize_points_within": ("polygons", "points"),
+    name: spec.input_names for name, spec in OPERATOR_REGISTRY.items()
 }
-
-
-def _validate_positive_number(value: Any) -> str | None:
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        return "must be a number"
-    if not math.isfinite(float(value)) or float(value) <= 0:
-        return "must be a positive finite number"
-    return None
-
-
-def _validate_non_empty_string(value: Any) -> str | None:
-    if not isinstance(value, str) or not value.strip():
-        return "must be a non-empty string"
-    return None
-
-
-def _validate_segments(value: Any) -> str | None:
-    if isinstance(value, bool) or not isinstance(value, int):
-        return "must be an integer between 1 and 64"
-    if not 1 <= value <= 64:
-        return "must be an integer between 1 and 64"
-    return None
-
-
-def _validate_optional_field_name(value: Any) -> str | None:
-    if value is None:
-        return None
-    return _validate_non_empty_string(value)
-
-
-def _validate_source_crs(value: Any) -> str | None:
-    message = _validate_non_empty_string(value)
-    if message is not None:
-        return message
-    try:
-        parse_crs(value)
-    except ValidationError as exc:
-        return str(exc)
-    return None
-
-
-def _validate_work_crs(value: Any) -> str | None:
-    message = _validate_non_empty_string(value)
-    if message is not None:
-        return message
-    try:
-        require_projected_crs(value)
-    except ValidationError as exc:
-        return str(exc)
-    return None
-
-
 OPERATOR_PARAMETER_SPECS: dict[str, dict[str, dict[str, ParameterValidator]]] = {
-    "buffer": {
-        "required": {
-            "distance": _validate_positive_number,
-            "source_crs": _validate_source_crs,
-            "work_crs": _validate_work_crs,
-        },
-        "optional": {
-            "segments": _validate_segments,
-        },
-    },
-    "dissolve": {
-        "required": {},
-        "optional": {
-            "group_field": _validate_optional_field_name,
-        },
-    },
-    "summarize_points_within": {
-        "required": {},
-        "optional": {
-            "polygon_id_field": _validate_non_empty_string,
-            "count_field": _validate_non_empty_string,
-        },
-    },
+    name: {
+        "required": spec.required_parameters,
+        "optional": spec.optional_parameters,
+    }
+    for name, spec in OPERATOR_REGISTRY.items()
 }
 
 
@@ -143,6 +51,12 @@ def _layer(context: Context, step: dict[str, Any], name: str) -> FeatureCollecti
     if layer_name not in context:
         raise ValidationError(f"unknown input layer: {layer_name}")
     return context[layer_name]
+
+
+def _resolved_inputs(
+    context: Context, step: dict[str, Any], spec: OperatorSpec
+) -> dict[str, FeatureCollection]:
+    return {name: _layer(context, step, name) for name in spec.input_names}
 
 
 def _diagnostic(
@@ -188,9 +102,9 @@ def _validate_parameters(
     step_index: int,
     step_path: str,
 ) -> None:
-    spec = OPERATOR_PARAMETER_SPECS[operation]
-    required = spec["required"]
-    optional = spec["optional"]
+    spec = OPERATOR_REGISTRY[operation]
+    required = spec.required_parameters
+    optional = spec.optional_parameters
     allowed = set(required) | set(optional)
 
     unexpected = sorted(set(parameters) - allowed)
@@ -299,7 +213,7 @@ def validate_workflow(workflow: Any, layer_names: Iterable[str]) -> None:
                 path=f"{step_path}.operation",
                 step_index=index,
             )
-        if operation not in OPERATORS:
+        if operation not in OPERATOR_REGISTRY:
             raise UnsupportedOperationError(
                 _diagnostic(
                     code="unsupported_operation",
@@ -310,6 +224,7 @@ def validate_workflow(workflow: Any, layer_names: Iterable[str]) -> None:
                 )
             )
 
+        spec = OPERATOR_REGISTRY[operation]
         inputs = step.get("inputs")
         if not isinstance(inputs, dict):
             _raise_diagnostic(
@@ -320,7 +235,7 @@ def validate_workflow(workflow: Any, layer_names: Iterable[str]) -> None:
                 operation=operation,
             )
 
-        allowed_inputs = set(OPERATOR_INPUTS[operation])
+        allowed_inputs = set(spec.input_names)
         unexpected_inputs = sorted(set(inputs) - allowed_inputs)
         if unexpected_inputs:
             name = unexpected_inputs[0]
@@ -332,7 +247,7 @@ def validate_workflow(workflow: Any, layer_names: Iterable[str]) -> None:
                 operation=operation,
             )
 
-        for input_name in OPERATOR_INPUTS[operation]:
+        for input_name in spec.input_names:
             input_path = f"{step_path}.inputs.{input_name}"
             layer_name = inputs.get(input_name)
             if not isinstance(layer_name, str) or not layer_name.strip():
@@ -397,5 +312,9 @@ def run_workflow(workflow: dict[str, Any], layers: Context) -> Context:
     for step in steps:
         operation = step["operation"]
         output_name = step["output"]
-        context[output_name] = OPERATORS[operation](context, step)
+        spec = OPERATOR_REGISTRY[operation]
+        context[output_name] = OPERATORS[operation](
+            _resolved_inputs(context, step, spec),
+            _parameters(step),
+        )
     return context

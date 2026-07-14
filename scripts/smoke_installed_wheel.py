@@ -54,8 +54,10 @@ def _assert_public_imports() -> None:
         "digest_json",
         "dissolve_features",
         "inspect_feature_collection",
+        "operator_catalog",
         "list_geopackage_layers",
         "read_geopackage",
+        "reproject_features",
         "run_workflow",
         "summarize_points_within",
         "validate_feature_collection",
@@ -135,6 +137,17 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
     if direct_counts != {"east": 1, "west": 2}:
         raise RuntimeError(f"unexpected direct API result: {direct_counts}")
 
+    direct_catalog = starshine_geo.operator_catalog()
+    catalog_names = [item["name"] for item in direct_catalog["operators"]]
+    if "reproject" not in catalog_names:
+        raise RuntimeError(f"installed operator catalog is missing reproject: {catalog_names}")
+
+    direct_reprojected = starshine_geo.reproject_features(sites, target_crs="EPSG:4326")
+    if direct_reprojected.get("starshine:crs") != "EPSG:4326":
+        raise RuntimeError(f"unexpected reprojected CRS: {direct_reprojected}")
+    if len(direct_reprojected.get("features", [])) != 3:
+        raise RuntimeError(f"unexpected reprojected feature count: {direct_reprojected}")
+
     direct_inspection = starshine_geo.inspect_feature_collection(zones)
     if direct_inspection.get("feature_count") != 2:
         raise RuntimeError(f"unexpected direct inspection count: {direct_inspection}")
@@ -152,10 +165,26 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
         manifest_path = root / "summary.manifest.json"
         inspection_path = root / "zones.inspection.json"
         invalid_path = root / "invalid-workflow.json"
+        reproject_workflow_path = root / "reproject-workflow.json"
+        reproject_output_path = root / "sites-wgs84.geojson"
 
         _write_json(workflow_path, workflow)
         _write_json(zones_path, zones)
         _write_json(sites_path, sites)
+        _write_json(
+            reproject_workflow_path,
+            {
+                "version": 1,
+                "steps": [
+                    {
+                        "operation": "reproject",
+                        "inputs": {"input": "sites"},
+                        "parameters": {"target_crs": "EPSG:4326"},
+                        "output": "sites_wgs84",
+                    }
+                ],
+            },
+        )
         _write_json(
             invalid_path,
             {
@@ -174,6 +203,10 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
         version_result = _run([starshine_command, "--version"])
         if version_result.stdout.strip() != f"starshine {installed_version}":
             raise RuntimeError(f"unexpected version output: {version_result.stdout!r}")
+
+        catalog_result = _run([starshine_command, "operators"])
+        if json.loads(catalog_result.stdout) != direct_catalog:
+            raise RuntimeError("installed CLI operator catalog differs from the public API catalog")
 
         inspection_result = _run([starshine_command, "inspect", str(zones_path)])
         cli_inspection = json.loads(inspection_result.stdout)
@@ -229,6 +262,25 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
             "steps[0].parameters.work_crs"
         ):
             raise RuntimeError(f"unexpected invalid-workflow diagnostic: {invalid_payload}")
+
+        _run(
+            [
+                starshine_command,
+                "run",
+                str(reproject_workflow_path),
+                "--layer",
+                f"sites={sites_path}",
+                "--output-layer",
+                "sites_wgs84",
+                "--output",
+                str(reproject_output_path),
+            ]
+        )
+        cli_reprojected = json.loads(reproject_output_path.read_text(encoding="utf-8"))
+        if starshine_geo.digest_json(cli_reprojected) != starshine_geo.digest_json(
+            direct_reprojected
+        ):
+            raise RuntimeError("CLI and direct reprojection results differ")
 
         _run(
             [

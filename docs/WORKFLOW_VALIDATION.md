@@ -18,8 +18,9 @@ Runtime preflight additionally checks:
 - output names do not overwrite inputs or earlier results;
 - unexpected workflow, step, input, and parameter fields are rejected;
 - buffer distances are positive and finite;
-- source CRS values are parseable and buffer working CRS values are projected;
-- buffer segment counts and optional field names meet their public contracts.
+- source and target CRS values are parseable and buffer working CRS values are projected;
+- buffer segment counts and optional field names meet their public contracts;
+- the runtime registry and external Workflow Schema describe the same operator names, inputs, and parameters.
 
 ## Python diagnostics
 
@@ -64,3 +65,14 @@ starshine validate tests/fixtures/workflows/invalid-buffer-missing-work-crs.json
 ```
 
 The command exits with status `0` for a valid workflow and status `2` for a validation failure. The CLI reuses the canonical Python validator; it does not maintain a second ruleset and does not require private datasets.
+
+## Operator catalog
+
+The same reviewed runtime registry is documented through:
+
+```bash
+starshine operators
+```
+
+The output conforms to `schemas/operator-catalog-v1.schema.json`. Catalog tests compare each input
+and parameter schema with `schemas/workflow-v1.schema.json`, preventing silent contract drift.
