@@ -28,6 +28,7 @@ pytest
 python -m build
 python -m twine check dist/*
 python scripts/check_release_artifacts.py dist
+starshine operators --output operators.json
 ```
 
 The artifact inspector checks that exactly one wheel and one source distribution were produced,
@@ -49,6 +50,8 @@ the downloaded wheel and run `scripts/smoke_installed_wheel.py`, which verifies:
 - the package imports from the installed environment rather than the working tree;
 - `starshine --version` matches installed package metadata;
 - top-level public callables are available;
+- the installed operator catalog includes the reviewed registry and matches the CLI output;
+- reprojection works through both the installed API and workflow CLI;
 - the installed inspection API and `starshine inspect` command produce matching reports;
 - valid and invalid workflow diagnostics work through the installed console command;
 - a self-created point-within-polygon workflow runs through both the Python API and CLI;

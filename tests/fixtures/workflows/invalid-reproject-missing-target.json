@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "steps": [
+    {
+      "operation": "reproject",
+      "inputs": {"input": "source"},
+      "parameters": {},
+      "output": "projected"
+    }
+  ]
+}

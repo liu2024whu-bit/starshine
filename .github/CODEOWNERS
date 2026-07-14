@@ -12,3 +12,5 @@
 /examples/teaching/ @liu2024whu-bit
 /docs/TEACHING_FAILURES.md @liu2024whu-bit
 /scripts/verify_teaching_examples.py @liu2024whu-bit
+/src/starshine_geo/operator_registry.py @liu2024whu-bit
+/schemas/operator-catalog-v1.schema.json @liu2024whu-bit

@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/liu2024whu-bit/starshine/schemas/operator-catalog-v1.schema.json",
+  "title": "Starshine Geo operator catalog version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "workflow_version", "operators"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "workflow_version": {"const": 1},
+    "operators": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/operator"}
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "description"],
+      "properties": {
+        "name": {"$ref": "#/$defs/nonEmptyString"},
+        "description": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "parameter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "description", "required", "schema"],
+      "properties": {
+        "name": {"$ref": "#/$defs/nonEmptyString"},
+        "description": {"$ref": "#/$defs/nonEmptyString"},
+        "required": {"type": "boolean"},
+        "schema": {"type": "object"},
+        "default": {}
+      }
+    },
+    "operator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "summary",
+        "inputs",
+        "parameters",
+        "output_crs",
+        "deterministic"
+      ],
+      "properties": {
+        "name": {"$ref": "#/$defs/nonEmptyString"},
+        "summary": {"$ref": "#/$defs/nonEmptyString"},
+        "inputs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/input"}
+        },
+        "parameters": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/parameter"}
+        },
+        "output_crs": {"$ref": "#/$defs/nonEmptyString"},
+        "deterministic": {"type": "boolean"}
+      }
+    }
+  }
+}

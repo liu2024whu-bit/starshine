@@ -7,7 +7,7 @@ from typing import Any
 from shapely.geometry import Point
 from shapely.ops import unary_union
 
-from .crs import geometry_transformer, require_projected_crs
+from .crs import geometry_transformer, parse_crs, require_projected_crs
 from .errors import ValidationError
 from .geojson import (
     FeatureCollection,
@@ -43,6 +43,55 @@ def buffer_features(
         properties["starshine:work_crs"] = work_crs
         output.append(make_feature(buffered, properties))
     return make_collection(output, crs=source_crs)
+
+
+def reproject_features(
+    collection: FeatureCollection,
+    *,
+    target_crs: str,
+    source_crs: str | None = None,
+) -> FeatureCollection:
+    """Transform every geometry to ``target_crs`` while preserving feature properties and order."""
+    validated = validate_feature_collection(collection)
+    declared_value = validated.get("starshine:crs")
+    declared_crs = (
+        declared_value.strip()
+        if isinstance(declared_value, str) and declared_value.strip()
+        else None
+    )
+
+    if source_crs is None:
+        if declared_crs is None:
+            raise ValidationError(
+                "source_crs is required when the collection has no starshine:crs"
+            )
+        resolved_source = declared_crs
+    else:
+        if not isinstance(source_crs, str) or not source_crs.strip():
+            raise ValidationError("source_crs must be a non-empty string when provided")
+        resolved_source = source_crs.strip()
+        if declared_crs is not None:
+            supplied = parse_crs(resolved_source)
+            declared = parse_crs(declared_crs)
+            if not supplied.equals(declared):
+                raise ValidationError(
+                    "source_crs does not match the collection starshine:crs"
+                )
+
+    if not isinstance(target_crs, str) or not target_crs.strip():
+        raise ValidationError("target_crs must be a non-empty string")
+
+    source = parse_crs(resolved_source)
+    target = parse_crs(target_crs.strip())
+    transform_geometry = geometry_transformer(source.to_string(), target.to_string())
+
+    output = []
+    for feature, geometry in iter_geometries(validated):
+        properties = dict(feature.get("properties") or {})
+        output.append(make_feature(transform_geometry(geometry), properties))
+
+    result = make_collection(output, crs=target.to_string())
+    return validate_feature_collection(result)
 
 
 def dissolve_features(
@@ -98,6 +147,7 @@ def summarize_points_within(
 __all__ = [
     "buffer_features",
     "dissolve_features",
+    "reproject_features",
     "summarize_points_within",
     "validate_feature_collection",
 ]

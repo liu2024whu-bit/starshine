@@ -19,8 +19,10 @@ All notable public changes are documented here.
 - a deterministic `inspect_feature_collection()` API and `starshine inspect` command;
 - schema-checked inspection reports containing counts, property fields, declared CRS, bounds, and a
   collection digest without copying feature content;
-- synthetic CRS and geometry teaching cases with exact CLI exit codes, stable diagnostic paths,
-  corrected projected-workflow checks, and a public verification script.
+- compact synthetic teaching cases for CRS and geometry failure modes with an executable verifier;
+- a declarative runtime operator registry and schema-checked `starshine operators` catalog;
+- a `reproject_features()` API and `reproject` workflow operation with explicit source/target CRS
+  validation and installed-wheel coverage.
 
 ## [0.2.0] - 2026-07-13
 

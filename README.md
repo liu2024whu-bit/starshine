@@ -24,10 +24,10 @@ The public 0.2 line provides:
 
 - validated GeoJSON FeatureCollection input;
 - projected-CRS checks for distance-based work;
-- buffer, dissolve, and point-within-polygon summary operators;
+- buffer, dissolve, point-within-polygon summary, and explicit reprojection operators;
 - a versioned JSON workflow format and operator-specific machine-readable schema;
 - structured preflight diagnostics for structure, inputs, parameters, and CRS rules;
-- an explicit operator registry with no dynamic `eval`;
+- a declarative operator registry and machine-readable catalog with no dynamic `eval`;
 - optional path-free reproducibility manifests;
 - optional GeoPackage input/output with explicit layer, CRS, and overwrite rules;
 - deterministic GeoJSON inspection reports with counts, bounds, CRS, fields, and digests;
@@ -74,6 +74,19 @@ python scripts/smoke_installed_wheel.py
 
 In CI, the wheel is built once and downloaded into clean Python 3.10, 3.11, and 3.12 jobs that do not
 check out the repository. See the [release process](docs/RELEASE_PROCESS.md) for the exact checks.
+
+## Discover supported operators
+
+The runtime registry is available as a schema-checked JSON catalog:
+
+```bash
+starshine operators
+starshine operators --output operators.json
+```
+
+The same value is available through `operator_catalog()`. Runtime executors and validators are not
+serialized into the report. See the [operator registry and extension contract](docs/OPERATORS.md) and
+[operator catalog schema](schemas/operator-catalog-v1.schema.json).
 
 ## Inspect a GeoJSON collection without running a workflow
 
@@ -192,6 +205,18 @@ fields but deliberately does not impose fragile wall-clock thresholds. See
 Only registered operators can run. Each step must write to a new layer name, so input data cannot
 be overwritten accidentally. See the [workflow schema](schemas/workflow-v1.schema.json) and
 [validation contract](docs/WORKFLOW_VALIDATION.md).
+
+A tracked reprojection example transforms the synthetic teaching points to `EPSG:3857`:
+
+```bash
+starshine run examples/reproject.workflow.json \
+  --layer source=examples/teaching/geographic-points.geojson \
+  --output-layer projected \
+  --output examples/output/projected-points.geojson
+```
+
+Reprojection preserves feature order and properties, requires an explicit target CRS, and refuses a
+`source_crs` parameter that conflicts with the collection's declared `starshine:crs`.
 
 ## Optional GeoPackage boundary
 

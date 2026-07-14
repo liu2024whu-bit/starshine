@@ -10,6 +10,7 @@ from .errors import StarshineError, WorkflowValidationError
 from .inspection import inspect_feature_collection
 from .io import read_json, write_json
 from .manifest import build_manifest
+from .operator_registry import operator_catalog
 from .workflow import run_workflow, validate_workflow
 
 
@@ -68,6 +69,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="Optionally write the inspection report instead of printing it",
     )
     _add_diagnostic_format(inspect_parser)
+
+    operators_parser = subparsers.add_parser(
+        "operators",
+        help="Print the machine-readable catalog of bounded workflow operators",
+    )
+    operators_parser.add_argument(
+        "--output",
+        type=Path,
+        help="Optionally write the operator catalog instead of printing it",
+    )
     return parser
 
 
@@ -138,6 +149,16 @@ def _inspect_command(args: argparse.Namespace) -> int:
     return 0
 
 
+def _operators_command(args: argparse.Namespace) -> int:
+    catalog = operator_catalog()
+    if args.output is None:
+        print(json.dumps(catalog, ensure_ascii=False, indent=2, sort_keys=True))
+    else:
+        write_json(catalog, args.output)
+        print(args.output)
+    return 0
+
+
 def _run_command(args: argparse.Namespace) -> int:
     workflow = read_json(args.workflow)
     layers = _parse_layers(args.layer)
@@ -165,9 +186,11 @@ def main(argv: list[str] | None = None) -> int:
             return _validate_command(args)
         if args.command == "inspect":
             return _inspect_command(args)
+        if args.command == "operators":
+            return _operators_command(args)
         return _run_command(args)
     except StarshineError as exc:
-        _print_error(exc, args.diagnostic_format)
+        _print_error(exc, getattr(args, "diagnostic_format", "text"))
         return 2
 
 
