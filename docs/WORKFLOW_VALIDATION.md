@@ -1,6 +1,8 @@
 # Workflow validation
 
-Starshine validates the complete workflow structure and operator parameters before executing the first operator. This prevents a malformed later step from leaving a partially evaluated in-memory workflow.
+Starshine validates the complete workflow structure and operator parameters before executing the
+first operator. This prevents a malformed later step from leaving a partially evaluated in-memory
+workflow.
 
 ## Machine-readable schema
 
@@ -10,7 +12,10 @@ The public workflow version 1 contract is available at:
 schemas/workflow-v1.schema.json
 ```
 
-The schema uses JSON Schema draft 2020-12 and defines a separate contract for each public operator. It covers exact input names, required and optional parameters, numeric bounds, field-name rules, and output names. Public valid and invalid examples are stored in `tests/fixtures/workflows/` and are checked with an external JSON Schema validator in CI.
+The schema uses JSON Schema draft 2020-12 and defines a separate contract for each public operator.
+It covers exact input names, required and optional parameters, numeric bounds, field-name rules, and
+output names. Public valid and invalid examples are stored in `tests/fixtures/workflows/` and are
+checked with an external JSON Schema validator in CI.
 
 Runtime preflight additionally checks:
 
@@ -20,11 +25,17 @@ Runtime preflight additionally checks:
 - buffer distances are positive and finite;
 - source and target CRS values are parseable and buffer working CRS values are projected;
 - buffer segment counts and optional field names meet their public contracts;
-- the runtime registry and external Workflow Schema describe the same operator names, inputs, and parameters.
+- clip steps accept exactly the `input` and `mask` layer references and no parameters;
+- the runtime registry and external Workflow Schema describe the same operator names, inputs, and
+  parameters.
+
+Data-dependent checks, such as clip mask geometry types and equivalent declared CRS values, run
+after every input collection has been validated but before a clip result is returned.
 
 ## Python diagnostics
 
-`validate_workflow()` and `run_workflow()` raise `WorkflowValidationError` before execution when the workflow contract fails. The exception contains a stable, JSON-ready `diagnostic` value:
+`validate_workflow()` and `run_workflow()` raise `WorkflowValidationError` before execution when the
+workflow contract fails. The exception contains a stable, JSON-ready `diagnostic` value:
 
 ```python
 from starshine_geo import WorkflowValidationError, validate_workflow
@@ -49,7 +60,8 @@ Example parameter result:
 
 ## Validate from the CLI
 
-Validation can run without loading feature data or executing spatial operators. Declare only the public layer names that the workflow may reference:
+Validation can run without loading feature data or executing spatial operators. Declare only the
+public layer names that the workflow may reference:
 
 ```bash
 starshine validate tests/fixtures/workflows/valid-buffer.json \
@@ -64,7 +76,9 @@ starshine validate tests/fixtures/workflows/invalid-buffer-missing-work-crs.json
   --diagnostic-format json
 ```
 
-The command exits with status `0` for a valid workflow and status `2` for a validation failure. The CLI reuses the canonical Python validator; it does not maintain a second ruleset and does not require private datasets.
+The command exits with status `0` for a valid workflow and status `2` for a validation failure. The
+CLI reuses the canonical Python validator; it does not maintain a second ruleset and does not require
+private datasets.
 
 ## Operator catalog
 

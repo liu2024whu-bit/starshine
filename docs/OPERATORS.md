@@ -83,6 +83,30 @@ Reprojection does not infer a suitable analysis CRS from the dataset. Selecting 
 remains an explicit domain decision. The operator only validates the declared choice and performs the
 coordinate transformation.
 
+## Clip operator
+
+`clip` intersects each input feature with the union of a polygon mask collection. It requires both
+collections to declare equivalent `starshine:crs` values, accepts only `Polygon` or `MultiPolygon`
+mask features, preserves source property objects and retained order, and drops empty intersections.
+
+```json
+{
+  "version": 1,
+  "steps": [
+    {
+      "operation": "clip",
+      "inputs": {"input": "source", "mask": "mask"},
+      "parameters": {},
+      "output": "clipped"
+    }
+  ]
+}
+```
+
+The operator intentionally has no repair or implicit-reprojection parameter. Use reviewed geometry
+repair outside the workflow and the explicit `reproject` step when coordinate systems differ. See
+[CRS-safe clipping](CLIP.md).
+
 ## Extension contract
 
 A new bounded operator should arrive through a public issue and include, in one reviewed change:

@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "steps": [
+    {
+      "operation": "clip",
+      "inputs": {"input": "source", "mask": "mask"},
+      "parameters": {},
+      "output": "clipped"
+    }
+  ]
+}

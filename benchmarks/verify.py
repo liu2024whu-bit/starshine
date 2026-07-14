@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from starshine_geo import run_workflow
+from starshine_geo import inspect_feature_collection, run_workflow
 
 from .corpus import BenchmarkCase, build_cases
 
@@ -41,6 +41,14 @@ def semantic_signature(case: BenchmarkCase, output: dict[str, Any]) -> dict[str,
         }
     if case.name == "multi-step-buffer-dissolve-36":
         return base
+    if case.name == "clip-grid-25":
+        inspection = inspect_feature_collection(output)
+        return {
+            **base,
+            "geometry_types": sorted(inspection["geometry_counts"]),
+            "cell_ids": [feature["properties"]["cell_id"] for feature in features],
+            "bbox": inspection["bbox"],
+        }
     raise RuntimeError(f"no semantic signature is defined for benchmark case: {case.name}")
 
 

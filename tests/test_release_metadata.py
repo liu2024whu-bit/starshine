@@ -55,9 +55,11 @@ def test_cli_reports_installed_version(capsys):
 
 
 def test_top_level_api_exports_public_operator_surfaces():
+    assert callable(starshine_geo.clip_features)
     assert callable(starshine_geo.dissolve_features)
     assert callable(starshine_geo.reproject_features)
     assert callable(starshine_geo.operator_catalog)
+    assert "clip_features" in starshine_geo.__all__
     assert "dissolve_features" in starshine_geo.__all__
     assert "reproject_features" in starshine_geo.__all__
     assert "operator_catalog" in starshine_geo.__all__

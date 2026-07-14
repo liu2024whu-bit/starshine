@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-CORPUS_VERSION = 1
+CORPUS_VERSION = 2
 CRS = "EPSG:3857"
 JsonObject = dict[str, Any]
 FeatureCollection = dict[str, Any]
@@ -60,6 +60,31 @@ def _square(x: float, y: float, size: float, **properties: Any) -> JsonObject:
                     [x + size, y + size],
                     [x, y + size],
                     [x, y],
+                ]
+            ],
+        },
+    }
+
+
+def _rectangle(
+    min_x: float,
+    min_y: float,
+    max_x: float,
+    max_y: float,
+    **properties: Any,
+) -> JsonObject:
+    return {
+        "type": "Feature",
+        "properties": properties,
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [min_x, min_y],
+                    [max_x, min_y],
+                    [max_x, max_y],
+                    [min_x, max_y],
+                    [min_x, min_y],
                 ]
             ],
         },
@@ -233,6 +258,55 @@ def _multi_step_case() -> BenchmarkCase:
     )
 
 
+def _clip_case() -> BenchmarkCase:
+    cells = [
+        _square(
+            column * 10.0,
+            row * 10.0,
+            10.0,
+            cell_id=f"cell-{row}-{column}",
+        )
+        for row in range(5)
+        for column in range(5)
+    ]
+    mask = [_rectangle(12.0, 7.0, 38.0, 33.0, mask_id="central-window")]
+    retained_ids = [
+        f"cell-{row}-{column}"
+        for row in range(4)
+        for column in range(1, 4)
+    ]
+    return BenchmarkCase(
+        name="clip-grid-25",
+        description="Clip a deterministic 5 by 5 polygon grid with one offset rectangular mask.",
+        workflow={
+            "version": 1,
+            "steps": [
+                {
+                    "operation": "clip",
+                    "inputs": {"input": "cells", "mask": "mask"},
+                    "parameters": {},
+                    "output": "clipped_cells",
+                }
+            ],
+        },
+        layers={"cells": _collection(cells), "mask": _collection(mask)},
+        output_layer="clipped_cells",
+        expected_signature={
+            "crs": CRS,
+            "feature_count": 12,
+            "geometry_types": ["Polygon"],
+            "cell_ids": retained_ids,
+            "bbox": [12.0, 7.0, 38.0, 33.0],
+        },
+    )
+
+
 def build_cases() -> tuple[BenchmarkCase, ...]:
     """Create the complete deterministic benchmark corpus from scratch."""
-    return (_buffer_case(), _dissolve_case(), _summary_case(), _multi_step_case())
+    return (
+        _buffer_case(),
+        _dissolve_case(),
+        _summary_case(),
+        _multi_step_case(),
+        _clip_case(),
+    )

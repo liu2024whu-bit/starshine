@@ -4,7 +4,13 @@ All notable public changes are documented here.
 
 ## [Unreleased]
 
-No unreleased changes yet.
+### Added
+
+- a CRS-safe `clip_features()` API and bounded `clip` workflow operation with explicit polygon-mask,
+  equivalent-CRS, property-preservation, feature-order, boundary-contact, and empty-result rules;
+- synthetic clip examples, Workflow Schema fixtures, installed-wheel coverage, and a fifth public
+  benchmark case;
+- benchmark corpus version 2, which identifies reports containing the new clip case.
 
 ## [0.3.0] - 2026-07-14
 

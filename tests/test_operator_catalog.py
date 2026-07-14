@@ -50,6 +50,7 @@ def test_operator_catalog_is_stable_and_defensive():
         "dissolve",
         "summarize_points_within",
         "reproject",
+        "clip",
     ]
 
     first["operators"][0]["parameters"][0]["schema"]["exclusiveMinimum"] = -1

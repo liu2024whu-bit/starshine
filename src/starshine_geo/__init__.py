@@ -8,6 +8,7 @@ from .manifest import build_manifest, digest_json
 from .operator_registry import OPERATOR_REGISTRY, operator_catalog
 from .operators import (
     buffer_features,
+    clip_features,
     dissolve_features,
     reproject_features,
     summarize_points_within,
@@ -21,6 +22,7 @@ __all__ = [
     "OPERATOR_REGISTRY",
     "__version__",
     "buffer_features",
+    "clip_features",
     "build_manifest",
     "digest_json",
     "dissolve_features",
