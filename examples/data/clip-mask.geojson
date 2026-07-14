@@ -1,0 +1,14 @@
+{
+  "type": "FeatureCollection",
+  "starshine:crs": "EPSG:3857",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"id": "study-window"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[5, -5], [25, -5], [25, 15], [5, 15], [5, -5]]]
+      }
+    }
+  ]
+}
