@@ -11,6 +11,7 @@ from .errors import ValidationError
 from .geojson import FeatureCollection
 from .operators import (
     buffer_features,
+    clip_features,
     dissolve_features,
     reproject_features,
     summarize_points_within,
@@ -167,6 +168,13 @@ def _execute_summary(
     return summarize_points_within(inputs["polygons"], inputs["points"], **parameters)
 
 
+def _execute_clip(
+    inputs: dict[str, FeatureCollection], parameters: dict[str, Any]
+) -> FeatureCollection:
+    del parameters
+    return clip_features(inputs["input"], inputs["mask"])
+
+
 def _execute_reproject(
     inputs: dict[str, FeatureCollection], parameters: dict[str, Any]
 ) -> FeatureCollection:
@@ -285,6 +293,17 @@ _OPERATOR_SPECS = (
         ),
         output_crs="target_crs parameter",
         executor=_execute_reproject,
+    ),
+    OperatorSpec(
+        name="clip",
+        summary="Intersect each input feature with the union of a polygon mask collection.",
+        inputs=(
+            InputSpec("input", "FeatureCollection whose properties and order are preserved."),
+            InputSpec("mask", "Polygon or MultiPolygon FeatureCollection in an equivalent CRS."),
+        ),
+        parameters=(),
+        output_crs="input layer; mask must declare an equivalent CRS",
+        executor=_execute_clip,
     ),
 )
 
