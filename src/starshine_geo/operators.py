@@ -4,6 +4,7 @@ import math
 from collections import defaultdict
 from typing import Any
 
+from shapely.errors import GEOSException
 from shapely.geometry import Point
 from shapely.ops import unary_union
 
@@ -16,6 +17,18 @@ from .geojson import (
     make_feature,
     validate_feature_collection,
 )
+
+
+def _required_declared_crs(
+    collection: FeatureCollection,
+    *,
+    label: str,
+) -> tuple[str, Any]:
+    value = collection.get("starshine:crs")
+    if not isinstance(value, str) or not value.strip():
+        raise ValidationError(f"{label} collection must declare starshine:crs")
+    normalized = value.strip()
+    return normalized, parse_crs(normalized)
 
 
 def buffer_features(
@@ -43,6 +56,54 @@ def buffer_features(
         properties["starshine:work_crs"] = work_crs
         output.append(make_feature(buffered, properties))
     return make_collection(output, crs=source_crs)
+
+
+def clip_features(
+    collection: FeatureCollection,
+    mask: FeatureCollection,
+) -> FeatureCollection:
+    """Clip input geometries by a polygon mask in the same declared CRS.
+
+    The union of all mask polygons is intersected with each input feature. Empty intersections are
+    omitted, while retained features keep their input order and property objects. Boundary-only
+    intersections are retained because they are valid non-empty geometric results.
+    """
+    validated_input = validate_feature_collection(collection)
+    validated_mask = validate_feature_collection(mask)
+
+    input_crs_label, input_crs = _required_declared_crs(
+        validated_input,
+        label="input",
+    )
+    _, mask_crs = _required_declared_crs(validated_mask, label="mask")
+    if not input_crs.equals(mask_crs):
+        raise ValidationError("clip input and mask must declare equivalent CRS values")
+
+    mask_geometries = []
+    for _, geometry in iter_geometries(validated_mask):
+        if geometry.geom_type not in {"Polygon", "MultiPolygon"}:
+            raise ValidationError("clip mask must contain Polygon or MultiPolygon geometry only")
+        mask_geometries.append(geometry)
+
+    if not mask_geometries:
+        return make_collection([], crs=input_crs_label)
+
+    try:
+        mask_union = unary_union(mask_geometries)
+    except GEOSException as exc:
+        raise ValidationError("clip mask union failed") from exc
+
+    output = []
+    for index, (feature, geometry) in enumerate(iter_geometries(validated_input)):
+        try:
+            clipped = geometry.intersection(mask_union)
+        except GEOSException as exc:
+            raise ValidationError(f"clip failed for input feature {index}") from exc
+        if clipped.is_empty:
+            continue
+        output.append(make_feature(clipped, feature.get("properties")))
+
+    return validate_feature_collection(make_collection(output, crs=input_crs_label))
 
 
 def reproject_features(
@@ -146,6 +207,7 @@ def summarize_points_within(
 
 __all__ = [
     "buffer_features",
+    "clip_features",
     "dissolve_features",
     "reproject_features",
     "summarize_points_within",
