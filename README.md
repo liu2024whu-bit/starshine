@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/liu2024whu-bit/starshine/actions/workflows/ci.yml/badge.svg)](https://github.com/liu2024whu-bit/starshine/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/status-0.2.0%20research%20preview-orange.svg)](ROADMAP.md)
+[![Status](https://img.shields.io/badge/status-0.3.0%20research%20preview-orange.svg)](ROADMAP.md)
 
 Starshine Geo is a small, auditable open-source core for reproducible spatial-analysis workflows.
 It focuses on the parts that must remain explicit in GIS automation: coordinate-reference-system
@@ -20,7 +20,7 @@ Spatial workflows often fail silently when geographic coordinates are treated as
 geometries enter overlays, output names overwrite inputs, or planners call unregistered functions.
 Starshine makes those boundaries visible, machine-readable, and executable.
 
-The public 0.2 line provides:
+The public 0.3 line provides:
 
 - validated GeoJSON FeatureCollection input;
 - projected-CRS checks for distance-based work;
@@ -241,12 +241,12 @@ source-distribution members. See [Open-source scope](docs/OPEN_SOURCE_SCOPE.md) 
 Version metadata is sourced from `pyproject.toml`, while runtime code reads the installed package
 metadata. CI builds and inspects one wheel and one source distribution, then installs the exact wheel
 in clean supported-Python jobs before a release can be tagged. See the
-[release process](docs/RELEASE_PROCESS.md), [0.2.0 release notes](docs/releases/0.2.0.md), and
+[release process](docs/RELEASE_PROCESS.md), [0.3.0 release notes](docs/releases/0.3.0.md), and
 [changelog](CHANGELOG.md).
 
 ## Project status
 
-Starshine Geo 0.2.0 is an alpha-quality research preview. The API is intentionally small while the
+Starshine Geo 0.3.0 is an alpha-quality research preview. The API is intentionally small while the
 maintainers establish stable contracts, external reproduction, issue triage, release discipline,
 and independent community use.
 
