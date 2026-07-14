@@ -10,6 +10,7 @@ except ModuleNotFoundError:  # pragma: no cover - exercised only on Python 3.10
     import tomli as tomllib
 
 import starshine_geo
+from scripts.check_release_readiness import check as check_release_readiness
 from starshine_geo.cli import main
 from starshine_geo.manifest import build_manifest
 
@@ -60,3 +61,10 @@ def test_top_level_api_exports_public_operator_surfaces():
     assert "dissolve_features" in starshine_geo.__all__
     assert "reproject_features" in starshine_geo.__all__
     assert "operator_catalog" in starshine_geo.__all__
+
+
+def test_release_readiness_check_matches_current_public_metadata():
+    summary = check_release_readiness(ROOT)
+    assert summary["version"] == _project_version()
+    assert summary["release_date"] == "2026-07-14"
+    assert summary["release_notes"] == f"docs/releases/{_project_version()}.md"

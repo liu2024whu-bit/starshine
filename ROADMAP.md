@@ -26,16 +26,17 @@ provenance does not make private source code or data part of the implementation 
 - [x] small vector benchmark fixtures with machine-readable result summaries
 - [x] installation smoke tests from built wheels on all supported Python versions
 - [x] deterministic GeoJSON inspection reports and installed-wheel CLI coverage
-- [x] declarative operator registry, machine-readable catalog, and reprojection operator
 - [ ] third-party reproduction notes from an environment not used by the maintainer
 - [x] synthetic teaching examples for CRS and geometry failure modes
 
-## 0.3 — Community research preview
+## 0.3 — Extensible community research preview
 
-- [ ] additional overlay and proximity operators designed through public issues
+- [x] declarative operator registry with a machine-readable, schema-checked catalog
+- [x] explicit reprojection API and bounded workflow operation
+- [ ] clip and additional overlay/proximity operators designed through public issues
 - [ ] optional read-only database adapter specified from public interfaces and synthetic fixtures
-- [ ] plugin boundary for independently validated operators
-- [ ] documentation examples for education and research replication
+- [ ] reviewed external-operator boundary without dynamic workflow code loading
+- [ ] additional documentation examples for education and research replication
 
 The public repository will remain intentionally focused. Features enter Starshine only after an
 independent public specification, licensing and data review, synthetic or redistributable fixtures,

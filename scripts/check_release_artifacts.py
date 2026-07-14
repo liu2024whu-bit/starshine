@@ -104,10 +104,11 @@ def _check_sdist(path: Path, version: str) -> None:
                 "/schemas/inspection-report-v1.schema.json",
                 "/schemas/operator-catalog-v1.schema.json",
                 "/schemas/workflow-v1.schema.json",
+                "/scripts/check_release_readiness.py",
                 "/scripts/smoke_installed_wheel.py",
                 "/scripts/verify_teaching_examples.py",
                 "/examples/reproject.workflow.json",
-                "/docs/releases/0.2.0.md",
+                f"/docs/releases/{version}.md",
             ),
             path.name,
         )
