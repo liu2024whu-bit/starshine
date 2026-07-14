@@ -51,6 +51,7 @@ def _assert_public_imports() -> None:
     expected_callables = (
         "buffer_features",
         "build_manifest",
+        "clip_features",
         "digest_json",
         "dissolve_features",
         "inspect_feature_collection",
@@ -139,14 +140,41 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
 
     direct_catalog = starshine_geo.operator_catalog()
     catalog_names = [item["name"] for item in direct_catalog["operators"]]
-    if "reproject" not in catalog_names:
-        raise RuntimeError(f"installed operator catalog is missing reproject: {catalog_names}")
+    missing_operators = sorted({"clip", "reproject"} - set(catalog_names))
+    if missing_operators:
+        raise RuntimeError(
+            f"installed operator catalog is missing operators {missing_operators}: {catalog_names}"
+        )
 
     direct_reprojected = starshine_geo.reproject_features(sites, target_crs="EPSG:4326")
     if direct_reprojected.get("starshine:crs") != "EPSG:4326":
         raise RuntimeError(f"unexpected reprojected CRS: {direct_reprojected}")
     if len(direct_reprojected.get("features", [])) != 3:
         raise RuntimeError(f"unexpected reprojected feature count: {direct_reprojected}")
+
+    clip_mask = {
+        "type": "FeatureCollection",
+        "starshine:crs": "EPSG:3857",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {"id": "central-mask"},
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": [[[5, -5], [15, -5], [15, 15], [5, 15], [5, -5]]],
+                },
+            }
+        ],
+    }
+    direct_clipped = starshine_geo.clip_features(zones, clip_mask)
+    if [feature["properties"]["id"] for feature in direct_clipped["features"]] != [
+        "west",
+        "east",
+    ]:
+        raise RuntimeError(f"unexpected clipped feature order: {direct_clipped}")
+    clipped_bounds = starshine_geo.inspect_feature_collection(direct_clipped).get("bbox")
+    if clipped_bounds != [5.0, 0.0, 15.0, 10.0]:
+        raise RuntimeError(f"unexpected clipped bounds: {direct_clipped}")
 
     direct_inspection = starshine_geo.inspect_feature_collection(zones)
     if direct_inspection.get("feature_count") != 2:
@@ -167,10 +195,28 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
         invalid_path = root / "invalid-workflow.json"
         reproject_workflow_path = root / "reproject-workflow.json"
         reproject_output_path = root / "sites-wgs84.geojson"
+        clip_mask_path = root / "clip-mask.geojson"
+        clip_workflow_path = root / "clip-workflow.json"
+        clip_output_path = root / "clipped-zones.geojson"
 
         _write_json(workflow_path, workflow)
         _write_json(zones_path, zones)
         _write_json(sites_path, sites)
+        _write_json(clip_mask_path, clip_mask)
+        _write_json(
+            clip_workflow_path,
+            {
+                "version": 1,
+                "steps": [
+                    {
+                        "operation": "clip",
+                        "inputs": {"input": "zones", "mask": "mask"},
+                        "parameters": {},
+                        "output": "clipped",
+                    }
+                ],
+            },
+        )
         _write_json(
             reproject_workflow_path,
             {
@@ -281,6 +327,25 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
             direct_reprojected
         ):
             raise RuntimeError("CLI and direct reprojection results differ")
+
+        _run(
+            [
+                starshine_command,
+                "run",
+                str(clip_workflow_path),
+                "--layer",
+                f"zones={zones_path}",
+                "--layer",
+                f"mask={clip_mask_path}",
+                "--output-layer",
+                "clipped",
+                "--output",
+                str(clip_output_path),
+            ]
+        )
+        cli_clipped = json.loads(clip_output_path.read_text(encoding="utf-8"))
+        if starshine_geo.digest_json(cli_clipped) != starshine_geo.digest_json(direct_clipped):
+            raise RuntimeError("CLI and direct clip results differ")
 
         _run(
             [
