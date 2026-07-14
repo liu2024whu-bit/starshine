@@ -22,6 +22,7 @@ Before a release:
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev,geopackage,release]"
 python scripts/audit_public_repository.py
+python scripts/check_release_readiness.py
 python scripts/verify_teaching_examples.py
 ruff check .
 pytest
@@ -31,11 +32,14 @@ python scripts/check_release_artifacts.py dist
 starshine operators --output operators.json
 ```
 
-The artifact inspector checks that exactly one wheel and one source distribution were produced,
-that their versions match package metadata, that expected public files are present, and that no
-unsafe archive paths, ignored caches, private-artifact directories, or unexpectedly large members
-were packaged. The source distribution must include the synthetic teaching inputs, their expected
-inspection report, focused documentation, and the public verification script.
+The release-readiness check verifies that package metadata, citation metadata, the dated
+changelog section, README status and release link, and `docs/releases/<version>.md` all describe the
+same current version. The artifact inspector then checks that exactly one wheel and one source
+distribution were produced, that their versions match package metadata, that expected public files
+are present, and that no unsafe archive paths, ignored caches, private-artifact directories, or
+unexpectedly large members were packaged. The source distribution must include the current
+versioned release notes, the synthetic teaching inputs, their expected inspection report, focused
+documentation, and the public verification scripts.
 
 ## Installed-wheel verification
 
