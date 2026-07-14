@@ -33,7 +33,8 @@ provenance does not make private source code or data part of the implementation 
 
 - [x] declarative operator registry with a machine-readable, schema-checked catalog
 - [x] explicit reprojection API and bounded workflow operation
-- [ ] clip and additional overlay/proximity operators designed through public issues
+- [x] CRS-safe clip API and bounded workflow operation with synthetic benchmark coverage
+- [ ] additional overlay and proximity operators designed through public issues
 - [ ] optional read-only database adapter specified from public interfaces and synthetic fixtures
 - [ ] reviewed external-operator boundary without dynamic workflow code loading
 - [ ] additional documentation examples for education and research replication
