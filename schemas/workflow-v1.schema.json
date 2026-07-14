@@ -28,6 +28,9 @@
           },
           {
             "$ref": "#/$defs/reprojectStep"
+          },
+          {
+            "$ref": "#/$defs/clipStep"
           }
         ]
       }
@@ -239,6 +242,45 @@
               ]
             }
           }
+        },
+        "output": {
+          "$ref": "#/$defs/outputName"
+        }
+      }
+    },
+    "clipStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation",
+        "inputs",
+        "output"
+      ],
+      "properties": {
+        "operation": {
+          "const": "clip"
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "input",
+            "mask"
+          ],
+          "properties": {
+            "input": {
+              "$ref": "#/$defs/layerReference"
+            },
+            "mask": {
+              "$ref": "#/$defs/layerReference"
+            }
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {},
+          "default": {}
         },
         "output": {
           "$ref": "#/$defs/outputName"
