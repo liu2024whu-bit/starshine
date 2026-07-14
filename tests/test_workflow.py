@@ -146,3 +146,30 @@ def test_complete_workflow_is_validated_before_first_operator(monkeypatch):
         )
 
     assert calls == []
+
+
+def test_runtime_parameters_are_resolved_from_registry_defaults(monkeypatch):
+    captured = {}
+
+    def capture_defaults(inputs, parameters):
+        captured.update(parameters)
+        return inputs["input"]
+
+    monkeypatch.setitem(workflow_module.OPERATORS, "dissolve", capture_defaults)
+    result = run_workflow(
+        {
+            "version": 1,
+            "steps": [
+                {
+                    "operation": "dissolve",
+                    "inputs": {"input": "zones"},
+                    "parameters": {},
+                    "output": "coverage",
+                }
+            ],
+        },
+        LAYERS,
+    )
+
+    assert captured == {"group_field": None}
+    assert result["coverage"] == LAYERS["zones"]

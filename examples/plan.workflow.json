@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "steps": [
+    {
+      "operation": "reproject",
+      "inputs": {"input": "source"},
+      "parameters": {"target_crs": "EPSG:3857"},
+      "output": "projected"
+    },
+    {
+      "operation": "clip",
+      "inputs": {"input": "projected", "mask": "mask"},
+      "parameters": {},
+      "output": "clipped"
+    },
+    {
+      "operation": "dissolve",
+      "inputs": {"input": "clipped"},
+      "parameters": {},
+      "output": "coverage"
+    }
+  ]
+}

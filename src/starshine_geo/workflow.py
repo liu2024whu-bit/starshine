@@ -315,6 +315,6 @@ def run_workflow(workflow: dict[str, Any], layers: Context) -> Context:
         spec = OPERATOR_REGISTRY[operation]
         context[output_name] = OPERATORS[operation](
             _resolved_inputs(context, step, spec),
-            _parameters(step),
+            spec.resolve_parameters(_parameters(step)),
         )
     return context

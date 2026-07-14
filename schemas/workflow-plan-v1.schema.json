@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/liu2024whu-bit/starshine/schemas/workflow-plan-v1.schema.json",
+  "title": "Starshine Geo workflow plan version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "workflow_version",
+    "workflow_digest",
+    "operator_catalog_version",
+    "operator_catalog_digest",
+    "declared_external_layers",
+    "required_external_layers",
+    "unused_external_layers",
+    "produced_layers",
+    "terminal_layers",
+    "step_count",
+    "steps",
+    "plan_digest"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "workflow_version": {"const": 1},
+    "workflow_digest": {"$ref": "#/$defs/digest"},
+    "operator_catalog_version": {"const": 1},
+    "operator_catalog_digest": {"$ref": "#/$defs/digest"},
+    "declared_external_layers": {"$ref": "#/$defs/layerList"},
+    "required_external_layers": {"$ref": "#/$defs/layerList"},
+    "unused_external_layers": {"$ref": "#/$defs/layerList"},
+    "produced_layers": {"$ref": "#/$defs/layerList"},
+    "terminal_layers": {"$ref": "#/$defs/layerList"},
+    "step_count": {"type": "integer", "minimum": 1},
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/step"}
+    },
+    "plan_digest": {"$ref": "#/$defs/digest"}
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "layerList": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/nonEmptyString"},
+      "uniqueItems": true
+    },
+    "inputSource": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "layer"],
+          "properties": {
+            "kind": {"const": "external"},
+            "layer": {"$ref": "#/$defs/nonEmptyString"}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "layer", "step_index"],
+          "properties": {
+            "kind": {"const": "step"},
+            "layer": {"$ref": "#/$defs/nonEmptyString"},
+            "step_index": {"type": "integer", "minimum": 0}
+          }
+        }
+      ]
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "index",
+        "operation",
+        "summary",
+        "inputs",
+        "input_sources",
+        "parameters",
+        "parameter_sources",
+        "output",
+        "output_crs",
+        "depends_on",
+        "deterministic"
+      ],
+      "properties": {
+        "index": {"type": "integer", "minimum": 0},
+        "operation": {"$ref": "#/$defs/nonEmptyString"},
+        "summary": {"$ref": "#/$defs/nonEmptyString"},
+        "inputs": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/nonEmptyString"}
+        },
+        "input_sources": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/inputSource"}
+        },
+        "parameters": {
+          "type": "object"
+        },
+        "parameter_sources": {
+          "type": "object",
+          "additionalProperties": {
+            "enum": ["provided", "default"]
+          }
+        },
+        "output": {"$ref": "#/$defs/nonEmptyString"},
+        "output_crs": {"$ref": "#/$defs/nonEmptyString"},
+        "depends_on": {
+          "type": "array",
+          "items": {"type": "integer", "minimum": 0},
+          "uniqueItems": true
+        },
+        "deterministic": {"type": "boolean"}
+      }
+    }
+  }
+}

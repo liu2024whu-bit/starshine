@@ -28,6 +28,7 @@ The public 0.3 line provides:
 - a versioned JSON workflow format and operator-specific machine-readable schema;
 - structured preflight diagnostics for structure, inputs, parameters, and CRS rules;
 - a declarative operator registry and machine-readable catalog with no dynamic `eval`;
+- deterministic data-free workflow plans with dependencies, defaults, layer provenance, and digests;
 - optional path-free reproducibility manifests;
 - optional GeoPackage input/output with explicit layer, CRS, and overwrite rules;
 - deterministic GeoJSON inspection reports with counts, bounds, CRS, fields, and digests;
@@ -87,6 +88,22 @@ starshine operators --output operators.json
 The same value is available through `operator_catalog()`. Runtime executors and validators are not
 serialized into the report. See the [operator registry and extension contract](docs/OPERATORS.md) and
 [operator catalog schema](schemas/operator-catalog-v1.schema.json).
+
+## Plan a workflow without reading feature data
+
+The planner validates a workflow, resolves registry defaults, and reports its dependency graph and
+layer provenance without loading GeoJSON or running operators:
+
+```bash
+starshine plan examples/plan.workflow.json \
+  --layer-name source \
+  --layer-name mask
+```
+
+Plans include Workflow and Operator Catalog digests, required and unused external layers, ordered
+step dependencies, resolved parameter sources, terminal outputs, and declared output-CRS behavior.
+See [workflow planning](docs/WORKFLOW_PLANNING.md) and the
+[workflow plan schema](schemas/workflow-plan-v1.schema.json).
 
 ## Inspect a GeoJSON collection without running a workflow
 

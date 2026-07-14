@@ -4,14 +4,24 @@
   "title": "Starshine Geo operator catalog version 1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "workflow_version", "operators"],
+  "required": [
+    "schema_version",
+    "workflow_version",
+    "operators"
+  ],
   "properties": {
-    "schema_version": {"const": 1},
-    "workflow_version": {"const": 1},
+    "schema_version": {
+      "const": 1
+    },
+    "workflow_version": {
+      "const": 1
+    },
     "operators": {
       "type": "array",
       "minItems": 1,
-      "items": {"$ref": "#/$defs/operator"}
+      "items": {
+        "$ref": "#/$defs/operator"
+      }
     }
   },
   "$defs": {
@@ -23,22 +33,46 @@
     "input": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "description"],
+      "required": [
+        "name",
+        "description"
+      ],
       "properties": {
-        "name": {"$ref": "#/$defs/nonEmptyString"},
-        "description": {"$ref": "#/$defs/nonEmptyString"}
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
       }
     },
     "parameter": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "description", "required", "schema"],
+      "required": [
+        "name",
+        "description",
+        "required",
+        "schema",
+        "sensitive"
+      ],
       "properties": {
-        "name": {"$ref": "#/$defs/nonEmptyString"},
-        "description": {"$ref": "#/$defs/nonEmptyString"},
-        "required": {"type": "boolean"},
-        "schema": {"type": "object"},
-        "default": {}
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "schema": {
+          "type": "object"
+        },
+        "default": {},
+        "sensitive": {
+          "type": "boolean"
+        }
       }
     },
     "operator": {
@@ -53,19 +87,31 @@
         "deterministic"
       ],
       "properties": {
-        "name": {"$ref": "#/$defs/nonEmptyString"},
-        "summary": {"$ref": "#/$defs/nonEmptyString"},
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "summary": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
         "inputs": {
           "type": "array",
           "minItems": 1,
-          "items": {"$ref": "#/$defs/input"}
+          "items": {
+            "$ref": "#/$defs/input"
+          }
         },
         "parameters": {
           "type": "array",
-          "items": {"$ref": "#/$defs/parameter"}
+          "items": {
+            "$ref": "#/$defs/parameter"
+          }
         },
-        "output_crs": {"$ref": "#/$defs/nonEmptyString"},
-        "deterministic": {"type": "boolean"}
+        "output_crs": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "deterministic": {
+          "type": "boolean"
+        }
       }
     }
   }

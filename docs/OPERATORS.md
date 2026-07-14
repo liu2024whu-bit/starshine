@@ -2,7 +2,8 @@
 
 Starshine keeps its bounded workflow operations in one declarative runtime registry. Each
 `OperatorSpec` combines the executable adapter with the public input names, parameter validation,
-JSON-compatible parameter schemas, defaults, output-CRS behavior, and a short description.
+JSON-compatible parameter schemas, defaults, sensitivity annotations, output-CRS behavior, and a
+short description. Runtime execution and workflow planning resolve defaults from this same entry.
 
 The registry is intentionally **not** a dynamic plugin loader. Workflow JSON cannot import Python
 modules, provide callables, or execute arbitrary code. Only operators already reviewed and registered
@@ -37,8 +38,10 @@ catalog = operator_catalog()
 ```
 
 The public catalog contains documentation and JSON schemas, never executor objects or validator
-callables. Tests compare it with `schemas/workflow-v1.schema.json`, so adding or changing an operator
-requires both runtime and external contracts to stay synchronized.
+callables. Each parameter also publishes a `sensitive` boolean. A sensitive value remains available
+to its reviewed executor but is redacted from public workflow plans. Tests compare the catalog with
+`schemas/workflow-v1.schema.json`, so adding or changing an operator requires runtime and external
+contracts to stay synchronized.
 
 ## Reproject operator
 

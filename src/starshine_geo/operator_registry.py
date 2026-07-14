@@ -46,6 +46,18 @@ class ParameterSpec:
     validator: ParameterValidator
     required: bool = False
     default: Any = _MISSING
+    sensitive: bool = False
+
+    @property
+    def has_default(self) -> bool:
+        """Whether the registry defines an explicit runtime default for this parameter."""
+        return self.default is not _MISSING
+
+    def public_value(self, value: Any) -> Any:
+        """Return a defensive plan-safe value, redacting parameters marked sensitive."""
+        if self.sensitive and value is not None:
+            return "<redacted>"
+        return deepcopy(value)
 
     def as_dict(self) -> dict[str, Any]:
         result: dict[str, Any] = {
@@ -53,6 +65,7 @@ class ParameterSpec:
             "description": self.description,
             "required": self.required,
             "schema": deepcopy(self.schema),
+            "sensitive": self.sensitive,
         }
         if self.default is not _MISSING:
             result["default"] = deepcopy(self.default)
@@ -82,6 +95,28 @@ class OperatorSpec:
     @property
     def optional_parameters(self) -> dict[str, ParameterValidator]:
         return {item.name: item.validator for item in self.parameters if not item.required}
+
+    def resolve_parameters(self, supplied: Mapping[str, Any]) -> dict[str, Any]:
+        """Merge validated supplied values with registry defaults in declaration order."""
+        resolved: dict[str, Any] = {}
+        for parameter in self.parameters:
+            if parameter.name in supplied:
+                resolved[parameter.name] = deepcopy(supplied[parameter.name])
+            elif parameter.has_default:
+                resolved[parameter.name] = deepcopy(parameter.default)
+        return resolved
+
+    def public_parameters(self, supplied: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, str]]:
+        """Resolve parameters for planning and report whether each value was supplied or defaulted."""
+        resolved = self.resolve_parameters(supplied)
+        values: dict[str, Any] = {}
+        sources: dict[str, str] = {}
+        by_name = {parameter.name: parameter for parameter in self.parameters}
+        for name, value in resolved.items():
+            parameter = by_name[name]
+            values[name] = parameter.public_value(value)
+            sources[name] = "provided" if name in supplied else "default"
+        return values, sources
 
     def as_dict(self) -> dict[str, Any]:
         return {

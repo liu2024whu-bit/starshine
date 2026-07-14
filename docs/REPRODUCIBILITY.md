@@ -43,3 +43,12 @@ hashing and step reporting.
 A manifest is not a cryptographic signature, proof of authorship, or substitute for archiving
 the referenced inputs. It is a deterministic description that helps reviewers detect changes
 and reproduce a workflow with separately supplied data.
+
+
+## Plan before execution, manifest after execution
+
+A workflow plan and a reproducibility manifest answer different questions. `starshine plan` records
+the validated dependency structure, resolved defaults, expected external layers, and declared CRS
+behavior before data is loaded. `starshine run --manifest ...` records sanitized workflow and content
+digests for the selected result after execution. Keeping both allows reviewers to compare intended
+structure with produced evidence without placing feature content in either report.
