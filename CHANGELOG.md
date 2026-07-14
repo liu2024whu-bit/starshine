@@ -4,25 +4,35 @@ All notable public changes are documented here.
 
 ## [Unreleased]
 
+No unreleased changes yet.
+
+## [0.3.0] - 2026-07-14
+
 ### Added
 
 - deterministic synthetic small-vector cases for buffer, dissolve, point summary, and multi-step
   workflows;
 - a machine-readable benchmark report schema with corpus, case, output, environment, and timing
   fields;
-- separate semantic verification, report checking, CI execution, and benchmark artifact upload;
-- public reproduction guidance that avoids fragile wall-clock pass/fail thresholds;
-- clean Python 3.10–3.12 jobs that install the exact CI-built wheel without an editable checkout;
-- an installed-wheel smoke script covering package location, public imports, CLI versioning,
-  structured validation diagnostics, synthetic workflow execution, and manifest metadata;
-- concise installation and smoke logs retained only when a wheel matrix job fails;
-- a deterministic `inspect_feature_collection()` API and `starshine inspect` command;
-- schema-checked inspection reports containing counts, property fields, declared CRS, bounds, and a
-  collection digest without copying feature content;
+- clean Python 3.10–3.12 jobs that install and exercise the exact CI-built wheel without an editable
+  checkout;
+- a deterministic `inspect_feature_collection()` API and `starshine inspect` command with
+  schema-checked structural reports;
 - compact synthetic teaching cases for CRS and geometry failure modes with an executable verifier;
 - a declarative runtime operator registry and schema-checked `starshine operators` catalog;
 - a `reproject_features()` API and `reproject` workflow operation with explicit source/target CRS
-  validation and installed-wheel coverage.
+  validation;
+- a release-readiness check that keeps package, citation, changelog, README, and versioned release
+  notes synchronized.
+
+### Changed
+
+- Workflow execution, named inputs, parameter validation, defaults, public schemas, and output-CRS
+  behavior now derive from one reviewed operator specification;
+- release archive inspection now requires the release-notes file for the current package version
+  instead of a hard-coded historical version;
+- public examples, benchmarks, teaching fixtures, and installed-wheel checks remain based only on
+  synthetic data created in this repository.
 
 ## [0.2.0] - 2026-07-13
 
