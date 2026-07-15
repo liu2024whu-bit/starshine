@@ -24,6 +24,9 @@
             "$ref": "#/$defs/dissolveStep"
           },
           {
+            "$ref": "#/$defs/geometryMetricsStep"
+          },
+          {
             "$ref": "#/$defs/summarizePointsWithinStep"
           },
           {
@@ -422,6 +425,48 @@
               ]
             }
           }
+        },
+        "output": {
+          "$ref": "#/$defs/outputName"
+        }
+      }
+    },
+    "geometryMetricsStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation",
+        "inputs",
+        "output"
+      ],
+      "properties": {
+        "operation": {
+          "const": "geometry_metrics"
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "input"
+          ],
+          "properties": {
+            "input": {
+              "$ref": "#/$defs/layerReference"
+            }
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "area_field": {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            "length_field": {
+              "$ref": "#/$defs/nonEmptyString"
+            }
+          },
+          "default": {}
         },
         "output": {
           "$ref": "#/$defs/outputName"

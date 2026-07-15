@@ -48,6 +48,7 @@ def test_operator_catalog_is_stable_and_defensive():
     assert [item["name"] for item in first["operators"]] == [
         "buffer",
         "dissolve",
+        "geometry_metrics",
         "summarize_points_within",
         "join_points_to_polygons",
         "nearest",

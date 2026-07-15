@@ -31,6 +31,12 @@ def semantic_signature(case: BenchmarkCase, output: dict[str, Any]) -> dict[str,
             **base,
             "bands": sorted(feature["properties"]["band"] for feature in features),
         }
+    if case.name == "geometry-metrics-grid-25":
+        return {
+            **base,
+            "areas": [feature["properties"]["area_m2"] for feature in features],
+            "lengths": [feature["properties"]["perimeter_m"] for feature in features],
+        }
     if case.name == "summarize-zones-16-sites-64":
         return {
             **base,

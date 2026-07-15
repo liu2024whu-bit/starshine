@@ -22,7 +22,11 @@ All notable public changes are documented here.
 - a deterministic `join_points_to_polygons()` API and bounded point-in-polygon workflow operation
   with boundary-inclusive matching, explicit ambiguity policy, retained unmatched points, planner
   integration, synthetic examples, installed-wheel coverage, and a seventh public benchmark case;
-- benchmark corpus version 4, identifying reports that include point-in-polygon attribution.
+- benchmark corpus version 4, identifying reports that include point-in-polygon attribution;
+- a focused `calculate_geometry_metrics()` API and `geometry_metrics` workflow operation with
+  projected-CRS requirements, collision-safe output fields, synthetic examples, planner/catalog
+  integration, installed-wheel coverage, and an eighth public benchmark case;
+- benchmark corpus version 5, identifying reports that include projected geometry metrics.
 
 ## [0.3.0] - 2026-07-14
 

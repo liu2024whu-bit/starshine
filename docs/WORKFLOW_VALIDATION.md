@@ -26,6 +26,7 @@ Runtime preflight additionally checks:
 - source and target CRS values are parseable and buffer working CRS values are projected;
 - buffer segment counts and optional field names meet their public contracts;
 - clip steps accept exactly the `input` and `mask` layer references and no parameters;
+- geometry-metric steps accept one input and validated area/length output field names;
 - nearest steps require `source`, `candidates`, and a non-empty `candidate_id_field`; optional
   output fields and `max_distance` are validated before data access;
 - point-in-polygon join steps require `points`, `polygons`, and `polygon_id_field`; output fields,

@@ -110,6 +110,13 @@ The operator intentionally has no repair or implicit-reprojection parameter. Use
 repair outside the workflow and the explicit `reproject` step when coordinate systems differ. See
 [CRS-safe clipping](CLIP.md).
 
+## Geometry metrics operator
+
+`geometry_metrics` preserves every feature and writes projected area and length values. It requires
+an explicit projected CRS and rejects output-field collisions. The implementation lives in the
+focused `metrics.py` module rather than extending topology-changing operator code. See
+[projected geometry metrics](GEOMETRY_METRICS.md).
+
 ## Point-in-polygon join operator
 
 `join_points_to_polygons` preserves every point and attaches one polygon identifier using

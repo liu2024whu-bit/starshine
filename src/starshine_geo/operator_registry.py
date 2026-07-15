@@ -9,6 +9,7 @@ from typing import Any, Callable, Mapping
 from .crs import parse_crs, require_projected_crs
 from .errors import ValidationError
 from .geojson import FeatureCollection
+from .metrics import calculate_geometry_metrics
 from .operators import (
     buffer_features,
     clip_features,
@@ -225,6 +226,12 @@ def _execute_dissolve(
     return dissolve_features(inputs["input"], **parameters)
 
 
+def _execute_geometry_metrics(
+    inputs: dict[str, FeatureCollection], parameters: dict[str, Any]
+) -> FeatureCollection:
+    return calculate_geometry_metrics(inputs["input"], **parameters)
+
+
 def _execute_summary(
     inputs: dict[str, FeatureCollection], parameters: dict[str, Any]
 ) -> FeatureCollection:
@@ -314,6 +321,29 @@ _OPERATOR_SPECS = (
         ),
         output_crs="input layer",
         executor=_execute_dissolve,
+    ),
+    OperatorSpec(
+        name="geometry_metrics",
+        summary="Attach projected area and length values without changing feature geometry.",
+        inputs=(InputSpec("input", "FeatureCollection whose geometry and order are preserved."),),
+        parameters=(
+            ParameterSpec(
+                "area_field",
+                "Output property receiving projected geometry area.",
+                {"type": "string", "minLength": 1, "pattern": "\\S"},
+                _validate_non_empty_string,
+                default="geometry_area",
+            ),
+            ParameterSpec(
+                "length_field",
+                "Output property receiving projected geometry length or boundary length.",
+                {"type": "string", "minLength": 1, "pattern": "\\S"},
+                _validate_non_empty_string,
+                default="geometry_length",
+            ),
+        ),
+        output_crs="input layer; input must declare a projected CRS",
+        executor=_execute_geometry_metrics,
     ),
     OperatorSpec(
         name="summarize_points_within",

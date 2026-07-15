@@ -1,0 +1,71 @@
+{
+  "type": "FeatureCollection",
+  "starshine:crs": "EPSG:3857",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "study-area"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              0,
+              0
+            ],
+            [
+              20,
+              0
+            ],
+            [
+              20,
+              10
+            ],
+            [
+              0,
+              10
+            ],
+            [
+              0,
+              0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "transect"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            0,
+            0
+          ],
+          [
+            6,
+            8
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          5,
+          5
+        ]
+      }
+    }
+  ]
+}

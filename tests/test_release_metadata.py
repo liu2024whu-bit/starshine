@@ -56,6 +56,7 @@ def test_cli_reports_installed_version(capsys):
 
 def test_top_level_api_exports_public_operator_surfaces():
     assert callable(starshine_geo.clip_features)
+    assert callable(starshine_geo.calculate_geometry_metrics)
     assert callable(starshine_geo.dissolve_features)
     assert callable(starshine_geo.join_points_to_polygons)
     assert callable(starshine_geo.nearest_features)
@@ -64,6 +65,7 @@ def test_top_level_api_exports_public_operator_surfaces():
     assert callable(starshine_geo.plan_workflow)
     assert starshine_geo.WORKFLOW_PLAN_VERSION == 1
     assert "clip_features" in starshine_geo.__all__
+    assert "calculate_geometry_metrics" in starshine_geo.__all__
     assert "dissolve_features" in starshine_geo.__all__
     assert "join_points_to_polygons" in starshine_geo.__all__
     assert "nearest_features" in starshine_geo.__all__
