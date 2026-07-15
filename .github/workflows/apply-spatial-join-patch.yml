@@ -1,4 +1,4 @@
-name: Apply spatial join patch
+name: Diagnose spatial join patch
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  apply:
+  diagnose:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
@@ -17,20 +17,16 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.head_ref }}
-      - name: Apply reviewed patch bundle
+      - name: Record patch checksums
         shell: bash
         env:
           TARGET_BRANCH: ${{ github.head_ref }}
         run: |
           set -euo pipefail
-          cat .starshine-patch/part-* > /tmp/starshine-patch.b64
-          echo "773d7cb61d0a50a7afc269af1a518002c11ff664feb86e8d264cac28c2baa298  /tmp/starshine-patch.b64" | sha256sum -c -
-          base64 --decode /tmp/starshine-patch.b64 > /tmp/starshine-patch.tar.gz
-          echo "0ecec2a96ddd4396f82c1574751e60e530966aa8dda0331610768a7d812e2159  /tmp/starshine-patch.tar.gz" | sha256sum -c -
-          tar -xzf /tmp/starshine-patch.tar.gz -C .
-          rm -rf .starshine-patch
+          sha256sum .starshine-patch/part-* > .starshine-patch/checksums.txt
+          cat .starshine-patch/part-* | sha256sum >> .starshine-patch/checksums.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "Add deterministic point-in-polygon spatial join"
+          git add .starshine-patch/checksums.txt
+          git commit -m "Record spatial join patch checksums"
           git push origin "HEAD:${TARGET_BRANCH}"
