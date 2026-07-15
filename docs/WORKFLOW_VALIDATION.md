@@ -26,11 +26,14 @@ Runtime preflight additionally checks:
 - source and target CRS values are parseable and buffer working CRS values are projected;
 - buffer segment counts and optional field names meet their public contracts;
 - clip steps accept exactly the `input` and `mask` layer references and no parameters;
+- nearest steps require `source`, `candidates`, and a non-empty `candidate_id_field`; optional
+  output fields and `max_distance` are validated before data access;
 - the runtime registry and external Workflow Schema describe the same operator names, inputs, and
   parameters.
 
-Data-dependent checks, such as clip mask geometry types and equivalent declared CRS values, run
-after every input collection has been validated but before a clip result is returned.
+Data-dependent checks, such as clip mask geometry types, nearest candidate identifiers, projected
+CRS equivalence, and source output-field conflicts, run after every input collection has been
+validated but before an operator result is returned.
 
 ## Python diagnostics
 

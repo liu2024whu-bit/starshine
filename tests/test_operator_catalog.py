@@ -49,6 +49,7 @@ def test_operator_catalog_is_stable_and_defensive():
         "buffer",
         "dissolve",
         "summarize_points_within",
+        "nearest",
         "reproject",
         "clip",
     ]

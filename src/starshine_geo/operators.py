@@ -31,6 +31,22 @@ def _required_declared_crs(
     return normalized, parse_crs(normalized)
 
 
+def _candidate_identifier_key(value: Any, *, index: int, field: str) -> tuple[str, Any]:
+    if value is None or isinstance(value, (dict, list)):
+        raise ValidationError(
+            f"candidate {index} property {field!r} must be a non-null JSON scalar"
+        )
+    if isinstance(value, float) and not math.isfinite(value):
+        raise ValidationError(
+            f"candidate {index} property {field!r} must be a finite JSON scalar"
+        )
+    if not isinstance(value, (str, int, float, bool)):
+        raise ValidationError(
+            f"candidate {index} property {field!r} must be a JSON scalar"
+        )
+    return type(value).__name__, value
+
+
 def buffer_features(
     collection: FeatureCollection,
     *,
@@ -104,6 +120,111 @@ def clip_features(
         output.append(make_feature(clipped, feature.get("properties")))
 
     return validate_feature_collection(make_collection(output, crs=input_crs_label))
+
+
+def nearest_features(
+    source: FeatureCollection,
+    candidates: FeatureCollection,
+    *,
+    candidate_id_field: str,
+    distance_field: str = "nearest_distance",
+    nearest_id_field: str = "nearest_id",
+    max_distance: float | None = None,
+) -> FeatureCollection:
+    """Attach the nearest candidate identifier and projected distance to every source feature.
+
+    Both collections must declare equivalent projected CRS values. Candidate ties are resolved by
+    input order because a later candidate replaces the current match only when its distance is
+    strictly smaller. Empty candidate collections and candidates beyond ``max_distance`` produce
+    explicit ``null`` output fields rather than dropping source features.
+    """
+    field_values = {
+        "candidate_id_field": candidate_id_field,
+        "distance_field": distance_field,
+        "nearest_id_field": nearest_id_field,
+    }
+    for label, value in field_values.items():
+        if not isinstance(value, str) or not value.strip():
+            raise ValidationError(f"{label} must be a non-empty string")
+    if distance_field == nearest_id_field:
+        raise ValidationError("distance_field and nearest_id_field must be different")
+    if max_distance is not None:
+        if isinstance(max_distance, bool) or not isinstance(max_distance, (int, float)):
+            raise ValidationError("max_distance must be a non-negative finite number or null")
+        if not math.isfinite(float(max_distance)) or float(max_distance) < 0:
+            raise ValidationError("max_distance must be a non-negative finite number or null")
+        max_distance = float(max_distance)
+
+    validated_source = validate_feature_collection(source)
+    validated_candidates = validate_feature_collection(candidates)
+    source_crs_label, source_crs = _required_declared_crs(validated_source, label="source")
+    candidate_crs_label, candidate_crs = _required_declared_crs(
+        validated_candidates, label="candidates"
+    )
+    if not source_crs.equals(candidate_crs):
+        raise ValidationError("nearest source and candidates must declare equivalent CRS values")
+    require_projected_crs(source_crs_label)
+    require_projected_crs(candidate_crs_label)
+
+    candidate_records: list[tuple[Any, Any]] = []
+    seen_identifiers: set[tuple[str, Any]] = set()
+    for index, (feature, geometry) in enumerate(iter_geometries(validated_candidates)):
+        properties = feature.get("properties") or {}
+        if candidate_id_field not in properties:
+            raise ValidationError(
+                f"candidate {index} is missing required property: {candidate_id_field}"
+            )
+        identifier = properties[candidate_id_field]
+        key = _candidate_identifier_key(
+            identifier, index=index, field=candidate_id_field
+        )
+        if key in seen_identifiers:
+            raise ValidationError(f"duplicate candidate identifier: {identifier!r}")
+        seen_identifiers.add(key)
+        candidate_records.append((identifier, geometry))
+
+    source_records = list(iter_geometries(validated_source))
+    for index, (feature, _) in enumerate(source_records):
+        properties = feature.get("properties") or {}
+        for field in (nearest_id_field, distance_field):
+            if field in properties:
+                raise ValidationError(
+                    f"source feature {index} already contains output property: {field}"
+                )
+
+    output = []
+    for source_index, (feature, geometry) in enumerate(source_records):
+        nearest_identifier: Any = None
+        nearest_distance: float | None = None
+        for candidate_index, (identifier, candidate_geometry) in enumerate(candidate_records):
+            try:
+                distance = float(geometry.distance(candidate_geometry))
+            except GEOSException as exc:
+                raise ValidationError(
+                    "nearest distance failed for source feature "
+                    f"{source_index} and candidate {candidate_index}"
+                ) from exc
+            if not math.isfinite(distance):
+                raise ValidationError(
+                    "nearest distance is not finite for source feature "
+                    f"{source_index} and candidate {candidate_index}"
+                )
+            if nearest_distance is None or distance < nearest_distance:
+                nearest_distance = distance
+                nearest_identifier = identifier
+
+        properties = dict(feature.get("properties") or {})
+        if nearest_distance is None or (
+            max_distance is not None and nearest_distance > max_distance
+        ):
+            properties[nearest_id_field] = None
+            properties[distance_field] = None
+        else:
+            properties[nearest_id_field] = nearest_identifier
+            properties[distance_field] = nearest_distance
+        output.append(make_feature(geometry, properties))
+
+    return validate_feature_collection(make_collection(output, crs=source_crs_label))
 
 
 def reproject_features(
@@ -209,6 +330,7 @@ __all__ = [
     "buffer_features",
     "clip_features",
     "dissolve_features",
+    "nearest_features",
     "reproject_features",
     "summarize_points_within",
     "validate_feature_collection",

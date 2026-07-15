@@ -10,7 +10,8 @@ execution overhead, not for claims about large production datasets.
 - `dissolve-bands-80`: dissolves 80 adjacent cells into four groups;
 - `summarize-zones-16-sites-64`: counts 64 points across 16 zones;
 - `multi-step-buffer-dissolve-36`: runs a two-step buffer and dissolve workflow;
-- `clip-grid-25`: clips a 5 by 5 polygon grid with one offset polygon mask.
+- `clip-grid-25`: clips a 5 by 5 polygon grid with one offset polygon mask;
+- `nearest-grid-36-candidates-9`: matches 36 source points to nine candidates with stable ties.
 
 The generators live in `benchmarks/corpus.py`. No fixture, parameter set, expected result, or source
 implementation is imported from a private repository or external service.
@@ -55,7 +56,7 @@ cross-environment pass/fail condition.
 
 ## Comparing environments
 
-The current public corpus version is `2`. Keep `corpus_version`, `corpus_digest`, each
+The current public corpus version is `3`. Keep `corpus_version`, `corpus_digest`, each
 `case_digest`, each `semantic_digest`, and `repeat_count` visible when comparing reports. Timing
 observations are environment-specific; compare them only alongside Python version, Starshine
 version, operating system, machine architecture, and dependency versions. CI validates the report

@@ -31,6 +31,9 @@
           },
           {
             "$ref": "#/$defs/clipStep"
+          },
+          {
+            "$ref": "#/$defs/nearestStep"
           }
         ]
       }
@@ -281,6 +284,69 @@
           "additionalProperties": false,
           "properties": {},
           "default": {}
+        },
+        "output": {
+          "$ref": "#/$defs/outputName"
+        }
+      }
+    },
+    "nearestStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation",
+        "inputs",
+        "parameters",
+        "output"
+      ],
+      "properties": {
+        "operation": {
+          "const": "nearest"
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source",
+            "candidates"
+          ],
+          "properties": {
+            "source": {
+              "$ref": "#/$defs/layerReference"
+            },
+            "candidates": {
+              "$ref": "#/$defs/layerReference"
+            }
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "candidate_id_field"
+          ],
+          "properties": {
+            "candidate_id_field": {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            "distance_field": {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            "nearest_id_field": {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            "max_distance": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
         },
         "output": {
           "$ref": "#/$defs/outputName"

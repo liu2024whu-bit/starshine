@@ -13,6 +13,7 @@ from .operators import (
     buffer_features,
     clip_features,
     dissolve_features,
+    nearest_features,
     reproject_features,
     summarize_points_within,
 )
@@ -137,6 +138,16 @@ def _validate_positive_number(value: Any) -> str | None:
     return None
 
 
+def _validate_optional_non_negative_number(value: Any) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return "must be a non-negative finite number or null"
+    if not math.isfinite(float(value)) or float(value) < 0:
+        return "must be a non-negative finite number or null"
+    return None
+
+
 def _validate_non_empty_string(value: Any) -> str | None:
     if not isinstance(value, str) or not value.strip():
         return "must be a non-empty string"
@@ -208,6 +219,12 @@ def _execute_clip(
 ) -> FeatureCollection:
     del parameters
     return clip_features(inputs["input"], inputs["mask"])
+
+
+def _execute_nearest(
+    inputs: dict[str, FeatureCollection], parameters: dict[str, Any]
+) -> FeatureCollection:
+    return nearest_features(inputs["source"], inputs["candidates"], **parameters)
 
 
 def _execute_reproject(
@@ -300,6 +317,56 @@ _OPERATOR_SPECS = (
         ),
         output_crs="polygons input layer",
         executor=_execute_summary,
+    ),
+    OperatorSpec(
+        name="nearest",
+        summary=(
+            "Attach the nearest candidate identifier and projected distance to each source feature."
+        ),
+        inputs=(
+            InputSpec("source", "FeatureCollection whose properties and order are preserved."),
+            InputSpec(
+                "candidates",
+                "FeatureCollection containing uniquely identified nearest-match candidates.",
+            ),
+        ),
+        parameters=(
+            ParameterSpec(
+                "candidate_id_field",
+                "Candidate property containing a unique non-null JSON scalar identifier.",
+                {"type": "string", "minLength": 1, "pattern": "\\S"},
+                _validate_non_empty_string,
+                required=True,
+            ),
+            ParameterSpec(
+                "distance_field",
+                "Output property that receives the nearest projected distance or null.",
+                {"type": "string", "minLength": 1, "pattern": "\\S"},
+                _validate_non_empty_string,
+                default="nearest_distance",
+            ),
+            ParameterSpec(
+                "nearest_id_field",
+                "Output property that receives the matched candidate identifier or null.",
+                {"type": "string", "minLength": 1, "pattern": "\\S"},
+                _validate_non_empty_string,
+                default="nearest_id",
+            ),
+            ParameterSpec(
+                "max_distance",
+                "Optional inclusive projected-distance limit; farther sources receive null fields.",
+                {
+                    "anyOf": [
+                        {"type": "number", "minimum": 0},
+                        {"type": "null"},
+                    ]
+                },
+                _validate_optional_non_negative_number,
+                default=None,
+            ),
+        ),
+        output_crs="source layer; candidates must declare an equivalent projected CRS",
+        executor=_execute_nearest,
     ),
     OperatorSpec(
         name="reproject",

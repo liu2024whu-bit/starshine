@@ -24,7 +24,8 @@ The public 0.3 line provides:
 
 - validated GeoJSON FeatureCollection input;
 - projected-CRS checks for distance-based work;
-- buffer, dissolve, point-within-polygon summary, explicit reprojection, and CRS-safe clipping;
+- buffer, dissolve, point-within-polygon summary, explicit reprojection, CRS-safe clipping, and
+  deterministic nearest-feature matching;
 - a versioned JSON workflow format and operator-specific machine-readable schema;
 - structured preflight diagnostics for structure, inputs, parameters, and CRS rules;
 - a declarative operator registry and machine-readable catalog with no dynamic `eval`;
@@ -251,6 +252,23 @@ starshine run examples/clip.workflow.json \
 The operation preserves source property objects and retained feature order, drops empty
 intersections, and retains valid boundary-only intersections. See the
 [clip contract](docs/CLIP.md).
+
+## Match each feature to its nearest candidate
+
+The `nearest` operator compares source and candidate geometries in one equivalent projected CRS,
+preserves every source feature, and adds deterministic match and distance fields:
+
+```bash
+starshine run examples/nearest.workflow.json \
+  --layer sources=examples/data/nearest-source.geojson \
+  --layer facilities=examples/data/nearest-candidates.geojson \
+  --output-layer nearest_facilities \
+  --output examples/output/nearest-facilities.geojson
+```
+
+Equal-distance ties use candidate input order. Empty candidate collections and matches beyond an
+optional inclusive distance limit produce explicit `null` fields instead of dropping source
+features. See the [nearest-feature contract](docs/NEAREST.md).
 
 ## Optional GeoPackage boundary
 
