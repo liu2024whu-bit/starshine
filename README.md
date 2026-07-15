@@ -24,8 +24,8 @@ The public 0.3 line provides:
 
 - validated GeoJSON FeatureCollection input;
 - projected-CRS checks for distance-based work;
-- buffer, dissolve, point-within-polygon summary, explicit reprojection, CRS-safe clipping, and
-  deterministic nearest-feature matching;
+- buffer, dissolve, point-within-polygon summary and join, explicit reprojection, CRS-safe
+  clipping, and deterministic nearest-feature matching;
 - a versioned JSON workflow format and operator-specific machine-readable schema;
 - structured preflight diagnostics for structure, inputs, parameters, and CRS rules;
 - a declarative operator registry and machine-readable catalog with no dynamic `eval`;
@@ -269,6 +269,25 @@ starshine run examples/nearest.workflow.json \
 Equal-distance ties use candidate input order. Empty candidate collections and matches beyond an
 optional inclusive distance limit produce explicit `null` fields instead of dropping source
 features. See the [nearest-feature contract](docs/NEAREST.md).
+
+## Join points to polygons with explicit ambiguity handling
+
+The `join_points_to_polygons` operator preserves every point and attaches one polygon identifier
+using boundary-inclusive `covers` semantics:
+
+```bash
+starshine run examples/spatial-join.workflow.json \
+  --layer points=examples/data/join-points.geojson \
+  --layer zones=examples/data/join-polygons.geojson \
+  --output-layer joined_points \
+  --output examples/output/joined-points.geojson
+```
+
+Ambiguous overlaps and shared-boundary matches fail by default. Workflows may explicitly select the
+deterministic `first` policy when polygon input order is an intentional priority rule. Unmatched
+points remain in the output with a configured scalar or `null` value. See the
+[point-in-polygon join contract](docs/SPATIAL_JOIN.md).
+
 
 ## Optional GeoPackage boundary
 

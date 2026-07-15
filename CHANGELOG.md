@@ -18,7 +18,11 @@ All notable public changes are documented here.
 - a CRS-safe `nearest_features()` API and bounded `nearest` workflow operation with deterministic
   tie-breaking, optional distance limits, explicit no-match fields, planner/catalog integration,
   synthetic examples, installed-wheel coverage, and a sixth public benchmark case;
-- benchmark corpus version 3, identifying reports that include nearest-feature matching.
+- benchmark corpus version 3, identifying reports that include nearest-feature matching;
+- a deterministic `join_points_to_polygons()` API and bounded point-in-polygon workflow operation
+  with boundary-inclusive matching, explicit ambiguity policy, retained unmatched points, planner
+  integration, synthetic examples, installed-wheel coverage, and a seventh public benchmark case;
+- benchmark corpus version 4, identifying reports that include point-in-polygon attribution.
 
 ## [0.3.0] - 2026-07-14
 

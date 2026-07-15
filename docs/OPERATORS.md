@@ -110,6 +110,36 @@ The operator intentionally has no repair or implicit-reprojection parameter. Use
 repair outside the workflow and the explicit `reproject` step when coordinate systems differ. See
 [CRS-safe clipping](CLIP.md).
 
+## Point-in-polygon join operator
+
+`join_points_to_polygons` preserves every point and attaches one polygon identifier using
+boundary-inclusive `covers` semantics. Both collections must declare equivalent CRS values, polygon
+identifiers must be unique non-null JSON scalars, and output-field collisions are rejected.
+
+```json
+{
+  "version": 1,
+  "steps": [
+    {
+      "operation": "join_points_to_polygons",
+      "inputs": {"points": "points", "polygons": "zones"},
+      "parameters": {
+        "polygon_id_field": "zone_id",
+        "output_field": "joined_zone",
+        "unmatched_value": "unassigned",
+        "multiple_match": "first"
+      },
+      "output": "joined_points"
+    }
+  ]
+}
+```
+
+The default `multiple_match` policy is `error`. The explicit `first` policy selects the first
+covering polygon in input order and is intended only when that ordering is an intentional priority
+rule. Unmatched points remain in the output. See
+[deterministic point-in-polygon spatial join](SPATIAL_JOIN.md).
+
 ## Nearest-feature operator
 
 `nearest` preserves each source feature and attaches a candidate identifier plus projected distance.

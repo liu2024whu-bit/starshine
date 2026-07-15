@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "steps": [
+    {
+      "operation": "join_points_to_polygons",
+      "inputs": {"points": "points", "polygons": "zones"},
+      "parameters": {
+        "polygon_id_field": "zone_id",
+        "output_field": "joined_zone",
+        "unmatched_value": "unassigned",
+        "multiple_match": "first"
+      },
+      "output": "joined_points"
+    }
+  ]
+}

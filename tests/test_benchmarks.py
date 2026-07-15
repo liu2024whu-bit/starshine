@@ -23,13 +23,14 @@ def test_public_benchmark_corpus_is_deterministic():
         "summarize-zones-16-sites-64",
         "multi-step-buffer-dissolve-36",
         "clip-grid-25",
+        "join-points-64-zones-16",
         "nearest-grid-36-candidates-9",
     ]
     assert digest_json([case.definition() for case in first]) == digest_json(
         [case.definition() for case in second]
     )
-    assert [case.input_feature_count for case in first] == [64, 80, 80, 36, 26, 45]
-    assert [case.operation_count for case in first] == [1, 1, 1, 2, 1, 1]
+    assert [case.input_feature_count for case in first] == [64, 80, 80, 36, 26, 80, 45]
+    assert [case.operation_count for case in first] == [1, 1, 1, 2, 1, 1, 1]
 
 
 def test_benchmark_correctness_checks_are_separate_from_timing():
@@ -51,7 +52,7 @@ def test_benchmark_report_matches_public_schema_with_deterministic_clock():
 
     cases = build_cases()
     assert report["repeat_count"] == 2
-    assert [case["output_feature_count"] for case in report["cases"]] == [64, 4, 16, 1, 12, 36]
+    assert [case["output_feature_count"] for case in report["cases"]] == [64, 4, 16, 1, 12, 64, 36]
     assert [case["semantic_digest"] for case in report["cases"]] == [
         digest_json(case.expected_signature) for case in cases
     ]

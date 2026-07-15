@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "steps": [
+    {
+      "operation": "join_points_to_polygons",
+      "inputs": {"points": "points", "polygons": "zones"},
+      "parameters": {},
+      "output": "joined_points"
+    }
+  ]
+}

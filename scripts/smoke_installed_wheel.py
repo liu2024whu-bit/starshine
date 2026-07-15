@@ -54,6 +54,7 @@ def _assert_public_imports() -> None:
         "clip_features",
         "digest_json",
         "dissolve_features",
+        "join_points_to_polygons",
         "nearest_features",
         "inspect_feature_collection",
         "operator_catalog",
@@ -142,7 +143,9 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
 
     direct_catalog = starshine_geo.operator_catalog()
     catalog_names = [item["name"] for item in direct_catalog["operators"]]
-    missing_operators = sorted({"clip", "nearest", "reproject"} - set(catalog_names))
+    missing_operators = sorted(
+        {"clip", "join_points_to_polygons", "nearest", "reproject"} - set(catalog_names)
+    )
     if missing_operators:
         raise RuntimeError(
             f"installed operator catalog is missing operators {missing_operators}: {catalog_names}"
@@ -185,6 +188,17 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
         "facility-east",
     ]:
         raise RuntimeError(f"unexpected nearest matches: {direct_nearest}")
+
+
+    direct_joined = starshine_geo.join_points_to_polygons(
+        sites,
+        zones,
+        polygon_id_field="id",
+        output_field="zone_id",
+    )
+    joined_properties = [feature["properties"] for feature in direct_joined["features"]]
+    if [item["zone_id"] for item in joined_properties] != ["west", "west", "east"]:
+        raise RuntimeError(f"unexpected point-in-polygon join: {direct_joined}")
 
     direct_reprojected = starshine_geo.reproject_features(sites, target_crs="EPSG:4326")
     if direct_reprojected.get("starshine:crs") != "EPSG:4326":
@@ -242,6 +256,8 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
         nearest_candidates_path = root / "nearest-candidates.geojson"
         nearest_workflow_path = root / "nearest-workflow.json"
         nearest_output_path = root / "nearest-sites.geojson"
+        join_workflow_path = root / "join-workflow.json"
+        join_output_path = root / "joined-sites.geojson"
 
         _write_json(workflow_path, workflow)
         _write_json(zones_path, zones)
@@ -261,6 +277,23 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
                             "max_distance": 10,
                         },
                         "output": "nearest_sites",
+                    }
+                ],
+            },
+        )
+        _write_json(
+            join_workflow_path,
+            {
+                "version": 1,
+                "steps": [
+                    {
+                        "operation": "join_points_to_polygons",
+                        "inputs": {"points": "sites", "polygons": "zones"},
+                        "parameters": {
+                            "polygon_id_field": "id",
+                            "output_field": "zone_id",
+                        },
+                        "output": "joined_sites",
                     }
                 ],
             },
@@ -460,6 +493,25 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
         cli_nearest = json.loads(nearest_output_path.read_text(encoding="utf-8"))
         if starshine_geo.digest_json(cli_nearest) != starshine_geo.digest_json(direct_nearest):
             raise RuntimeError("CLI and direct nearest results differ")
+
+        _run(
+            [
+                starshine_command,
+                "run",
+                str(join_workflow_path),
+                "--layer",
+                f"sites={sites_path}",
+                "--layer",
+                f"zones={zones_path}",
+                "--output-layer",
+                "joined_sites",
+                "--output",
+                str(join_output_path),
+            ]
+        )
+        cli_joined = json.loads(join_output_path.read_text(encoding="utf-8"))
+        if starshine_geo.digest_json(cli_joined) != starshine_geo.digest_json(direct_joined):
+            raise RuntimeError("CLI and direct point-in-polygon join results differ")
 
         _run(
             [

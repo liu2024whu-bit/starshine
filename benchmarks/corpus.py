@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-CORPUS_VERSION = 3
+CORPUS_VERSION = 4
 CRS = "EPSG:3857"
 JsonObject = dict[str, Any]
 FeatureCollection = dict[str, Any]
@@ -301,6 +301,60 @@ def _clip_case() -> BenchmarkCase:
     )
 
 
+def _join_case() -> BenchmarkCase:
+    polygons: list[JsonObject] = []
+    points: list[JsonObject] = []
+    expected_assignments: list[list[str]] = []
+    for row in range(4):
+        for column in range(4):
+            origin_x = column * 100.0
+            origin_y = row * 100.0
+            zone_id = f"zone-{row}-{column}"
+            polygons.append(_square(origin_x, origin_y, 100.0, zone_id=zone_id))
+            for point_index, (offset_x, offset_y) in enumerate(
+                (
+                    (20.0, 20.0),
+                    (20.0, 80.0),
+                    (80.0, 20.0),
+                    (80.0, 80.0),
+                )
+            ):
+                point_id = f"point-{row}-{column}-{point_index}"
+                points.append(
+                    _point(
+                        origin_x + offset_x,
+                        origin_y + offset_y,
+                        point_id=point_id,
+                    )
+                )
+                expected_assignments.append([point_id, zone_id])
+
+    return BenchmarkCase(
+        name="join-points-64-zones-16",
+        description="Join 64 synthetic points to 16 non-overlapping polygon zones.",
+        workflow={
+            "version": 1,
+            "steps": [
+                {
+                    "operation": "join_points_to_polygons",
+                    "inputs": {"points": "points", "polygons": "zones"},
+                    "parameters": {
+                        "polygon_id_field": "zone_id",
+                        "output_field": "joined_zone",
+                    },
+                    "output": "joined_points",
+                }
+            ],
+        },
+        layers={"points": _collection(points), "zones": _collection(polygons)},
+        output_layer="joined_points",
+        expected_signature={
+            "crs": CRS,
+            "feature_count": 64,
+            "assignments": expected_assignments,
+        },
+    )
+
 def _nearest_case() -> BenchmarkCase:
     sources = [
         _point(
@@ -378,5 +432,6 @@ def build_cases() -> tuple[BenchmarkCase, ...]:
         _summary_case(),
         _multi_step_case(),
         _clip_case(),
+        _join_case(),
         _nearest_case(),
     )

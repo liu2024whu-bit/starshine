@@ -33,6 +33,9 @@
             "$ref": "#/$defs/clipStep"
           },
           {
+            "$ref": "#/$defs/joinPointsToPolygonsStep"
+          },
+          {
             "$ref": "#/$defs/nearestStep"
           }
         ]
@@ -344,6 +347,78 @@
                 {
                   "type": "null"
                 }
+              ]
+            }
+          }
+        },
+        "output": {
+          "$ref": "#/$defs/outputName"
+        }
+      }
+    },
+    "joinPointsToPolygonsStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation",
+        "inputs",
+        "parameters",
+        "output"
+      ],
+      "properties": {
+        "operation": {
+          "const": "join_points_to_polygons"
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "points",
+            "polygons"
+          ],
+          "properties": {
+            "points": {
+              "$ref": "#/$defs/layerReference"
+            },
+            "polygons": {
+              "$ref": "#/$defs/layerReference"
+            }
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "polygon_id_field"
+          ],
+          "properties": {
+            "polygon_id_field": {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            "output_field": {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            "unmatched_value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "multiple_match": {
+              "type": "string",
+              "enum": [
+                "error",
+                "first"
               ]
             }
           }

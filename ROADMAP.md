@@ -36,7 +36,8 @@ provenance does not make private source code or data part of the implementation 
 - [x] CRS-safe clip API and bounded workflow operation with synthetic benchmark coverage
 - [x] deterministic data-free workflow planning with dependencies and resolved defaults
 - [x] CRS-safe nearest-feature matching with deterministic ties and synthetic benchmark coverage
-- [ ] spatial join and geometry-metric operators designed through public issues
+- [x] deterministic point-in-polygon spatial join with explicit ambiguity handling
+- [ ] geometry-metric operators designed through public issues
 - [ ] optional read-only database adapter specified from public interfaces and synthetic fixtures
 - [ ] reviewed external-operator boundary without dynamic workflow code loading
 - [ ] additional documentation examples for education and research replication

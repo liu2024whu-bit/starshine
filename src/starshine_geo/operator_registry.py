@@ -13,6 +13,7 @@ from .operators import (
     buffer_features,
     clip_features,
     dissolve_features,
+    join_points_to_polygons,
     nearest_features,
     reproject_features,
     summarize_points_within,
@@ -148,6 +149,22 @@ def _validate_optional_non_negative_number(value: Any) -> str | None:
     return None
 
 
+def _validate_json_scalar_or_null(value: Any) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, (dict, list)) or not isinstance(value, (str, int, float, bool)):
+        return "must be a finite JSON scalar or null"
+    if isinstance(value, float) and not math.isfinite(value):
+        return "must be a finite JSON scalar or null"
+    return None
+
+
+def _validate_multiple_match(value: Any) -> str | None:
+    if not isinstance(value, str) or value not in {"error", "first"}:
+        return "must be 'error' or 'first'"
+    return None
+
+
 def _validate_non_empty_string(value: Any) -> str | None:
     if not isinstance(value, str) or not value.strip():
         return "must be a non-empty string"
@@ -219,6 +236,12 @@ def _execute_clip(
 ) -> FeatureCollection:
     del parameters
     return clip_features(inputs["input"], inputs["mask"])
+
+
+def _execute_point_polygon_join(
+    inputs: dict[str, FeatureCollection], parameters: dict[str, Any]
+) -> FeatureCollection:
+    return join_points_to_polygons(inputs["points"], inputs["polygons"], **parameters)
 
 
 def _execute_nearest(
@@ -317,6 +340,61 @@ _OPERATOR_SPECS = (
         ),
         output_crs="polygons input layer",
         executor=_execute_summary,
+    ),
+    OperatorSpec(
+        name="join_points_to_polygons",
+        summary=(
+            "Attach one boundary-inclusive covering polygon identifier to every point feature."
+        ),
+        inputs=(
+            InputSpec(
+                "points",
+                "Point FeatureCollection whose properties and order are preserved.",
+            ),
+            InputSpec(
+                "polygons",
+                "Polygon or MultiPolygon FeatureCollection in an equivalent CRS.",
+            ),
+        ),
+        parameters=(
+            ParameterSpec(
+                "polygon_id_field",
+                "Polygon property containing a unique non-null JSON scalar identifier.",
+                {"type": "string", "minLength": 1, "pattern": "\\S"},
+                _validate_non_empty_string,
+                required=True,
+            ),
+            ParameterSpec(
+                "output_field",
+                "Output point property that receives the matched polygon identifier.",
+                {"type": "string", "minLength": 1, "pattern": "\\S"},
+                _validate_non_empty_string,
+                default="polygon_id",
+            ),
+            ParameterSpec(
+                "unmatched_value",
+                "JSON scalar or null written when no polygon covers a point.",
+                {
+                    "anyOf": [
+                        {"type": "string"},
+                        {"type": "number"},
+                        {"type": "boolean"},
+                        {"type": "null"},
+                    ]
+                },
+                _validate_json_scalar_or_null,
+                default=None,
+            ),
+            ParameterSpec(
+                "multiple_match",
+                "Policy for points covered by multiple polygons.",
+                {"type": "string", "enum": ["error", "first"]},
+                _validate_multiple_match,
+                default="error",
+            ),
+        ),
+        output_crs="points input layer; polygons must declare an equivalent CRS",
+        executor=_execute_point_polygon_join,
     ),
     OperatorSpec(
         name="nearest",

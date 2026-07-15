@@ -28,12 +28,14 @@ Runtime preflight additionally checks:
 - clip steps accept exactly the `input` and `mask` layer references and no parameters;
 - nearest steps require `source`, `candidates`, and a non-empty `candidate_id_field`; optional
   output fields and `max_distance` are validated before data access;
+- point-in-polygon join steps require `points`, `polygons`, and `polygon_id_field`; output fields,
+  unmatched values, and ambiguity policies are validated before data access;
 - the runtime registry and external Workflow Schema describe the same operator names, inputs, and
   parameters.
 
-Data-dependent checks, such as clip mask geometry types, nearest candidate identifiers, projected
-CRS equivalence, and source output-field conflicts, run after every input collection has been
-validated but before an operator result is returned.
+Data-dependent checks, such as clip mask geometry types, nearest candidate identifiers,
+point/polygon join geometry types and ambiguity, CRS equivalence, and output-field conflicts, run
+after every input collection has been validated but before an operator result is returned.
 
 ## Python diagnostics
 

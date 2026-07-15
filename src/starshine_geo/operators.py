@@ -31,20 +31,44 @@ def _required_declared_crs(
     return normalized, parse_crs(normalized)
 
 
-def _candidate_identifier_key(value: Any, *, index: int, field: str) -> tuple[str, Any]:
+def _json_scalar_key(
+    value: Any,
+    *,
+    index: int,
+    field: str,
+    entity: str,
+) -> tuple[str, Any]:
     if value is None or isinstance(value, (dict, list)):
         raise ValidationError(
-            f"candidate {index} property {field!r} must be a non-null JSON scalar"
+            f"{entity} {index} property {field!r} must be a non-null JSON scalar"
         )
     if isinstance(value, float) and not math.isfinite(value):
         raise ValidationError(
-            f"candidate {index} property {field!r} must be a finite JSON scalar"
+            f"{entity} {index} property {field!r} must be a finite JSON scalar"
         )
     if not isinstance(value, (str, int, float, bool)):
         raise ValidationError(
-            f"candidate {index} property {field!r} must be a JSON scalar"
+            f"{entity} {index} property {field!r} must be a JSON scalar"
         )
     return type(value).__name__, value
+
+
+def _candidate_identifier_key(value: Any, *, index: int, field: str) -> tuple[str, Any]:
+    return _json_scalar_key(
+        value,
+        index=index,
+        field=field,
+        entity="candidate",
+    )
+
+
+def _validate_json_scalar_or_null(value: Any, *, label: str) -> None:
+    if value is None:
+        return
+    if isinstance(value, (dict, list)) or not isinstance(value, (str, int, float, bool)):
+        raise ValidationError(f"{label} must be a finite JSON scalar or null")
+    if isinstance(value, float) and not math.isfinite(value):
+        raise ValidationError(f"{label} must be a finite JSON scalar or null")
 
 
 def buffer_features(
@@ -227,6 +251,104 @@ def nearest_features(
     return validate_feature_collection(make_collection(output, crs=source_crs_label))
 
 
+def join_points_to_polygons(
+    points: FeatureCollection,
+    polygons: FeatureCollection,
+    *,
+    polygon_id_field: str,
+    output_field: str = "polygon_id",
+    unmatched_value: Any = None,
+    multiple_match: str = "error",
+) -> FeatureCollection:
+    """Attach one covering polygon identifier to every point feature.
+
+    Polygon ``covers`` semantics include boundary points. Ambiguous multiple matches fail by
+    default; the explicit ``first`` policy chooses the first covering polygon in input order.
+    Unmatched points are retained with the configured JSON-scalar value.
+    """
+    field_values = {
+        "polygon_id_field": polygon_id_field,
+        "output_field": output_field,
+    }
+    for label, value in field_values.items():
+        if not isinstance(value, str) or not value.strip():
+            raise ValidationError(f"{label} must be a non-empty string")
+    if not isinstance(multiple_match, str) or multiple_match not in {"error", "first"}:
+        raise ValidationError("multiple_match must be 'error' or 'first'")
+    _validate_json_scalar_or_null(unmatched_value, label="unmatched_value")
+
+    validated_points = validate_feature_collection(points)
+    validated_polygons = validate_feature_collection(polygons)
+    points_crs_label, points_crs = _required_declared_crs(validated_points, label="points")
+    _, polygons_crs = _required_declared_crs(validated_polygons, label="polygons")
+    if not points_crs.equals(polygons_crs):
+        raise ValidationError("point join inputs must declare equivalent CRS values")
+
+    polygon_records: list[tuple[Any, Any]] = []
+    seen_identifiers: set[tuple[str, Any]] = set()
+    for index, (feature, geometry) in enumerate(iter_geometries(validated_polygons)):
+        if geometry.geom_type not in {"Polygon", "MultiPolygon"}:
+            raise ValidationError(
+                "point join polygons must contain Polygon or MultiPolygon geometry only"
+            )
+        properties = feature.get("properties") or {}
+        if polygon_id_field not in properties:
+            raise ValidationError(
+                f"polygon {index} is missing required property: {polygon_id_field}"
+            )
+        identifier = properties[polygon_id_field]
+        key = _json_scalar_key(
+            identifier,
+            index=index,
+            field=polygon_id_field,
+            entity="polygon",
+        )
+        if key in seen_identifiers:
+            raise ValidationError(f"duplicate polygon identifier: {identifier!r}")
+        seen_identifiers.add(key)
+        polygon_records.append((identifier, geometry))
+
+    point_records = list(iter_geometries(validated_points))
+    for index, (feature, geometry) in enumerate(point_records):
+        if not isinstance(geometry, Point):
+            raise ValidationError("point join source must contain Point geometry only")
+        properties = feature.get("properties") or {}
+        if output_field in properties:
+            raise ValidationError(
+                f"point feature {index} already contains output property: {output_field}"
+            )
+
+    output = []
+    for point_index, (feature, point) in enumerate(point_records):
+        matched_identifier: Any = unmatched_value
+        matched_count = 0
+        for polygon_index, (identifier, polygon) in enumerate(polygon_records):
+            try:
+                covered = polygon.covers(point)
+            except GEOSException as exc:
+                raise ValidationError(
+                    "point-in-polygon join failed for point feature "
+                    f"{point_index} and polygon {polygon_index}"
+                ) from exc
+            if not covered:
+                continue
+            matched_count += 1
+            if matched_count == 1:
+                matched_identifier = identifier
+                if multiple_match == "first":
+                    break
+            elif multiple_match == "error":
+                raise ValidationError(
+                    f"point feature {point_index} matches multiple polygons"
+                )
+
+        properties = dict(feature.get("properties") or {})
+        properties[output_field] = matched_identifier
+        output.append(make_feature(point, properties))
+
+    return validate_feature_collection(make_collection(output, crs=points_crs_label))
+
+
 def reproject_features(
     collection: FeatureCollection,
     *,
@@ -330,6 +452,7 @@ __all__ = [
     "buffer_features",
     "clip_features",
     "dissolve_features",
+    "join_points_to_polygons",
     "nearest_features",
     "reproject_features",
     "summarize_points_within",
