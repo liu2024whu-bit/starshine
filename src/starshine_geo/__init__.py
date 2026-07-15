@@ -5,6 +5,7 @@ from .errors import WorkflowDiagnostic, WorkflowValidationError
 from .geopackage import list_geopackage_layers, read_geopackage, write_geopackage
 from .inspection import inspect_feature_collection
 from .manifest import build_manifest, digest_json
+from .metrics import calculate_geometry_metrics
 from .operator_registry import OPERATOR_REGISTRY, operator_catalog
 from .planning import WORKFLOW_PLAN_VERSION, plan_workflow
 from .operators import (
@@ -27,6 +28,7 @@ __all__ = [
     "__version__",
     "buffer_features",
     "clip_features",
+    "calculate_geometry_metrics",
     "build_manifest",
     "digest_json",
     "dissolve_features",

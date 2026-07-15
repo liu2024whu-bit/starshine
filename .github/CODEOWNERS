@@ -23,3 +23,6 @@
 /examples/nearest.workflow.json @liu2024whu-bit
 /docs/SPATIAL_JOIN.md @liu2024whu-bit
 /examples/spatial-join.workflow.json @liu2024whu-bit
+/src/starshine_geo/metrics.py @liu2024whu-bit
+/docs/GEOMETRY_METRICS.md @liu2024whu-bit
+/examples/geometry-metrics.workflow.json @liu2024whu-bit

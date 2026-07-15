@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "steps": [
+    {
+      "operation": "geometry_metrics",
+      "inputs": {
+        "input": "features"
+      },
+      "parameters": {
+        "area_field": "area_m2",
+        "length_field": "length_m"
+      },
+      "output": "measured"
+    }
+  ]
+}

@@ -95,6 +95,9 @@ cannot prove data-dependent conditions such as:
 - whether point-in-polygon inputs use supported geometry types, whether polygon identifiers are
   unique, or whether a point will match zero, one, or multiple polygons.
 
+- whether geometry-metric output fields collide with loaded properties or the loaded CRS is
+  projected.
+
 Those checks remain part of input validation and operator execution.
 
 For a `join_points_to_polygons` step, the planner resolves `output_field` to `polygon_id`,

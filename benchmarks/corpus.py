@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-CORPUS_VERSION = 4
+CORPUS_VERSION = 5
 CRS = "EPSG:3857"
 JsonObject = dict[str, Any]
 FeatureCollection = dict[str, Any]
@@ -164,6 +164,37 @@ def _dissolve_case() -> BenchmarkCase:
             "crs": CRS,
             "feature_count": 4,
             "bands": ["band-0", "band-1", "band-2", "band-3"],
+        },
+    )
+
+
+def _metrics_case() -> BenchmarkCase:
+    polygons = [
+        _square(column * 12.0, row * 12.0, 10.0, cell_id=f"metric-{row}-{column}")
+        for row in range(5)
+        for column in range(5)
+    ]
+    return BenchmarkCase(
+        name="geometry-metrics-grid-25",
+        description="Calculate projected area and boundary length for 25 synthetic squares.",
+        workflow={
+            "version": 1,
+            "steps": [
+                {
+                    "operation": "geometry_metrics",
+                    "inputs": {"input": "cells"},
+                    "parameters": {"area_field": "area_m2", "length_field": "perimeter_m"},
+                    "output": "measured_cells",
+                }
+            ],
+        },
+        layers={"cells": _collection(polygons)},
+        output_layer="measured_cells",
+        expected_signature={
+            "crs": CRS,
+            "feature_count": 25,
+            "areas": [100.0] * 25,
+            "lengths": [40.0] * 25,
         },
     )
 
@@ -429,6 +460,7 @@ def build_cases() -> tuple[BenchmarkCase, ...]:
     return (
         _buffer_case(),
         _dissolve_case(),
+        _metrics_case(),
         _summary_case(),
         _multi_step_case(),
         _clip_case(),

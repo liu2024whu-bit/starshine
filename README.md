@@ -24,8 +24,8 @@ The public 0.3 line provides:
 
 - validated GeoJSON FeatureCollection input;
 - projected-CRS checks for distance-based work;
-- buffer, dissolve, point-within-polygon summary and join, explicit reprojection, CRS-safe
-  clipping, and deterministic nearest-feature matching;
+- buffer, dissolve, point-within-polygon summary and join, projected geometry metrics, explicit
+  reprojection, CRS-safe clipping, and deterministic nearest-feature matching;
 - a versioned JSON workflow format and operator-specific machine-readable schema;
 - structured preflight diagnostics for structure, inputs, parameters, and CRS rules;
 - a declarative operator registry and machine-readable catalog with no dynamic `eval`;
@@ -269,6 +269,20 @@ starshine run examples/nearest.workflow.json \
 Equal-distance ties use candidate input order. Empty candidate collections and matches beyond an
 optional inclusive distance limit produce explicit `null` fields instead of dropping source
 features. See the [nearest-feature contract](docs/NEAREST.md).
+
+## Calculate projected geometry metrics
+
+The `geometry_metrics` operation adds area and length fields without changing feature geometry:
+
+```bash
+starshine run examples/geometry-metrics.workflow.json \
+  --layer features=examples/data/metric-features.geojson \
+  --output-layer measured \
+  --output examples/output/measured-features.geojson
+```
+
+The input must declare a projected CRS, and output fields must not collide with source properties.
+See the [geometry metrics contract](docs/GEOMETRY_METRICS.md).
 
 ## Join points to polygons with explicit ambiguity handling
 

@@ -37,7 +37,8 @@ provenance does not make private source code or data part of the implementation 
 - [x] deterministic data-free workflow planning with dependencies and resolved defaults
 - [x] CRS-safe nearest-feature matching with deterministic ties and synthetic benchmark coverage
 - [x] deterministic point-in-polygon spatial join with explicit ambiguity handling
-- [ ] geometry-metric operators designed through public issues
+- [x] projected area and length metrics with explicit CRS and field-collision rules
+- [ ] additional geometry-derived operators designed through public issues
 - [ ] optional read-only database adapter specified from public interfaces and synthetic fixtures
 - [ ] reviewed external-operator boundary without dynamic workflow code loading
 - [ ] additional documentation examples for education and research replication

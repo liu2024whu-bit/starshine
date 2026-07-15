@@ -52,6 +52,7 @@ def _assert_public_imports() -> None:
         "buffer_features",
         "build_manifest",
         "clip_features",
+        "calculate_geometry_metrics",
         "digest_json",
         "dissolve_features",
         "join_points_to_polygons",
@@ -144,7 +145,8 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
     direct_catalog = starshine_geo.operator_catalog()
     catalog_names = [item["name"] for item in direct_catalog["operators"]]
     missing_operators = sorted(
-        {"clip", "join_points_to_polygons", "nearest", "reproject"} - set(catalog_names)
+        {"clip", "geometry_metrics", "join_points_to_polygons", "nearest", "reproject"}
+        - set(catalog_names)
     )
     if missing_operators:
         raise RuntimeError(
@@ -188,6 +190,18 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
         "facility-east",
     ]:
         raise RuntimeError(f"unexpected nearest matches: {direct_nearest}")
+
+
+    direct_metrics = starshine_geo.calculate_geometry_metrics(
+        zones,
+        area_field="area_m2",
+        length_field="perimeter_m",
+    )
+    metric_properties = [feature["properties"] for feature in direct_metrics["features"]]
+    if [item["area_m2"] for item in metric_properties] != [100.0, 100.0]:
+        raise RuntimeError(f"unexpected geometry areas: {direct_metrics}")
+    if [item["perimeter_m"] for item in metric_properties] != [40.0, 40.0]:
+        raise RuntimeError(f"unexpected geometry lengths: {direct_metrics}")
 
 
     direct_joined = starshine_geo.join_points_to_polygons(
@@ -258,6 +272,8 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
         nearest_output_path = root / "nearest-sites.geojson"
         join_workflow_path = root / "join-workflow.json"
         join_output_path = root / "joined-sites.geojson"
+        metrics_workflow_path = root / "metrics-workflow.json"
+        metrics_output_path = root / "measured-zones.geojson"
 
         _write_json(workflow_path, workflow)
         _write_json(zones_path, zones)
@@ -277,6 +293,23 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
                             "max_distance": 10,
                         },
                         "output": "nearest_sites",
+                    }
+                ],
+            },
+        )
+        _write_json(
+            metrics_workflow_path,
+            {
+                "version": 1,
+                "steps": [
+                    {
+                        "operation": "geometry_metrics",
+                        "inputs": {"input": "zones"},
+                        "parameters": {
+                            "area_field": "area_m2",
+                            "length_field": "perimeter_m",
+                        },
+                        "output": "measured_zones",
                     }
                 ],
             },
@@ -493,6 +526,25 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
         cli_nearest = json.loads(nearest_output_path.read_text(encoding="utf-8"))
         if starshine_geo.digest_json(cli_nearest) != starshine_geo.digest_json(direct_nearest):
             raise RuntimeError("CLI and direct nearest results differ")
+
+        _run(
+            [
+                starshine_command,
+                "run",
+                str(metrics_workflow_path),
+                "--layer",
+                f"zones={zones_path}",
+                "--output-layer",
+                "measured_zones",
+                "--output",
+                str(metrics_output_path),
+            ]
+        )
+        cli_metrics = json.loads(metrics_output_path.read_text(encoding="utf-8"))
+        if starshine_geo.digest_json(cli_metrics) != starshine_geo.digest_json(
+            direct_metrics
+        ):
+            raise RuntimeError("CLI and direct geometry-metric results differ")
 
         _run(
             [

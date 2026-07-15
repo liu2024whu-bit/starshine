@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "steps": [
+    {
+      "operation": "geometry_metrics",
+      "inputs": {
+        "input": "features"
+      },
+      "parameters": {
+        "units": "meters"
+      },
+      "output": "measured"
+    }
+  ]
+}

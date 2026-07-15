@@ -20,6 +20,7 @@ def test_public_benchmark_corpus_is_deterministic():
     assert [case.name for case in first] == [
         "buffer-grid-64",
         "dissolve-bands-80",
+        "geometry-metrics-grid-25",
         "summarize-zones-16-sites-64",
         "multi-step-buffer-dissolve-36",
         "clip-grid-25",
@@ -29,8 +30,8 @@ def test_public_benchmark_corpus_is_deterministic():
     assert digest_json([case.definition() for case in first]) == digest_json(
         [case.definition() for case in second]
     )
-    assert [case.input_feature_count for case in first] == [64, 80, 80, 36, 26, 80, 45]
-    assert [case.operation_count for case in first] == [1, 1, 1, 2, 1, 1, 1]
+    assert [case.input_feature_count for case in first] == [64, 80, 25, 80, 36, 26, 80, 45]
+    assert [case.operation_count for case in first] == [1, 1, 1, 1, 2, 1, 1, 1]
 
 
 def test_benchmark_correctness_checks_are_separate_from_timing():
@@ -52,7 +53,7 @@ def test_benchmark_report_matches_public_schema_with_deterministic_clock():
 
     cases = build_cases()
     assert report["repeat_count"] == 2
-    assert [case["output_feature_count"] for case in report["cases"]] == [64, 4, 16, 1, 12, 64, 36]
+    assert [case["output_feature_count"] for case in report["cases"]] == [64, 4, 25, 16, 1, 12, 64, 36]
     assert [case["semantic_digest"] for case in report["cases"]] == [
         digest_json(case.expected_signature) for case in cases
     ]

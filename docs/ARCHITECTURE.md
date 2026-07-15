@@ -7,6 +7,7 @@ Starshine uses a deliberately small modular architecture.
 - `crs.py` centralizes CRS parsing, projected-coordinate requirements, and transforms.
 - `operators.py` implements independently testable transformation, overlay, attribution, summary,
   and proximity operations.
+- `metrics.py` keeps projected geometry measurement logic isolated from topology-changing operators.
 - `operator_registry.py` binds reviewed executors to public input, parameter, default, and sensitivity contracts.
 - `workflow.py` maps versioned JSON steps to an explicit operator registry.
 - `planning.py` produces deterministic data-free dependency and layer-provenance reports.
