@@ -1,32 +1,13 @@
 name: Apply geometry metrics patch
 
 on:
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  apply:
-    if: github.actor != 'github-actions[bot]'
+  paused:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: feature/projected-geometry-metrics
-      - name: Record patch checksums
-        shell: bash
-        run: |
-          set -euo pipefail
-          sha256sum .starshine-metrics-patch/part-* > .starshine-metrics-patch/diagnostics.txt
-          cat .starshine-metrics-patch/part-* > /tmp/metrics.b64
-          sha256sum /tmp/metrics.b64 >> .starshine-metrics-patch/diagnostics.txt
-          wc -c /tmp/metrics.b64 >> .starshine-metrics-patch/diagnostics.txt
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .starshine-metrics-patch/diagnostics.txt
-          git commit -m "Record geometry metrics patch checksums"
-          git push origin "HEAD:feature/projected-geometry-metrics"
+      - run: echo "Patch application is temporarily paused while transfer checksums are repaired."
