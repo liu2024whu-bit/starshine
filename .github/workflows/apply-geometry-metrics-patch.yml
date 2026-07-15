@@ -17,18 +17,16 @@ jobs:
         with:
           fetch-depth: 0
           ref: feature/projected-geometry-metrics
-      - name: Apply checksum-verified bundle
+      - name: Record patch checksums
         shell: bash
         run: |
           set -euo pipefail
+          sha256sum .starshine-metrics-patch/part-* > .starshine-metrics-patch/diagnostics.txt
           cat .starshine-metrics-patch/part-* > /tmp/metrics.b64
-          echo "500bdcc4a049769bdfaaadcca9571e47228089a8641eb261c7c9eb30e4803fab  /tmp/metrics.b64" | sha256sum -c -
-          base64 --decode /tmp/metrics.b64 > /tmp/metrics.tar.gz
-          echo "e03b7ce3728da4c48d5d89259a9d31fbbb4c347f789c43b3e05100c5071c067a  /tmp/metrics.tar.gz" | sha256sum -c -
-          tar -xzf /tmp/metrics.tar.gz -C .
-          rm -rf .starshine-metrics-patch
+          sha256sum /tmp/metrics.b64 >> .starshine-metrics-patch/diagnostics.txt
+          wc -c /tmp/metrics.b64 >> .starshine-metrics-patch/diagnostics.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "Add focused projected geometry metrics"
+          git add .starshine-metrics-patch/diagnostics.txt
+          git commit -m "Record geometry metrics patch checksums"
           git push origin "HEAD:feature/projected-geometry-metrics"
