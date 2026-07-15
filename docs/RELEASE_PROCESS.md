@@ -57,7 +57,8 @@ the downloaded wheel and run `scripts/smoke_installed_wheel.py`, which verifies:
 - top-level public callables are available;
 - the installed operator catalog includes the reviewed registry and matches the CLI output;
 - the installed workflow planner matches the CLI and reports dependencies without loading data;
-- reprojection and nearest-feature matching work through both the installed API and workflow CLI;
+- reprojection, nearest-feature matching, and point-in-polygon joining work through both the
+  installed API and workflow CLI;
 - the installed inspection API and `starshine inspect` command produce matching reports;
 - valid and invalid workflow diagnostics work through the installed console command;
 - a self-created point-within-polygon workflow runs through both the Python API and CLI;

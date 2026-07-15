@@ -1,0 +1,58 @@
+{
+  "type": "FeatureCollection",
+  "starshine:crs": "EPSG:3857",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "point_id": "west-interior"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          2.0,
+          5.0
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "point_id": "shared-boundary"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          10.0,
+          5.0
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "point_id": "east-interior"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          18.0,
+          5.0
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "point_id": "outside"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          30.0,
+          5.0
+        ]
+      }
+    }
+  ]
+}

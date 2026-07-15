@@ -91,9 +91,15 @@ cannot prove data-dependent conditions such as:
 - whether a polygon identifier field exists or is unique;
 - whether an overlay will produce an empty result;
 - whether nearest candidates have unique identifiers, whether output fields already exist, or
-  what the actual projected distances will be.
+  what the actual projected distances will be;
+- whether point-in-polygon inputs use supported geometry types, whether polygon identifiers are
+  unique, or whether a point will match zero, one, or multiple polygons.
 
 Those checks remain part of input validation and operator execution.
+
+For a `join_points_to_polygons` step, the planner resolves `output_field` to `polygon_id`,
+`unmatched_value` to `null`, and `multiple_match` to `error` unless supplied. It cannot decide actual
+matches without loading geometries.
 
 For a `nearest` step, the planner resolves `distance_field` to `nearest_distance`,
 `nearest_id_field` to `nearest_id`, and `max_distance` to `null` unless the workflow supplies other
