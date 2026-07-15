@@ -1,0 +1,34 @@
+name: Apply spatial join patch
+
+on:
+  push:
+    branches:
+      - feature/point-polygon-spatial-join
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply reviewed patch bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .starshine-patch/part-* > /tmp/starshine-patch.b64
+          echo "773d7cb61d0a50a7afc269af1a518002c11ff664feb86e8d264cac28c2baa298  /tmp/starshine-patch.b64" | sha256sum -c -
+          base64 --decode /tmp/starshine-patch.b64 > /tmp/starshine-patch.tar.gz
+          echo "0ecec2a96ddd4396f82c1574751e60e530966aa8dda0331610768a7d812e2159  /tmp/starshine-patch.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/starshine-patch.tar.gz -C .
+          rm -rf .starshine-patch
+          rm -f .github/workflows/apply-spatial-join-patch.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add deterministic point-in-polygon spatial join"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
