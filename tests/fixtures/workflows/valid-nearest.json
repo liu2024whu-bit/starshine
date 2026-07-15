@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "steps": [
+    {
+      "operation": "nearest",
+      "inputs": {"source": "sources", "candidates": "candidates"},
+      "parameters": {"candidate_id_field": "candidate_id", "max_distance": 500},
+      "output": "nearest_result"
+    }
+  ]
+}

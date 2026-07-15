@@ -1,0 +1,16 @@
+{
+  "type": "FeatureCollection",
+  "starshine:crs": "EPSG:3857",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"facility_id": "facility-west"},
+      "geometry": {"type": "Point", "coordinates": [-5.0, 0.0]}
+    },
+    {
+      "type": "Feature",
+      "properties": {"facility_id": "facility-east"},
+      "geometry": {"type": "Point", "coordinates": [30.0, 0.0]}
+    }
+  ]
+}

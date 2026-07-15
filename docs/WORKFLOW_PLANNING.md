@@ -89,9 +89,15 @@ cannot prove data-dependent conditions such as:
 - whether two loaded CRS values are equivalent;
 - whether a clip mask contains only Polygon or MultiPolygon geometry;
 - whether a polygon identifier field exists or is unique;
-- whether an overlay will produce an empty result.
+- whether an overlay will produce an empty result;
+- whether nearest candidates have unique identifiers, whether output fields already exist, or
+  what the actual projected distances will be.
 
 Those checks remain part of input validation and operator execution.
+
+For a `nearest` step, the planner resolves `distance_field` to `nearest_distance`,
+`nearest_id_field` to `nearest_id`, and `max_distance` to `null` unless the workflow supplies other
+values. These defaults are the same values used by execution.
 
 The plan contains resolved parameter values. Parameters marked `sensitive` in the reviewed registry
 are replaced with `<redacted>` before they enter a public plan or its digest. Current built-in

@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "steps": [
+    {
+      "operation": "nearest",
+      "inputs": {"source": "sources", "candidates": "candidates"},
+      "parameters": {},
+      "output": "nearest_result"
+    }
+  ]
+}

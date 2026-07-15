@@ -49,6 +49,18 @@ def semantic_signature(case: BenchmarkCase, output: dict[str, Any]) -> dict[str,
             "cell_ids": [feature["properties"]["cell_id"] for feature in features],
             "bbox": inspection["bbox"],
         }
+    if case.name == "nearest-grid-36-candidates-9":
+        return {
+            **base,
+            "matches": [
+                [
+                    feature["properties"]["source_id"],
+                    feature["properties"]["nearest_id"],
+                    round(float(feature["properties"]["nearest_distance"]), 6),
+                ]
+                for feature in features
+            ],
+        }
     raise RuntimeError(f"no semantic signature is defined for benchmark case: {case.name}")
 
 

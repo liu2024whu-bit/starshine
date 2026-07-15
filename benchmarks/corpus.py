@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-CORPUS_VERSION = 2
+CORPUS_VERSION = 3
 CRS = "EPSG:3857"
 JsonObject = dict[str, Any]
 FeatureCollection = dict[str, Any]
@@ -301,6 +301,75 @@ def _clip_case() -> BenchmarkCase:
     )
 
 
+def _nearest_case() -> BenchmarkCase:
+    sources = [
+        _point(
+            column * 10.0,
+            row * 10.0,
+            source_id=f"source-{row}-{column}",
+        )
+        for row in range(6)
+        for column in range(6)
+    ]
+    candidates = [
+        _point(
+            column * 20.0,
+            row * 20.0,
+            candidate_id=f"candidate-{row}-{column}",
+        )
+        for row in range(3)
+        for column in range(3)
+    ]
+    candidate_positions = [
+        (
+            feature["properties"]["candidate_id"],
+            float(feature["geometry"]["coordinates"][0]),
+            float(feature["geometry"]["coordinates"][1]),
+        )
+        for feature in candidates
+    ]
+    expected_matches = []
+    for feature in sources:
+        source_id = feature["properties"]["source_id"]
+        source_x, source_y = feature["geometry"]["coordinates"]
+        nearest_id = None
+        nearest_distance = None
+        for candidate_id, candidate_x, candidate_y in candidate_positions:
+            distance = ((source_x - candidate_x) ** 2 + (source_y - candidate_y) ** 2) ** 0.5
+            if nearest_distance is None or distance < nearest_distance:
+                nearest_id = candidate_id
+                nearest_distance = distance
+        expected_matches.append([source_id, nearest_id, round(float(nearest_distance), 6)])
+
+    return BenchmarkCase(
+        name="nearest-grid-36-candidates-9",
+        description=(
+            "Match a 6 by 6 projected source grid to a 3 by 3 candidate grid with stable ties."
+        ),
+        workflow={
+            "version": 1,
+            "steps": [
+                {
+                    "operation": "nearest",
+                    "inputs": {"source": "sources", "candidates": "candidates"},
+                    "parameters": {"candidate_id_field": "candidate_id"},
+                    "output": "nearest_matches",
+                }
+            ],
+        },
+        layers={
+            "sources": _collection(sources),
+            "candidates": _collection(candidates),
+        },
+        output_layer="nearest_matches",
+        expected_signature={
+            "crs": CRS,
+            "feature_count": 36,
+            "matches": expected_matches,
+        },
+    )
+
+
 def build_cases() -> tuple[BenchmarkCase, ...]:
     """Create the complete deterministic benchmark corpus from scratch."""
     return (
@@ -309,4 +378,5 @@ def build_cases() -> tuple[BenchmarkCase, ...]:
         _summary_case(),
         _multi_step_case(),
         _clip_case(),
+        _nearest_case(),
     )

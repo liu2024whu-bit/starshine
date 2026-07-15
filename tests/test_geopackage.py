@@ -147,5 +147,5 @@ def test_optional_dependency_error_is_actionable(monkeypatch):
 
     monkeypatch.setattr(importlib, "import_module", missing_dependency)
 
-    with pytest.raises(ValidationError, match="starshine-geo\[geopackage\]"):
+    with pytest.raises(ValidationError, match=r"starshine-geo\[geopackage\]"):
         _require_optional_backend()

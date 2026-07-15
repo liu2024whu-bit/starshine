@@ -1,0 +1,21 @@
+{
+  "type": "FeatureCollection",
+  "starshine:crs": "EPSG:3857",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"source_id": "source-west"},
+      "geometry": {"type": "Point", "coordinates": [0.0, 0.0]}
+    },
+    {
+      "type": "Feature",
+      "properties": {"source_id": "source-east"},
+      "geometry": {"type": "Point", "coordinates": [25.0, 0.0]}
+    },
+    {
+      "type": "Feature",
+      "properties": {"source_id": "source-unmatched"},
+      "geometry": {"type": "Point", "coordinates": [100.0, 100.0]}
+    }
+  ]
+}

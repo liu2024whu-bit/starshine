@@ -110,6 +110,33 @@ The operator intentionally has no repair or implicit-reprojection parameter. Use
 repair outside the workflow and the explicit `reproject` step when coordinate systems differ. See
 [CRS-safe clipping](CLIP.md).
 
+## Nearest-feature operator
+
+`nearest` preserves each source feature and attaches a candidate identifier plus projected distance.
+Both collections must declare equivalent projected CRS values. Candidate identifiers must be unique,
+non-null JSON scalar values, and equal-distance ties are resolved by candidate input order.
+
+```json
+{
+  "version": 1,
+  "steps": [
+    {
+      "operation": "nearest",
+      "inputs": {"source": "sources", "candidates": "facilities"},
+      "parameters": {
+        "candidate_id_field": "facility_id",
+        "max_distance": 5000
+      },
+      "output": "nearest_facilities"
+    }
+  ]
+}
+```
+
+The defaults are `nearest_id`, `nearest_distance`, and no distance limit. Empty candidates or
+out-of-range matches produce `null` values without removing source features. The operator performs no
+implicit reprojection or geometry repair. See [CRS-safe nearest-feature matching](NEAREST.md).
+
 ## Extension contract
 
 A new bounded operator should arrive through a public issue and include, in one reviewed change:

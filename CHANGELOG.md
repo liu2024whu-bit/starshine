@@ -14,7 +14,11 @@ All notable public changes are documented here.
 - a deterministic `plan_workflow()` API and `starshine plan` command with schema-checked dependency,
   layer-provenance, terminal-output, resolved-default, and digest reporting;
 - registry-level sensitive-parameter annotations so future plan reports can redact values before
-  serialization and hashing.
+  serialization and hashing;
+- a CRS-safe `nearest_features()` API and bounded `nearest` workflow operation with deterministic
+  tie-breaking, optional distance limits, explicit no-match fields, planner/catalog integration,
+  synthetic examples, installed-wheel coverage, and a sixth public benchmark case;
+- benchmark corpus version 3, identifying reports that include nearest-feature matching.
 
 ## [0.3.0] - 2026-07-14
 

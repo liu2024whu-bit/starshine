@@ -19,3 +19,5 @@
 /src/starshine_geo/planning.py @liu2024whu-bit
 /schemas/workflow-plan-v1.schema.json @liu2024whu-bit
 /docs/WORKFLOW_PLANNING.md @liu2024whu-bit
+/docs/NEAREST.md @liu2024whu-bit
+/examples/nearest.workflow.json @liu2024whu-bit

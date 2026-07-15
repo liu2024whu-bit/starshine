@@ -54,6 +54,7 @@ def _assert_public_imports() -> None:
         "clip_features",
         "digest_json",
         "dissolve_features",
+        "nearest_features",
         "inspect_feature_collection",
         "operator_catalog",
         "plan_workflow",
@@ -141,7 +142,7 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
 
     direct_catalog = starshine_geo.operator_catalog()
     catalog_names = [item["name"] for item in direct_catalog["operators"]]
-    missing_operators = sorted({"clip", "reproject"} - set(catalog_names))
+    missing_operators = sorted({"clip", "nearest", "reproject"} - set(catalog_names))
     if missing_operators:
         raise RuntimeError(
             f"installed operator catalog is missing operators {missing_operators}: {catalog_names}"
@@ -154,6 +155,36 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
         raise RuntimeError(f"unexpected unused workflow-plan layers: {direct_plan}")
     if direct_plan.get("terminal_layers") != ["summary"]:
         raise RuntimeError(f"unexpected workflow-plan terminal layers: {direct_plan}")
+
+    nearest_candidates = {
+        "type": "FeatureCollection",
+        "starshine:crs": "EPSG:3857",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {"facility_id": "facility-west"},
+                "geometry": {"type": "Point", "coordinates": [0, 0]},
+            },
+            {
+                "type": "Feature",
+                "properties": {"facility_id": "facility-east"},
+                "geometry": {"type": "Point", "coordinates": [20, 0]},
+            },
+        ],
+    }
+    direct_nearest = starshine_geo.nearest_features(
+        sites,
+        nearest_candidates,
+        candidate_id_field="facility_id",
+        max_distance=10,
+    )
+    nearest_properties = [feature["properties"] for feature in direct_nearest["features"]]
+    if [item["nearest_id"] for item in nearest_properties] != [
+        "facility-west",
+        None,
+        "facility-east",
+    ]:
+        raise RuntimeError(f"unexpected nearest matches: {direct_nearest}")
 
     direct_reprojected = starshine_geo.reproject_features(sites, target_crs="EPSG:4326")
     if direct_reprojected.get("starshine:crs") != "EPSG:4326":
@@ -208,11 +239,32 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
         clip_mask_path = root / "clip-mask.geojson"
         clip_workflow_path = root / "clip-workflow.json"
         clip_output_path = root / "clipped-zones.geojson"
+        nearest_candidates_path = root / "nearest-candidates.geojson"
+        nearest_workflow_path = root / "nearest-workflow.json"
+        nearest_output_path = root / "nearest-sites.geojson"
 
         _write_json(workflow_path, workflow)
         _write_json(zones_path, zones)
         _write_json(sites_path, sites)
         _write_json(clip_mask_path, clip_mask)
+        _write_json(nearest_candidates_path, nearest_candidates)
+        _write_json(
+            nearest_workflow_path,
+            {
+                "version": 1,
+                "steps": [
+                    {
+                        "operation": "nearest",
+                        "inputs": {"source": "sites", "candidates": "facilities"},
+                        "parameters": {
+                            "candidate_id_field": "facility_id",
+                            "max_distance": 10,
+                        },
+                        "output": "nearest_sites",
+                    }
+                ],
+            },
+        )
         _write_json(
             clip_workflow_path,
             {
@@ -389,6 +441,25 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
         cli_clipped = json.loads(clip_output_path.read_text(encoding="utf-8"))
         if starshine_geo.digest_json(cli_clipped) != starshine_geo.digest_json(direct_clipped):
             raise RuntimeError("CLI and direct clip results differ")
+
+        _run(
+            [
+                starshine_command,
+                "run",
+                str(nearest_workflow_path),
+                "--layer",
+                f"sites={sites_path}",
+                "--layer",
+                f"facilities={nearest_candidates_path}",
+                "--output-layer",
+                "nearest_sites",
+                "--output",
+                str(nearest_output_path),
+            ]
+        )
+        cli_nearest = json.loads(nearest_output_path.read_text(encoding="utf-8"))
+        if starshine_geo.digest_json(cli_nearest) != starshine_geo.digest_json(direct_nearest):
+            raise RuntimeError("CLI and direct nearest results differ")
 
         _run(
             [
