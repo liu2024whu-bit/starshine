@@ -1,0 +1,31 @@
+name: Apply workflow graph patch
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: feature/workflow-graph-export
+      - name: Apply checksum-verified graph bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "40e8d2d8fd625a2b8febf9bff51a6d654dd285b74165882ec8c841be3ea3c5ce  .starshine-graph-patch/bundle.tar.gz" | sha256sum -c -
+          tar -xzf .starshine-graph-patch/bundle.tar.gz -C .
+          rm -rf .starshine-graph-patch
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add deterministic workflow graph export"
+          git push origin "HEAD:feature/workflow-graph-export"
