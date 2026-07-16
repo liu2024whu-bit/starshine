@@ -41,6 +41,7 @@ provenance does not make private source code or data part of the implementation 
 - [ ] additional geometry-derived operators designed through public issues
 - [ ] optional read-only database adapter specified from public interfaces and synthetic fixtures
 - [ ] reviewed external-operator boundary without dynamic workflow code loading
+- [x] deterministic Workflow Graph JSON and Mermaid export derived from the canonical planner
 - [ ] additional documentation examples for education and research replication
 
 The public repository will remain intentionally focused. Features enter Starshine only after an

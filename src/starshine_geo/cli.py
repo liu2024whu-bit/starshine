@@ -7,6 +7,7 @@ from pathlib import Path
 
 from ._version import __version__
 from .errors import StarshineError, WorkflowValidationError
+from .graph import build_workflow_graph, render_workflow_mermaid
 from .inspection import inspect_feature_collection
 from .io import read_json, write_json
 from .manifest import build_manifest
@@ -99,6 +100,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="Optionally write the workflow plan instead of printing it",
     )
     _add_diagnostic_format(plan_parser)
+
+    graph_parser = subparsers.add_parser(
+        "graph",
+        help="Export a validated workflow as JSON graph data or Mermaid",
+    )
+    graph_parser.add_argument("workflow", type=Path)
+    graph_parser.add_argument(
+        "--layer-name",
+        action="append",
+        default=[],
+        metavar="NAME",
+        help="Declare an available external layer name; repeat for multiple layers",
+    )
+    graph_parser.add_argument("--format", choices=("json", "mermaid"), default="json")
+    graph_parser.add_argument("--output", type=Path)
+    _add_diagnostic_format(graph_parser)
     return parser
 
 
@@ -192,6 +209,25 @@ def _plan_command(args: argparse.Namespace) -> int:
     return 0
 
 
+
+def _graph_command(args: argparse.Namespace) -> int:
+    if args.output is not None and args.output.resolve() == args.workflow.resolve():
+        raise StarshineError("workflow graph output must not overwrite the workflow file")
+    workflow = read_json(args.workflow)
+    graph = build_workflow_graph(workflow, _parse_layer_names(args.layer_name))
+    rendered = (
+        json.dumps(graph, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+        if args.format == "json"
+        else render_workflow_mermaid(graph)
+    )
+    if args.output is None:
+        print(rendered, end="")
+    else:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(rendered, encoding="utf-8")
+        print(args.output)
+    return 0
+
 def _run_command(args: argparse.Namespace) -> int:
     workflow = read_json(args.workflow)
     layers = _parse_layers(args.layer)
@@ -223,6 +259,8 @@ def main(argv: list[str] | None = None) -> int:
             return _operators_command(args)
         if args.command == "plan":
             return _plan_command(args)
+        if args.command == "graph":
+            return _graph_command(args)
         return _run_command(args)
     except StarshineError as exc:
         _print_error(exc, getattr(args, "diagnostic_format", "text"))

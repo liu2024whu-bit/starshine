@@ -31,6 +31,7 @@ python -m twine check dist/*
 python scripts/check_release_artifacts.py dist
 starshine operators --output operators.json
 starshine plan examples/plan.workflow.json --layer-name source --layer-name mask
+starshine graph examples/plan.workflow.json --layer-name source --layer-name mask --format mermaid
 ```
 
 The release-readiness check verifies that package metadata, citation metadata, the dated
@@ -56,7 +57,7 @@ the downloaded wheel and run `scripts/smoke_installed_wheel.py`, which verifies:
 - `starshine --version` matches installed package metadata;
 - top-level public callables are available;
 - the installed operator catalog includes the reviewed registry and matches the CLI output;
-- the installed workflow planner matches the CLI and reports dependencies without loading data;
+- the installed workflow planner and graph exporter match their CLI forms without loading data;
 - reprojection, projected geometry metrics, nearest-feature matching, and point-in-polygon joining
   work through both the installed API and workflow CLI;
 - the installed inspection API and `starshine inspect` command produce matching reports;

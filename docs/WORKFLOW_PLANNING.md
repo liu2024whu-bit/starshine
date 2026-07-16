@@ -116,3 +116,8 @@ future adapters.
 A plan is not an execution manifest. It describes intended structure before data is loaded; the
 optional reproducibility manifest records the workflow and content digests after a selected result
 has been produced.
+
+
+## Graph export
+
+`build_workflow_graph()` and `starshine graph` consume the canonical plan rather than recalculating dependencies. They expose a stable bipartite layer/step model and deterministic Mermaid output. See `docs/WORKFLOW_GRAPH.md`.

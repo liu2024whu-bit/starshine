@@ -106,6 +106,21 @@ step dependencies, resolved parameter sources, terminal outputs, and declared ou
 See [workflow planning](docs/WORKFLOW_PLANNING.md) and the
 [workflow plan schema](schemas/workflow-plan-v1.schema.json).
 
+
+## Export a workflow graph
+
+Render the validated data flow without loading feature data:
+
+```bash
+starshine graph examples/plan.workflow.json \
+  --layer-name source \
+  --layer-name mask \
+  --format mermaid
+```
+
+The JSON graph model and Mermaid renderer share the canonical planner, so dependencies and layer
+provenance cannot drift into a second ruleset. See [workflow graph export](docs/WORKFLOW_GRAPH.md).
+
 ## Inspect a GeoJSON collection without running a workflow
 
 The inspection command validates one `FeatureCollection` and reports structure without copying

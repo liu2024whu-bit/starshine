@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/liu2024whu-bit/starshine/schemas/workflow-graph-v1.schema.json",
+  "title": "Starshine Geo workflow graph version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "workflow_version", "workflow_digest", "plan_digest", "graph_digest", "node_count", "edge_count", "nodes", "edges"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "workflow_version": {"const": 1},
+    "workflow_digest": {"$ref": "#/$defs/digest"},
+    "plan_digest": {"$ref": "#/$defs/digest"},
+    "graph_digest": {"$ref": "#/$defs/digest"},
+    "node_count": {"type": "integer", "minimum": 1},
+    "edge_count": {"type": "integer", "minimum": 1},
+    "nodes": {"type": "array", "minItems": 1, "items": {"oneOf": [{"$ref": "#/$defs/layerNode"}, {"$ref": "#/$defs/stepNode"}]}},
+    "edges": {"type": "array", "minItems": 1, "items": {"oneOf": [{"$ref": "#/$defs/inputEdge"}, {"$ref": "#/$defs/outputEdge"}]}}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "nonEmpty": {"type": "string", "minLength": 1},
+    "layerNode": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "kind", "name", "provenance", "terminal"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^layer:.+"}, "kind": {"const": "layer"},
+        "name": {"$ref": "#/$defs/nonEmpty"}, "provenance": {"enum": ["external", "produced"]},
+        "terminal": {"type": "boolean"}
+      }
+    },
+    "stepNode": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "kind", "index", "operation", "summary", "deterministic", "output_crs"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^step:[0-9]+$"}, "kind": {"const": "step"},
+        "index": {"type": "integer", "minimum": 0}, "operation": {"$ref": "#/$defs/nonEmpty"},
+        "summary": {"$ref": "#/$defs/nonEmpty"}, "deterministic": {"type": "boolean"},
+        "output_crs": {"$ref": "#/$defs/nonEmpty"}
+      }
+    },
+    "inputEdge": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source", "target", "kind", "input", "layer"],
+      "properties": {
+        "source": {"type": "string", "pattern": "^layer:.+"}, "target": {"type": "string", "pattern": "^step:[0-9]+$"},
+        "kind": {"const": "input"}, "input": {"$ref": "#/$defs/nonEmpty"}, "layer": {"$ref": "#/$defs/nonEmpty"}
+      }
+    },
+    "outputEdge": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source", "target", "kind", "layer"],
+      "properties": {
+        "source": {"type": "string", "pattern": "^step:[0-9]+$"}, "target": {"type": "string", "pattern": "^layer:.+"},
+        "kind": {"const": "output"}, "layer": {"$ref": "#/$defs/nonEmpty"}
+      }
+    }
+  }
+}

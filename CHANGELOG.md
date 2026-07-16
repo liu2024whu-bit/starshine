@@ -27,6 +27,7 @@ All notable public changes are documented here.
   projected-CRS requirements, collision-safe output fields, synthetic examples, planner/catalog
   integration, installed-wheel coverage, and an eighth public benchmark case;
 - benchmark corpus version 5, identifying reports that include projected geometry metrics.
+- deterministic Workflow Graph JSON and Mermaid export built from the canonical data-free planner, with schema validation and installed-wheel coverage.
 
 ## [0.3.0] - 2026-07-14
 
