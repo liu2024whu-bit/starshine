@@ -18,6 +18,7 @@ jobs:
       - name: Record graph bundle diagnostics
         shell: bash
         run: |
+          set +e
           {
             sha256sum .starshine-graph-patch/bundle.tar.gz
             wc -c .starshine-graph-patch/bundle.tar.gz
@@ -26,6 +27,7 @@ jobs:
             echo "tar_status=$?"
           } > graph-bundle-diagnostics.txt 2>&1
           cat graph-bundle-diagnostics.txt
+          exit 0
       - uses: actions/upload-artifact@v4
         with:
           name: graph-bundle-diagnostics
