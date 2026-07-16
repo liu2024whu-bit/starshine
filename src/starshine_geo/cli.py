@@ -7,6 +7,7 @@ from pathlib import Path
 
 from ._version import __version__
 from .errors import StarshineError, WorkflowValidationError
+from .explain import explain_workflow, render_workflow_explanation_markdown
 from .graph import build_workflow_graph, render_workflow_mermaid
 from .inspection import inspect_feature_collection
 from .io import read_json, write_json
@@ -125,6 +126,31 @@ def build_parser() -> argparse.ArgumentParser:
         help="Optionally write the workflow graph instead of printing it",
     )
     _add_diagnostic_format(graph_parser)
+
+    explain_parser = subparsers.add_parser(
+        "explain",
+        help="Explain a validated data-free workflow as JSON or Markdown",
+    )
+    explain_parser.add_argument("workflow", type=Path)
+    explain_parser.add_argument(
+        "--layer-name",
+        action="append",
+        default=[],
+        metavar="NAME",
+        help="Declare an available external layer name; repeat for multiple layers",
+    )
+    explain_parser.add_argument(
+        "--format",
+        choices=("json", "markdown"),
+        default="markdown",
+        help="Choose a machine-readable JSON report or Markdown explanation",
+    )
+    explain_parser.add_argument(
+        "--output",
+        type=Path,
+        help="Optionally write the workflow explanation instead of printing it",
+    )
+    _add_diagnostic_format(explain_parser)
     return parser
 
 
@@ -237,6 +263,25 @@ def _graph_command(args: argparse.Namespace) -> int:
     return 0
 
 
+def _explain_command(args: argparse.Namespace) -> int:
+    if args.output is not None and args.output.resolve() == args.workflow.resolve():
+        raise StarshineError("workflow explanation output must not overwrite the workflow file")
+    workflow = read_json(args.workflow)
+    explanation = explain_workflow(workflow, _parse_layer_names(args.layer_name))
+    if args.format == "json":
+        content = json.dumps(explanation, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    else:
+        content = render_workflow_explanation_markdown(explanation)
+
+    if args.output is None:
+        print(content, end="")
+    else:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(content, encoding="utf-8")
+        print(args.output)
+    return 0
+
+
 def _run_command(args: argparse.Namespace) -> int:
     workflow = read_json(args.workflow)
     layers = _parse_layers(args.layer)
@@ -270,6 +315,8 @@ def main(argv: list[str] | None = None) -> int:
             return _plan_command(args)
         if args.command == "graph":
             return _graph_command(args)
+        if args.command == "explain":
+            return _explain_command(args)
         return _run_command(args)
     except StarshineError as exc:
         _print_error(exc, getattr(args, "diagnostic_format", "text"))

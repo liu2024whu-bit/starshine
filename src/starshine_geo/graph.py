@@ -19,10 +19,13 @@ def build_workflow_graph(
 
     The graph contains layer and operation metadata only. It deliberately excludes parameter values,
     feature content, file paths, and credentials. Validation, dependency ordering, default
-    resolution,
-    and layer provenance remain single-sourced in :func:`plan_workflow`.
+    resolution, and layer provenance remain single-sourced in :func:`plan_workflow`.
     """
-    plan = plan_workflow(workflow, layer_names)
+    return _build_workflow_graph_from_plan(plan_workflow(workflow, layer_names))
+
+
+def _build_workflow_graph_from_plan(plan: dict[str, Any]) -> WorkflowGraph:
+    """Convert one canonical plan to a graph without revalidating or replanning the workflow."""
     required_external = set(plan["required_external_layers"])
     unused_external = set(plan["unused_external_layers"])
     terminal_layers = set(plan["terminal_layers"])

@@ -12,6 +12,7 @@ Starshine uses a deliberately small modular architecture.
 - `workflow.py` maps versioned JSON steps to an explicit operator registry.
 - `planning.py` produces deterministic data-free dependency and layer-provenance reports.
 - `graph.py` converts canonical plans into schema-checked JSON and safe Mermaid views.
+- `explain.py` turns canonical plan and graph evidence into structured and Markdown explanations.
 - `cli.py` provides reproducible file-based execution.
 
 The workflow layer does not import functions from arbitrary module names and does not use `eval`, `exec`, shell commands, or user-provided Python. Each operator returns an in-memory FeatureCollection; the CLI is the only component that writes a selected result to disk.

@@ -59,24 +59,30 @@ def test_top_level_api_exports_public_operator_surfaces():
     assert callable(starshine_geo.clip_features)
     assert callable(starshine_geo.calculate_geometry_metrics)
     assert callable(starshine_geo.dissolve_features)
+    assert callable(starshine_geo.explain_workflow)
     assert callable(starshine_geo.join_points_to_polygons)
     assert callable(starshine_geo.nearest_features)
     assert callable(starshine_geo.reproject_features)
     assert callable(starshine_geo.operator_catalog)
     assert callable(starshine_geo.plan_workflow)
+    assert callable(starshine_geo.render_workflow_explanation_markdown)
     assert callable(starshine_geo.render_workflow_mermaid)
+    assert starshine_geo.WORKFLOW_EXPLANATION_VERSION == 1
     assert starshine_geo.WORKFLOW_GRAPH_VERSION == 1
     assert starshine_geo.WORKFLOW_PLAN_VERSION == 1
     assert "build_workflow_graph" in starshine_geo.__all__
     assert "clip_features" in starshine_geo.__all__
     assert "calculate_geometry_metrics" in starshine_geo.__all__
     assert "dissolve_features" in starshine_geo.__all__
+    assert "explain_workflow" in starshine_geo.__all__
     assert "join_points_to_polygons" in starshine_geo.__all__
     assert "nearest_features" in starshine_geo.__all__
     assert "reproject_features" in starshine_geo.__all__
     assert "operator_catalog" in starshine_geo.__all__
     assert "plan_workflow" in starshine_geo.__all__
+    assert "render_workflow_explanation_markdown" in starshine_geo.__all__
     assert "render_workflow_mermaid" in starshine_geo.__all__
+    assert "WORKFLOW_EXPLANATION_VERSION" in starshine_geo.__all__
     assert "WORKFLOW_GRAPH_VERSION" in starshine_geo.__all__
     assert "WORKFLOW_PLAN_VERSION" in starshine_geo.__all__
 
