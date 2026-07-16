@@ -35,6 +35,7 @@ provenance does not make private source code or data part of the implementation 
 - [x] explicit reprojection API and bounded workflow operation
 - [x] CRS-safe clip API and bounded workflow operation with synthetic benchmark coverage
 - [x] deterministic data-free workflow planning with dependencies and resolved defaults
+- [x] deterministic JSON and Mermaid workflow graph export derived from planning
 - [x] CRS-safe nearest-feature matching with deterministic ties and synthetic benchmark coverage
 - [x] deterministic point-in-polygon spatial join with explicit ambiguity handling
 - [x] projected area and length metrics with explicit CRS and field-collision rules

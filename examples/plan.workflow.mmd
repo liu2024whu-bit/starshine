@@ -1,0 +1,17 @@
+flowchart LR
+    external_0["External layer: mask"]
+    external_1["External layer: source"]
+    external_2["Unused external: unused"]
+    step_0{{"Step 0: reproject"}}
+    layer_0["Produced layer: projected"]
+    step_1{{"Step 1: clip"}}
+    layer_1["Produced layer: clipped"]
+    step_2{{"Step 2: dissolve"}}
+    layer_2["Terminal layer: coverage"]
+    external_1 -->|"input"| step_0
+    step_0 -->|"output"| layer_0
+    layer_0 -->|"input"| step_1
+    external_0 -->|"mask"| step_1
+    step_1 -->|"output"| layer_1
+    layer_1 -->|"input"| step_2
+    step_2 -->|"output"| layer_2
