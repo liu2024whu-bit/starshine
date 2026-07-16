@@ -1,0 +1,137 @@
+_geo-0.3.0/ROADMAP.md	2020-02-02 00:00:00.000000000 +0000
++++ starshine-explain/starshine_geo-0.3.0/ROADMAP.md	2026-07-16 18:18:19.475113568 +0000
+@@ -36,6 +36,7 @@
+ - [x] CRS-safe clip API and bounded workflow operation with synthetic benchmark coverage
+ - [x] deterministic data-free workflow planning with dependencies and resolved defaults
+ - [x] deterministic JSON and Mermaid workflow graph export derived from planning
++- [x] data-free Workflow Explain reports and Markdown review narratives
+ - [x] CRS-safe nearest-feature matching with deterministic ties and synthetic benchmark coverage
+ - [x] deterministic point-in-polygon spatial join with explicit ambiguity handling
+ - [x] projected area and length metrics with explicit CRS and field-collision rules
+diff -ruN '--exclude=.git' '--exclude=__pycache__' '--exclude=.pytest_cache' starshine-pristine/starshine_geo-0.3.0/docs/ARCHITECTURE.md starshine-explain/starshine_geo-0.3.0/docs/ARCHITECTURE.md
+--- starshine-pristine/starshine_geo-0.3.0/docs/ARCHITECTURE.md	2020-02-02 00:00:00.000000000 +0000
++++ starshine-explain/starshine_geo-0.3.0/docs/ARCHITECTURE.md	2026-07-16 18:18:19.476398146 +0000
+@@ -12,6 +12,7 @@
+ - `workflow.py` maps versioned JSON steps to an explicit operator registry.
+ - `planning.py` produces deterministic data-free dependency and layer-provenance reports.
+ - `graph.py` converts canonical plans into schema-checked JSON and safe Mermaid views.
++- `explain.py` turns canonical plan and graph evidence into structured and Markdown explanations.
+ - `cli.py` provides reproducible file-based execution.
+ 
+ The workflow layer does not import functions from arbitrary module names and does not use `eval`, `exec`, shell commands, or user-provided Python. Each operator returns an in-memory FeatureCollection; the CLI is the only component that writes a selected result to disk.
+diff -ruN '--exclude=.git' '--exclude=__pycache__' '--exclude=.pytest_cache' starshine-pristine/starshine_geo-0.3.0/docs/RELEASE_PROCESS.md starshine-explain/starshine_geo-0.3.0/docs/RELEASE_PROCESS.md
+--- starshine-pristine/starshine_geo-0.3.0/docs/RELEASE_PROCESS.md	2020-02-02 00:00:00.000000000 +0000
++++ starshine-explain/starshine_geo-0.3.0/docs/RELEASE_PROCESS.md	2026-07-16 18:18:19.477070523 +0000
+@@ -32,6 +32,7 @@
+ starshine operators --output operators.json
+ starshine plan examples/plan.workflow.json --layer-name source --layer-name mask
+ starshine graph examples/plan.workflow.json --layer-name source --layer-name mask
++starshine explain examples/plan.workflow.json --layer-name source --layer-name mask
+ ```
+ 
+ The release-readiness check verifies that package metadata, citation metadata, the dated
+@@ -57,7 +58,7 @@
+ - `starshine --version` matches installed package metadata;
+ - top-level public callables are available;
+ - the installed operator catalog includes the reviewed registry and matches the CLI output;
+-- the installed workflow planner and graph exporter match their CLI forms without loading data;
++- the installed workflow planner, graph exporter, and explanation renderer match their CLI forms without loading data;
+ - reprojection, projected geometry metrics, nearest-feature matching, and point-in-polygon joining
+   work through both the installed API and workflow CLI;
+ - the installed inspection API and `starshine inspect` command produce matching reports;
+diff -ruN '--exclude=.git' '--exclude=__pycache__' '--exclude=.pytest_cache' starshine-pristine/starshine_geo-0.3.0/docs/WORKFLOW_EXPLAIN.md starshine-explain/starshine_geo-0.3.0/docs/WORKFLOW_EXPLAIN.md
+--- starshine-pristine/starshine_geo-0.3.0/docs/WORKFLOW_EXPLAIN.md	1970-01-01 00:00:00.000000000 +0000
++++ starshine-explain/starshine_geo-0.3.0/docs/WORKFLOW_EXPLAIN.md	2026-07-16 18:14:55.854558247 +0000
+@@ -0,0 +1,71 @@
++# Deterministic workflow explanations
++
++Starshine can convert a validated data-free workflow plan into a review-oriented explanation without
++loading GeoJSON, opening a GeoPackage, or executing a spatial operator. The explanation combines the
++canonical plan with its graph digest and presents input provenance, direct dependencies,
++registry-resolved parameter sources, output behavior, terminal layers, and checks that remain for
++execution time.
++
++## Python API
++
++```python
++from starshine_geo import explain_workflow, render_workflow_explanation_markdown
++
++explanation = explain_workflow(workflow, {"source", "mask", "unused"})
++markdown = render_workflow_explanation_markdown(explanation)
++```
++
++The machine-readable report conforms to:
++
++```text
++schemas/workflow-explanation-v1.schema.json
++```
++
++## Command line
++
++Render Markdown to standard output:
++
++```bash
++starshine explain examples/plan.workflow.json \
++  --layer-name source \
++  --layer-name mask \
++  --layer-name unused
++```
++
++Write JSON for CI, a documentation generator, or a review interface:
++
++```bash
++starshine explain examples/plan.workflow.json \
++  --layer-name source \
++  --layer-name mask \
++  --layer-name unused \
++  --format json \
++  --output examples/output/plan.explanation.json
++```
++
++The output path cannot overwrite the workflow file. Invalid workflows use the same stable text or
++JSON diagnostics as validation, planning, and graphing.
++
++## What the explanation contains
++
++- workflow, operator-catalog, plan, graph, and explanation digests;
++- required and unused external layers plus produced and terminal layers;
++- each step's operation summary and deterministic flag;
++- named input roles and whether each layer is external or produced by an earlier step;
++- direct step dependencies;
++- registry-resolved parameter values and whether they were provided or defaulted;
++- reviewed output-CRS behavior;
++- generic execution-time checks that cannot be proven without feature data.
++
++Sensitive registry parameters remain redacted by the planner before they enter the explanation or
++its digest.
++
++## Scope
++
++An explanation describes intent; it does not certify the loaded data. Actual CRS equality,
++projected-coordinate requirements, geometry types, property existence and uniqueness, output-field
++collisions, spatial matches, distances, and empty results remain execution-time checks.
++
++Use `starshine plan` for the complete structured preflight report, `starshine graph` for compact data
++flow, `starshine explain` for a human-readable review narrative, and `starshine run --manifest` for
++post-execution evidence.
+diff -ruN '--exclude=.git' '--exclude=__pycache__' '--exclude=.pytest_cache' starshine-pristine/starshine_geo-0.3.0/docs/WORKFLOW_GRAPH.md starshine-explain/starshine_geo-0.3.0/docs/WORKFLOW_GRAPH.md
+--- starshine-pristine/starshine_geo-0.3.0/docs/WORKFLOW_GRAPH.md	2020-02-02 00:00:00.000000000 +0000
++++ starshine-explain/starshine_geo-0.3.0/docs/WORKFLOW_GRAPH.md	2026-07-16 18:18:19.478175577 +0000
+@@ -90,3 +90,10 @@
+ - `starshine plan` for resolved defaults and detailed pre-execution metadata;
+ - `starshine graph` for a reviewable dependency view;
+ - `starshine run --manifest` for post-execution reproducibility evidence.
++
++
++## From graph to explanation
++
++Workflow explanations retain the graph digest as evidence while adding registry-resolved parameter
++provenance, step summaries, and execution-time limitations. Use `starshine graph` for compact data
++flow and `starshine explain` for a review narrative.
+diff -ruN '--exclude=.git' '--exclude=__pycache__' '--exclude=.pytest_cache' starshine-pristine/starshine_geo-0.3.0/docs/WORKFLOW_PLANNING.md starshine-explain/starshine_geo-0.3.0/docs/WORKFLOW_PLANNING.md
+--- starshine-pristine/starshine_geo-0.3.0/docs/WORKFLOW_PLANNING.md	2020-02-02 00:00:00.000000000 +0000
++++ starshine-explain/starshine_geo-0.3.0/docs/WORKFLOW_PLANNING.md	2026-07-16 18:18:19.477689568 +0000
+@@ -123,3 +123,12 @@
+ parameter values, feature content, and paths. Use the plan when reviewing defaults and CRS behavior,
+ and use the graph when a compact dependency view or Mermaid diagram is more useful. See
+ `docs/WORKFLOW_GRAPH.md` and `sch
