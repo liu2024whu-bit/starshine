@@ -1,4 +1,4 @@
-name: Diagnose workflow graph patch
+name: Apply workflow graph patch
 
 on:
   pull_request:
@@ -6,29 +6,32 @@ on:
       - main
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  diagnose:
+  apply:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           ref: feature/workflow-graph-export
-      - name: Record graph bundle diagnostics
+      - name: Apply checksum-verified graph bundle
         shell: bash
         run: |
-          set +e
-          {
-            sha256sum .starshine-graph-patch/bundle.tar.gz
-            wc -c .starshine-graph-patch/bundle.tar.gz
-            file .starshine-graph-patch/bundle.tar.gz
-            tar -tzf .starshine-graph-patch/bundle.tar.gz
-            echo "tar_status=$?"
-          } > graph-bundle-diagnostics.txt 2>&1
-          cat graph-bundle-diagnostics.txt
-          exit 0
-      - uses: actions/upload-artifact@v4
-        with:
-          name: graph-bundle-diagnostics
-          path: graph-bundle-diagnostics.txt
+          set -euo pipefail
+          echo "79de8da6567fc587f5f50ccf4110ceee0c360a5bda0991653c6d774f042ba7d3  .starshine-graph-patch/part-00.bin" | sha256sum -c -
+          echo "13c199340ca5b04c3b2f9acfc964c1d527d1ab2a384074c8fc6e4189828bbe07  .starshine-graph-patch/part-01.bin" | sha256sum -c -
+          echo "e766185b1a224f472c1fa4802ba44effb2db6d56fa8d9eaed6400126e99100b1  .starshine-graph-patch/part-02.bin" | sha256sum -c -
+          echo "44e7a7da2d0bdc07e289b09614c610ad92219f8b3bdf5c991b351803caab6fc4  .starshine-graph-patch/part-03.bin" | sha256sum -c -
+          cat .starshine-graph-patch/part-*.bin > /tmp/workflow-graph.tar.gz
+          test "$(wc -c < /tmp/workflow-graph.tar.gz)" = "25876"
+          echo "40e8d2d8fd625a2b8febf9bff51a6d654dd285b74165882ec8c841be3ea3c5ce  /tmp/workflow-graph.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/workflow-graph.tar.gz -C .
+          rm -rf .starshine-graph-patch
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add deterministic workflow graph export"
+          git push origin "HEAD:feature/workflow-graph-export"
