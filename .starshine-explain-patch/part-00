@@ -1,0 +1,64 @@
+diff -ruN '--exclude=.git' '--exclude=__pycache__' '--exclude=.pytest_cache' starshine-pristine/starshine_geo-0.3.0/.github/CODEOWNERS starshine-explain/starshine_geo-0.3.0/.github/CODEOWNERS
+--- starshine-pristine/starshine_geo-0.3.0/.github/CODEOWNERS	2020-02-02 00:00:00.000000000 +0000
++++ starshine-explain/starshine_geo-0.3.0/.github/CODEOWNERS	2026-07-16 18:18:19.474096306 +0000
+@@ -30,3 +30,7 @@
+ /schemas/workflow-graph-v1.schema.json @liu2024whu-bit
+ /docs/WORKFLOW_GRAPH.md @liu2024whu-bit
+ /examples/plan.workflow.mmd @liu2024whu-bit
++/src/starshine_geo/explain.py @liu2024whu-bit
++/schemas/workflow-explanation-v1.schema.json @liu2024whu-bit
++/docs/WORKFLOW_EXPLAIN.md @liu2024whu-bit
++/examples/plan.workflow.explanation.md @liu2024whu-bit
+diff -ruN '--exclude=.git' '--exclude=__pycache__' '--exclude=.pytest_cache' starshine-pristine/starshine_geo-0.3.0/CHANGELOG.md starshine-explain/starshine_geo-0.3.0/CHANGELOG.md
+--- starshine-pristine/starshine_geo-0.3.0/CHANGELOG.md	2020-02-02 00:00:00.000000000 +0000
++++ starshine-explain/starshine_geo-0.3.0/CHANGELOG.md	2026-07-16 18:18:19.474753949 +0000
+@@ -29,7 +29,10 @@
+ - benchmark corpus version 5, identifying reports that include projected geometry metrics;
+ - deterministic `build_workflow_graph()` and `render_workflow_mermaid()` APIs plus `starshine graph`,
+   with schema-checked JSON graphs, safely escaped Mermaid output, plan-derived dependencies, and
+-  clean installed-wheel coverage.
++  clean installed-wheel coverage;
++- deterministic `explain_workflow()` and Markdown rendering plus `starshine explain`, with
++  plan-derived parameter provenance, graph-linked evidence, execution-time limitations, a
++  machine-readable Schema, and clean installed-wheel coverage.
+ 
+ ## [0.3.0] - 2026-07-14
+ 
+diff -ruN '--exclude=.git' '--exclude=__pycache__' '--exclude=.pytest_cache' starshine-pristine/starshine_geo-0.3.0/README.md starshine-explain/starshine_geo-0.3.0/README.md
+--- starshine-pristine/starshine_geo-0.3.0/README.md	2020-02-02 00:00:00.000000000 +0000
++++ starshine-explain/starshine_geo-0.3.0/README.md	2026-07-16 18:18:19.475826400 +0000
+@@ -31,6 +31,7 @@
+ - a declarative operator registry and machine-readable catalog with no dynamic `eval`;
+ - deterministic data-free workflow plans with dependencies, defaults, layer provenance, and digests;
+ - schema-checked JSON workflow graphs and safely escaped Mermaid dependency views;
++- data-free Workflow Explain reports with parameter provenance and review-ready Markdown;
+ - optional path-free reproducibility manifests;
+ - optional GeoPackage input/output with explicit layer, CRS, and overwrite rules;
+ - deterministic GeoJSON inspection reports with counts, bounds, CRS, fields, and digests;
+@@ -123,6 +124,24 @@
+ [workflow graph schema](schemas/workflow-graph-v1.schema.json), and the tracked
+ [Mermaid example](examples/plan.workflow.mmd).
+ 
++## Explain a workflow for review or teaching
++
++The explain command converts the canonical plan and graph evidence into a step-by-step Markdown
++narrative without loading feature data:
++
++```bash
++starshine explain examples/plan.workflow.json \
++  --layer-name source \
++  --layer-name mask \
++  --layer-name unused
++```
++
++Use `--format json` for a Schema-checked explanation report containing input provenance, direct
++dependencies, provided/default parameter sources, output-CRS behavior, terminal outputs, and
++execution-time limitations. See [workflow explanations](docs/WORKFLOW_EXPLAIN.md), the
++[explanation schema](schemas/workflow-explanation-v1.schema.json), and the tracked
++[Markdown example](examples/plan.workflow.explanation.md).
++
+ ## Inspect a GeoJSON collection without running a workflow
+ 
+ The inspection command validates one `FeatureCollection` and reports structure without copying
+diff -ruN '--exclude=.git' '--exclude=__pycache__' '--exclude=.pytest_cache' starshine-pristine/starshine_geo-0.3.0/ROADMAP.md starshine-explain/starshine_geo-0.3.0/ROADMAP.md
+--- starshine-pristine/starshine
