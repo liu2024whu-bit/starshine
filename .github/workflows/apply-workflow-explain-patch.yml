@@ -17,16 +17,16 @@ jobs:
         with:
           fetch-depth: 0
           ref: feature/workflow-explain
-      - name: Verify and apply Workflow Explain patch
+      - name: Record corrected Workflow Explain checksums
         shell: bash
         run: |
           set -euo pipefail
+          sha256sum .starshine-explain-patch/part-* > .starshine-explain-patch/diagnostics.txt
           cat .starshine-explain-patch/part-* > /tmp/explain.patch
-          echo "b77fa07ec5856527eb61c3bcced31a9c508e1a5d98243ec79e819bb00e64ef0d  /tmp/explain.patch" | sha256sum -c -
-          patch -p2 < /tmp/explain.patch
-          rm -rf .starshine-explain-patch
+          sha256sum /tmp/explain.patch >> .starshine-explain-patch/diagnostics.txt
+          wc -c /tmp/explain.patch >> .starshine-explain-patch/diagnostics.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "Add deterministic workflow explanations"
+          git add .starshine-explain-patch/diagnostics.txt
+          git commit -m "Recheck Workflow Explain patch checksums"
           git push origin "HEAD:feature/workflow-explain"
