@@ -1,0 +1,97 @@
+t "clip_features" in starshine_geo.__all__
+     assert "calculate_geometry_metrics" in starshine_geo.__all__
+     assert "dissolve_features" in starshine_geo.__all__
++    assert "explain_workflow" in starshine_geo.__all__
+     assert "join_points_to_polygons" in starshine_geo.__all__
+     assert "nearest_features" in starshine_geo.__all__
+     assert "reproject_features" in starshine_geo.__all__
+     assert "operator_catalog" in starshine_geo.__all__
+     assert "plan_workflow" in starshine_geo.__all__
++    assert "render_workflow_explanation_markdown" in starshine_geo.__all__
+     assert "render_workflow_mermaid" in starshine_geo.__all__
++    assert "WORKFLOW_EXPLANATION_VERSION" in starshine_geo.__all__
+     assert "WORKFLOW_GRAPH_VERSION" in starshine_geo.__all__
+     assert "WORKFLOW_PLAN_VERSION" in starshine_geo.__all__
+ 
+diff -ruN '--exclude=.git' '--exclude=__pycache__' '--exclude=.pytest_cache' starshine-pristine/starshine_geo-0.3.0/tests/test_workflow_explain.py starshine-explain/starshine_geo-0.3.0/tests/test_workflow_explain.py
+--- starshine-pristine/starshine_geo-0.3.0/tests/test_workflow_explain.py	1970-01-01 00:00:00.000000000 +0000
++++ starshine-explain/starshine_geo-0.3.0/tests/test_workflow_explain.py	2026-07-16 18:17:23.879166127 +0000
+@@ -0,0 +1,262 @@
++import json
++from copy import deepcopy
++from pathlib import Path
++
++import pytest
++from jsonschema import Draft202012Validator
++
++import starshine_geo.workflow as workflow_module
++from starshine_geo import (
++    WORKFLOW_EXPLANATION_VERSION,
++    build_workflow_graph,
++    digest_json,
++    explain_workflow,
++    plan_workflow,
++    render_workflow_explanation_markdown,
++)
++from starshine_geo.cli import main
++from starshine_geo.errors import ValidationError
++
++ROOT = Path(__file__).resolve().parents[1]
++EXPLANATION_SCHEMA_PATH = ROOT / "schemas" / "workflow-explanation-v1.schema.json"
++PLAN_WORKFLOW_PATH = ROOT / "examples" / "plan.workflow.json"
++MARKDOWN_EXAMPLE_PATH = ROOT / "examples" / "plan.workflow.explanation.md"
++
++
++def _load(path: Path):
++    return json.loads(path.read_text(encoding="utf-8"))
++
++
++def _buffer_workflow(layer_name="sites"):
++    return {
++        "version": 1,
++        "steps": [
++            {
++                "operation": "buffer",
++                "inputs": {"input": layer_name},
++                "parameters": {
++                    "distance": 10,
++                    "source_crs": "EPSG:3857",
++                    "work_crs": "EPSG:3857",
++                },
++                "output": "buffers",
++            }
++        ],
++    }
++
++
++def test_workflow_explanation_schema_is_valid_and_report_conforms():
++    schema = _load(EXPLANATION_SCHEMA_PATH)
++    Draft202012Validator.check_schema(schema)
++    explanation = explain_workflow(
++        _load(PLAN_WORKFLOW_PATH), {"source", "mask", "unused"}
++    )
++    Draft202012Validator(schema).validate(explanation)
++
++
++def test_explanation_reuses_plan_and_graph_evidence_with_stable_steps():
++    workflow = _load(PLAN_WORKFLOW_PATH)
++    layers = {"source", "mask", "unused"}
++    plan = plan_workflow(workflow, layers)
++    graph = build_workflow_graph(workflow, layers)
++    explanation = explain_workflow(workflow, layers)
++
++    assert explanation["schema_version"] == WORKFLOW_EXPLANATION_VERSION
++    assert explanation["workflow_digest"] == plan["workflow_digest"]
++    assert explanation["plan_digest"] == plan["plan_digest"]
++    assert explanation["graph_digest"] == graph["graph_digest"]
++    assert explanation["required_external_layers"] == ["mask", "source"]
++    assert explanation["unused_external_layers"] == ["unused"]
++    assert explanation["terminal_layers"] == ["coverage"]
++    assert explanation["all_steps_deterministic"] is True
++
++    assert explanation["steps"][0] == {
++        "index": 0,
++        "operation": "reproject",
++        "summary": "Transform every geometry to a target CRS while preserving properties and order.",
++        "deterministic": True,
++        "depende
