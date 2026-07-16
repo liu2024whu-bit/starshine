@@ -3,6 +3,11 @@
 from ._version import __version__
 from .errors import WorkflowDiagnostic, WorkflowValidationError
 from .geopackage import list_geopackage_layers, read_geopackage, write_geopackage
+from .graph import (
+    WORKFLOW_GRAPH_VERSION,
+    build_workflow_graph,
+    render_workflow_mermaid,
+)
 from .inspection import inspect_feature_collection
 from .manifest import build_manifest, digest_json
 from .metrics import calculate_geometry_metrics
@@ -24,9 +29,11 @@ __all__ = [
     "WorkflowDiagnostic",
     "WorkflowValidationError",
     "OPERATOR_REGISTRY",
+    "WORKFLOW_GRAPH_VERSION",
     "WORKFLOW_PLAN_VERSION",
     "__version__",
     "buffer_features",
+    "build_workflow_graph",
     "clip_features",
     "calculate_geometry_metrics",
     "build_manifest",
@@ -39,6 +46,7 @@ __all__ = [
     "plan_workflow",
     "list_geopackage_layers",
     "read_geopackage",
+    "render_workflow_mermaid",
     "reproject_features",
     "run_workflow",
     "summarize_points_within",

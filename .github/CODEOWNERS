@@ -26,3 +26,7 @@
 /src/starshine_geo/metrics.py @liu2024whu-bit
 /docs/GEOMETRY_METRICS.md @liu2024whu-bit
 /examples/geometry-metrics.workflow.json @liu2024whu-bit
+/src/starshine_geo/graph.py @liu2024whu-bit
+/schemas/workflow-graph-v1.schema.json @liu2024whu-bit
+/docs/WORKFLOW_GRAPH.md @liu2024whu-bit
+/examples/plan.workflow.mmd @liu2024whu-bit

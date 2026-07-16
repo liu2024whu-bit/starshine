@@ -93,8 +93,7 @@ cannot prove data-dependent conditions such as:
 - whether nearest candidates have unique identifiers, whether output fields already exist, or
   what the actual projected distances will be;
 - whether point-in-polygon inputs use supported geometry types, whether polygon identifiers are
-  unique, or whether a point will match zero, one, or multiple polygons.
-
+  unique, or whether a point will match zero, one, or multiple polygons;
 - whether geometry-metric output fields collide with loaded properties or the loaded CRS is
   projected.
 
@@ -116,3 +115,11 @@ future adapters.
 A plan is not an execution manifest. It describes intended structure before data is loaded; the
 optional reproducibility manifest records the workflow and content digests after a selected result
 has been produced.
+
+## Graphs derived from plans
+
+`build_workflow_graph()` and `starshine graph` call the canonical planner, then project its layer
+provenance and step ordering into a smaller node-and-edge report. Graphs intentionally omit resolved
+parameter values, feature content, and paths. Use the plan when reviewing defaults and CRS behavior,
+and use the graph when a compact dependency view or Mermaid diagram is more useful. See
+`docs/WORKFLOW_GRAPH.md` and `schemas/workflow-graph-v1.schema.json`.

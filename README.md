@@ -30,6 +30,7 @@ The public 0.3 line provides:
 - structured preflight diagnostics for structure, inputs, parameters, and CRS rules;
 - a declarative operator registry and machine-readable catalog with no dynamic `eval`;
 - deterministic data-free workflow plans with dependencies, defaults, layer provenance, and digests;
+- schema-checked JSON workflow graphs and safely escaped Mermaid dependency views;
 - optional path-free reproducibility manifests;
 - optional GeoPackage input/output with explicit layer, CRS, and overwrite rules;
 - deterministic GeoJSON inspection reports with counts, bounds, CRS, fields, and digests;
@@ -105,6 +106,22 @@ Plans include Workflow and Operator Catalog digests, required and unused externa
 step dependencies, resolved parameter sources, terminal outputs, and declared output-CRS behavior.
 See [workflow planning](docs/WORKFLOW_PLANNING.md) and the
 [workflow plan schema](schemas/workflow-plan-v1.schema.json).
+
+## Render a workflow graph for review or teaching
+
+The graph command derives a compact dependency view from the canonical plan without reading feature
+data or exposing parameter values:
+
+```bash
+starshine graph examples/plan.workflow.json \
+  --layer-name source \
+  --layer-name mask
+```
+
+Mermaid is the default output. Use `--format json` for a schema-checked graph report suitable for CI
+or a user interface. See [workflow graphs](docs/WORKFLOW_GRAPH.md), the
+[workflow graph schema](schemas/workflow-graph-v1.schema.json), and the tracked
+[Mermaid example](examples/plan.workflow.mmd).
 
 ## Inspect a GeoJSON collection without running a workflow
 

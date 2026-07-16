@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/liu2024whu-bit/starshine/schemas/workflow-graph-v1.schema.json",
+  "title": "Starshine Geo workflow graph version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "workflow_version",
+    "workflow_digest",
+    "operator_catalog_version",
+    "operator_catalog_digest",
+    "plan_digest",
+    "declared_external_layers",
+    "required_external_layers",
+    "unused_external_layers",
+    "produced_layers",
+    "terminal_layers",
+    "node_count",
+    "edge_count",
+    "nodes",
+    "edges",
+    "graph_digest"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "workflow_version": {"const": 1},
+    "workflow_digest": {"$ref": "#/$defs/digest"},
+    "operator_catalog_version": {"const": 1},
+    "operator_catalog_digest": {"$ref": "#/$defs/digest"},
+    "plan_digest": {"$ref": "#/$defs/digest"},
+    "declared_external_layers": {"$ref": "#/$defs/layerList"},
+    "required_external_layers": {"$ref": "#/$defs/layerList"},
+    "unused_external_layers": {"$ref": "#/$defs/layerList"},
+    "produced_layers": {"$ref": "#/$defs/layerList"},
+    "terminal_layers": {"$ref": "#/$defs/layerList"},
+    "node_count": {"type": "integer", "minimum": 1},
+    "edge_count": {"type": "integer", "minimum": 1},
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          {"$ref": "#/$defs/externalLayerNode"},
+          {"$ref": "#/$defs/operationNode"},
+          {"$ref": "#/$defs/producedLayerNode"}
+        ]
+      }
+    },
+    "edges": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          {"$ref": "#/$defs/inputEdge"},
+          {"$ref": "#/$defs/outputEdge"}
+        ]
+      }
+    },
+    "graph_digest": {"$ref": "#/$defs/digest"}
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "layerList": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/nonEmptyString"},
+      "uniqueItems": true
+    },
+    "externalLayerNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "label", "layer", "required", "unused"],
+      "properties": {
+        "id": {"$ref": "#/$defs/nonEmptyString"},
+        "kind": {"const": "external_layer"},
+        "label": {"type": "string"},
+        "layer": {"$ref": "#/$defs/nonEmptyString"},
+        "required": {"type": "boolean"},
+        "unused": {"type": "boolean"}
+      }
+    },
+    "operationNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "label",
+        "step_index",
+        "operation",
+        "deterministic",
+        "output_crs"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/nonEmptyString"},
+        "kind": {"const": "operation"},
+        "label": {"$ref": "#/$defs/nonEmptyString"},
+        "step_index": {"type": "integer", "minimum": 0},
+        "operation": {"$ref": "#/$defs/nonEmptyString"},
+        "deterministic": {"type": "boolean"},
+        "output_crs": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "producedLayerNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "label", "layer", "producer_step", "terminal"],
+      "properties": {
+        "id": {"$ref": "#/$defs/nonEmptyString"},
+        "kind": {"const": "produced_layer"},
+        "label": {"$ref": "#/$defs/nonEmptyString"},
+        "layer": {"$ref": "#/$defs/nonEmptyString"},
+        "producer_step": {"type": "integer", "minimum": 0},
+        "terminal": {"type": "boolean"}
+      }
+    },
+    "inputEdge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "source", "target", "label", "input_name", "layer"],
+      "properties": {
+        "id": {"$ref": "#/$defs/nonEmptyString"},
+        "kind": {"const": "input"},
+        "source": {"$ref": "#/$defs/nonEmptyString"},
+        "target": {"$ref": "#/$defs/nonEmptyString"},
+        "label": {"$ref": "#/$defs/nonEmptyString"},
+        "input_name": {"$ref": "#/$defs/nonEmptyString"},
+        "layer": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "outputEdge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "source", "target", "label", "layer"],
+      "properties": {
+        "id": {"$ref": "#/$defs/nonEmptyString"},
+        "kind": {"const": "output"},
+        "source": {"$ref": "#/$defs/nonEmptyString"},
+        "target": {"$ref": "#/$defs/nonEmptyString"},
+        "label": {"const": "output"},
+        "layer": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    }
+  }
+}

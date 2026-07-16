@@ -50,6 +50,7 @@ def _assert_installed_location() -> Path:
 def _assert_public_imports() -> None:
     expected_callables = (
         "buffer_features",
+        "build_workflow_graph",
         "build_manifest",
         "clip_features",
         "calculate_geometry_metrics",
@@ -62,6 +63,7 @@ def _assert_public_imports() -> None:
         "plan_workflow",
         "list_geopackage_layers",
         "read_geopackage",
+        "render_workflow_mermaid",
         "reproject_features",
         "run_workflow",
         "summarize_points_within",
@@ -160,6 +162,19 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
         raise RuntimeError(f"unexpected unused workflow-plan layers: {direct_plan}")
     if direct_plan.get("terminal_layers") != ["summary"]:
         raise RuntimeError(f"unexpected workflow-plan terminal layers: {direct_plan}")
+
+    direct_graph = starshine_geo.build_workflow_graph(
+        workflow, {"zones", "sites", "unused"}
+    )
+    if direct_graph.get("node_count") != 5 or direct_graph.get("edge_count") != 3:
+        raise RuntimeError(f"unexpected workflow graph size: {direct_graph}")
+    if direct_graph.get("terminal_layers") != ["summary"]:
+        raise RuntimeError(f"unexpected workflow graph terminal layers: {direct_graph}")
+    direct_mermaid = starshine_geo.render_workflow_mermaid(direct_graph)
+    if "Step 0: summarize_points_within" not in direct_mermaid:
+        raise RuntimeError(f"unexpected Mermaid workflow graph: {direct_mermaid}")
+    if "polygon_id_field" in direct_mermaid or "site_count" in direct_mermaid:
+        raise RuntimeError("Mermaid workflow graph exposed parameter values")
 
     nearest_candidates = {
         "type": "FeatureCollection",
@@ -261,6 +276,8 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
         manifest_path = root / "summary.manifest.json"
         inspection_path = root / "zones.inspection.json"
         plan_path = root / "workflow.plan.json"
+        graph_path = root / "workflow.graph.json"
+        mermaid_path = root / "workflow.mmd"
         invalid_path = root / "invalid-workflow.json"
         reproject_workflow_path = root / "reproject-workflow.json"
         reproject_output_path = root / "sites-wgs84.geojson"
@@ -414,6 +431,78 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
         )
         if json.loads(plan_path.read_text(encoding="utf-8")) != direct_plan:
             raise RuntimeError("written installed-wheel workflow plan differs from direct planning")
+
+        graph_result = _run(
+            [
+                starshine_command,
+                "graph",
+                str(workflow_path),
+                "--layer-name",
+                "zones",
+                "--layer-name",
+                "sites",
+                "--layer-name",
+                "unused",
+                "--format",
+                "json",
+            ]
+        )
+        if json.loads(graph_result.stdout) != direct_graph:
+            raise RuntimeError("installed CLI workflow graph differs from the public API graph")
+        _run(
+            [
+                starshine_command,
+                "graph",
+                str(workflow_path),
+                "--layer-name",
+                "zones",
+                "--layer-name",
+                "sites",
+                "--layer-name",
+                "unused",
+                "--format",
+                "json",
+                "--output",
+                str(graph_path),
+            ]
+        )
+        if json.loads(graph_path.read_text(encoding="utf-8")) != direct_graph:
+            raise RuntimeError("written installed-wheel workflow graph differs from direct graph")
+
+        mermaid_result = _run(
+            [
+                starshine_command,
+                "graph",
+                str(workflow_path),
+                "--layer-name",
+                "zones",
+                "--layer-name",
+                "sites",
+                "--layer-name",
+                "unused",
+            ]
+        )
+        if mermaid_result.stdout != direct_mermaid:
+            raise RuntimeError("installed CLI Mermaid graph differs from the public renderer")
+        _run(
+            [
+                starshine_command,
+                "graph",
+                str(workflow_path),
+                "--layer-name",
+                "zones",
+                "--layer-name",
+                "sites",
+                "--layer-name",
+                "unused",
+                "--output",
+                str(mermaid_path),
+            ]
+        )
+        if mermaid_path.read_text(encoding="utf-8") != direct_mermaid:
+            raise RuntimeError(
+                "written installed-wheel Mermaid graph differs from direct rendering"
+            )
 
         inspection_result = _run([starshine_command, "inspect", str(zones_path)])
         cli_inspection = json.loads(inspection_result.stdout)

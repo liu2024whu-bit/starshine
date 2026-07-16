@@ -26,7 +26,10 @@ All notable public changes are documented here.
 - a focused `calculate_geometry_metrics()` API and `geometry_metrics` workflow operation with
   projected-CRS requirements, collision-safe output fields, synthetic examples, planner/catalog
   integration, installed-wheel coverage, and an eighth public benchmark case;
-- benchmark corpus version 5, identifying reports that include projected geometry metrics.
+- benchmark corpus version 5, identifying reports that include projected geometry metrics;
+- deterministic `build_workflow_graph()` and `render_workflow_mermaid()` APIs plus `starshine graph`,
+  with schema-checked JSON graphs, safely escaped Mermaid output, plan-derived dependencies, and
+  clean installed-wheel coverage.
 
 ## [0.3.0] - 2026-07-14
 
