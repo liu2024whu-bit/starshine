@@ -8,5 +8,6 @@ f8cf6dfe037bb2fd48863a8d194d536aeff14c2af2e0428a68f4faffe821db82  .starshine-exp
 cb72a22bd1b4df9595e5727447ac2b032d63839c042bd4e63f584fea841256d2  .starshine-explain-patch/part-06b1
 6a4a6aa0936412b28a8ce00cd771870388f142918d5d330af4a27519e6676bde  .starshine-explain-patch/part-06b2a
 82a0f939c38dc5fc251bc5af967675d0aa3805f1c496913137f95558bbb2e9fb  .starshine-explain-patch/part-06b2c
-deae8f8838eb8870b1e1fd166721e6c2ba9839a0c041a9dc8b10e02f45c979f5  /tmp/explain.patch
-52499 /tmp/explain.patch
+8519577191ea4cb859963d4a0fee94cc2fe30d0dbf4e7696c71231522c13141b  .starshine-explain-patch/part-06b2d
+b77fa07ec5856527eb61c3bcced31a9c508e1a5d98243ec79e819bb00e64ef0d  /tmp/explain.patch
+53982 /tmp/explain.patch
