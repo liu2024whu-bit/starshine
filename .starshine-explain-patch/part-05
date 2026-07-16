@@ -1,0 +1,167 @@
+["step_count"],
++        "all_steps_deterministic": all(step["deterministic"] for step in plan["steps"]),
++        "steps": steps,
++        "remaining_checks": list(_REMAINING_CHECKS),
++    }
++    explanation["explanation_digest"] = digest_json(explanation)
++    return explanation
++
++
++def _inline_code(value: Any, *, quote_strings: bool = True) -> str:
++    if isinstance(value, str) and not quote_strings:
++        text = value
++    else:
++        text = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
++    text = " ".join(text.splitlines()).replace("`", "\\`")
++    return f"`{text}`"
++
++
++def _validate_explanation_for_render(explanation: WorkflowExplanation) -> list[dict[str, Any]]:
++    if not isinstance(explanation, dict) or explanation.get("schema_version") != 1:
++        raise ValidationError("workflow explanation must use schema version 1")
++    steps = explanation.get("steps")
++    if not isinstance(steps, list) or not steps:
++        raise ValidationError("workflow explanation must contain a non-empty steps array")
++    for step in steps:
++        if not isinstance(step, dict):
++            raise ValidationError("workflow explanation steps must be objects")
++        if not isinstance(step.get("index"), int) or not isinstance(step.get("operation"), str):
++            raise ValidationError("workflow explanation steps require index and operation values")
++        if not isinstance(step.get("inputs"), list) or not isinstance(step.get("parameters"), list):
++            raise ValidationError("workflow explanation steps require input and parameter arrays")
++    return steps
++
++
++def render_workflow_explanation_markdown(explanation: WorkflowExplanation) -> str:
++    """Render a deterministic Markdown explanation without feature data or file paths."""
++    steps = _validate_explanation_for_render(explanation)
++
++    def layer_list(name: str) -> str:
++        values = explanation.get(name, [])
++        if not values:
++            return "none"
++        return ", ".join(_inline_code(value, quote_strings=False) for value in values)
++
++    lines = [
++        "# Starshine Workflow Explanation",
++        "",
++        f"- Workflow version: {_inline_code(explanation['workflow_version'])}",
++        f"- Steps: {explanation['step_count']}",
++        f"- Required external layers: {layer_list('required_external_layers')}",
++        f"- Unused external layers: {layer_list('unused_external_layers')}",
++        f"- Terminal layers: {layer_list('terminal_layers')}",
++        "- All steps deterministic: "
++        + ("yes" if explanation.get("all_steps_deterministic") else "no"),
++        "",
++    ]
++
++    for step in steps:
++        lines.extend(
++            [
++                f"## Step {step['index']}: {_inline_code(step['operation'], quote_strings=False)}",
++                "",
++                str(step["summary"]),
++                "",
++                "### Inputs",
++                "",
++            ]
++        )
++        for item in step["inputs"]:
++            if item["source_kind"] == "external":
++                source = f"external layer {_inline_code(item['layer'], quote_strings=False)}"
++            else:
++                source = (
++                    f"layer {_inline_code(item['layer'], quote_strings=False)} produced by step "
++                    f"{item['producer_step']}"
++                )
++            lines.append(f"- {_inline_code(item['name'], quote_strings=False)}: {source}")
++
++        lines.extend(["", "### Parameters", ""])
++        if step["parameters"]:
++            for parameter in step["parameters"]:
++                lines.append(
++                    f"- {_inline_code(parameter['name'], quote_strings=False)} = "
++                    f"{_inline_code(parameter['value'])} ({parameter['source']})"
++                )
++        else:
++            lines.append("- none")
++
++        dependencies = step["dependencies"]
++        dependency_text = "none" if not dependencies else ", ".join(map(str, dependencies))
++        lines.extend(
++            [
++                "",
++                f"- Direct dependencies: {dependency_text}",
++                f"- Output layer: {_inline_code(step['output'], quote_strings=False)}",
++                f"- Output CRS behavior: {step['output_crs']}",
++                "- Deterministic: " + ("yes" if step["deterministic"] else "no"),
++                "- Terminal output: " + ("yes" if step["terminal"] else "no"),
++                "",
++            ]
++        )
++
++    lines.extend(["## Remaining execution-time checks", ""])
++    for message in explanation.get("remaining_checks", []):
++        lines.append(f"- {message}")
++
++    lines.extend(
++        [
++            "",
++            "## Evidence",
++            "",
++            f"- Workflow digest: {_inline_code(explanation['workflow_digest'], quote_strings=False)}",
++            f"- Plan digest: {_inline_code(explanation['plan_digest'], quote_strings=False)}",
++            f"- Graph digest: {_inline_code(explanation['graph_digest'], quote_strings=False)}",
++            f"- Explanation digest: {_inline_code(explanation['explanation_digest'], quote_strings=False)}",
++            "",
++        ]
++    )
++    return "\n".join(lines)
++
++
++__all__ = [
++    "WORKFLOW_EXPLANATION_VERSION",
++    "WorkflowExplanation",
++    "explain_workflow",
++    "render_workflow_explanation_markdown",
++]
+diff -ruN '--exclude=.git' '--exclude=__pycache__' '--exclude=.pytest_cache' starshine-pristine/starshine_geo-0.3.0/src/starshine_geo/graph.py starshine-explain/starshine_geo-0.3.0/src/starshine_geo/graph.py
+--- starshine-pristine/starshine_geo-0.3.0/src/starshine_geo/graph.py	2020-02-02 00:00:00.000000000 +0000
++++ starshine-explain/starshine_geo-0.3.0/src/starshine_geo/graph.py	2026-07-16 18:14:55.603712938 +0000
+@@ -19,10 +19,13 @@
+ 
+     The graph contains layer and operation metadata only. It deliberately excludes parameter values,
+     feature content, file paths, and credentials. Validation, dependency ordering, default
+-    resolution,
+-    and layer provenance remain single-sourced in :func:`plan_workflow`.
++    resolution, and layer provenance remain single-sourced in :func:`plan_workflow`.
+     """
+-    plan = plan_workflow(workflow, layer_names)
++    return _build_workflow_graph_from_plan(plan_workflow(workflow, layer_names))
++
++
++def _build_workflow_graph_from_plan(plan: dict[str, Any]) -> WorkflowGraph:
++    """Convert one canonical plan to a graph without revalidating or replanning the workflow."""
+     required_external = set(plan["required_external_layers"])
+     unused_external = set(plan["unused_external_layers"])
+     terminal_layers = set(plan["terminal_layers"])
+diff -ruN '--exclude=.git' '--exclude=__pycache__' '--exclude=.pytest_cache' starshine-pristine/starshine_geo-0.3.0/tests/test_release_metadata.py starshine-explain/starshine_geo-0.3.0/tests/test_release_metadata.py
+--- starshine-pristine/starshine_geo-0.3.0/tests/test_release_metadata.py	2020-02-02 00:00:00.000000000 +0000
++++ starshine-explain/starshine_geo-0.3.0/tests/test_release_metadata.py	2026-07-16 18:18:19.478549160 +0000
+@@ -59,24 +59,30 @@
+     assert callable(starshine_geo.clip_features)
+     assert callable(starshine_geo.calculate_geometry_metrics)
+     assert callable(starshine_geo.dissolve_features)
++    assert callable(starshine_geo.explain_workflow)
+     assert callable(starshine_geo.join_points_to_polygons)
+     assert callable(starshine_geo.nearest_features)
+     assert callable(starshine_geo.reproject_features)
+     assert callable(starshine_geo.operator_catalog)
+     assert callable(starshine_geo.plan_workflow)
++    assert callable(starshine_geo.render_workflow_explanation_markdown)
+     assert callable(starshine_geo.render_workflow_mermaid)
++    assert starshine_geo.WORKFLOW_EXPLANATION_VERSION == 1
+     assert starshine_geo.WORKFLOW_GRAPH_VERSION == 1
+     assert starshine_geo.WORKFLOW_PLAN_VERSION == 1
+     assert "build_workflow_graph" in starshine_geo.__all__
+     asser
