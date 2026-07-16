@@ -1,0 +1,56 @@
+ncies": [],
++        "inputs": [
++            {"name": "input", "layer": "source", "source_kind": "external"}
++        ],
++        "parameters": [
++            {"name": "target_crs", "value": "EPSG:3857", "source": "provided"},
++            {"name": "source_crs", "value": None, "source": "default"},
++        ],
++        "output": "projected",
++        "output_crs": "target_crs parameter",
++        "terminal": False,
++    }
++    assert explanation["steps"][1]["inputs"] == [
++        {
++            "name": "input",
++            "layer": "projected",
++            "source_kind": "step",
++            "producer_step": 0,
++        },
++        {"name": "mask", "layer": "mask", "source_kind": "external"},
++    ]
++    assert explanation["steps"][2]["terminal"] is True
++
++
++def test_explanation_is_deterministic_and_digest_covers_report_body():
++    workflow = _load(PLAN_WORKFLOW_PATH)
++    first = explain_workflow(workflow, ["source", "mask", "unused"])
++    second = explain_workflow(deepcopy(workflow), ["unused", "mask", "source"])
++
++    assert first == second
++    body = deepcopy(first)
++    digest = body.pop("explanation_digest")
++    assert digest == digest_json(body)
++
++
++def test_explanation_never_executes_registered_operators(monkeypatch):
++    def unexpected_execution(inputs, parameters):
++        raise AssertionError((inputs, parameters))
++
++    monkeypatch.setitem(workflow_module.OPERATORS, "buffer", unexpected_execution)
++    explanation = explain_workflow(_buffer_workflow(), {"sites"})
++    assert explanation["step_count"] == 1
++    assert explanation["steps"][0]["parameters"][0] == {
++        "name": "distance",
++        "value": 10,
++        "source": "provided",
++    }
++
++
++def test_markdown_renderer_is_deterministic_and_matches_tracked_example():
++    explanation = explain_workflow(
++        _load(PLAN_WORKFLOW_PATH), {"source", "mask", "unused"}
++    )
++    markdown = render_workflow_explanation_markdown(explanation)
++
++    assert markdown == MARKDOWN_EXAMPLE
