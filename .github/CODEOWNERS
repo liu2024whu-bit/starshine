@@ -30,3 +30,7 @@
 /schemas/workflow-graph-v1.schema.json @liu2024whu-bit
 /docs/WORKFLOW_GRAPH.md @liu2024whu-bit
 /examples/plan.workflow.mmd @liu2024whu-bit
+/src/starshine_geo/explain.py @liu2024whu-bit
+/schemas/workflow-explanation-v1.schema.json @liu2024whu-bit
+/docs/WORKFLOW_EXPLAIN.md @liu2024whu-bit
+/examples/plan.workflow.explanation.md @liu2024whu-bit

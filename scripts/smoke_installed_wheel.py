@@ -56,6 +56,7 @@ def _assert_public_imports() -> None:
         "calculate_geometry_metrics",
         "digest_json",
         "dissolve_features",
+        "explain_workflow",
         "join_points_to_polygons",
         "nearest_features",
         "inspect_feature_collection",
@@ -63,6 +64,7 @@ def _assert_public_imports() -> None:
         "plan_workflow",
         "list_geopackage_layers",
         "read_geopackage",
+        "render_workflow_explanation_markdown",
         "render_workflow_mermaid",
         "reproject_features",
         "run_workflow",
@@ -176,6 +178,19 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
     if "polygon_id_field" in direct_mermaid or "site_count" in direct_mermaid:
         raise RuntimeError("Mermaid workflow graph exposed parameter values")
 
+    direct_explanation = starshine_geo.explain_workflow(
+        workflow, {"zones", "sites", "unused"}
+    )
+    if direct_explanation.get("plan_digest") != direct_plan.get("plan_digest"):
+        raise RuntimeError(f"workflow explanation does not reference the plan: {direct_explanation}")
+    if direct_explanation.get("graph_digest") != direct_graph.get("graph_digest"):
+        raise RuntimeError(f"workflow explanation does not reference the graph: {direct_explanation}")
+    direct_markdown = starshine_geo.render_workflow_explanation_markdown(direct_explanation)
+    if "## Step 0: `summarize_points_within`" not in direct_markdown:
+        raise RuntimeError(f"unexpected Markdown workflow explanation: {direct_markdown}")
+    if '`polygon_id_field` = `"id"` (provided)' not in direct_markdown:
+        raise RuntimeError("workflow explanation omitted provided parameter provenance")
+
     nearest_candidates = {
         "type": "FeatureCollection",
         "starshine:crs": "EPSG:3857",
@@ -277,6 +292,8 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
         inspection_path = root / "zones.inspection.json"
         plan_path = root / "workflow.plan.json"
         graph_path = root / "workflow.graph.json"
+        explanation_path = root / "workflow.explanation.json"
+        explanation_markdown_path = root / "workflow.explanation.md"
         mermaid_path = root / "workflow.mmd"
         invalid_path = root / "invalid-workflow.json"
         reproject_workflow_path = root / "reproject-workflow.json"
@@ -502,6 +519,84 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
         if mermaid_path.read_text(encoding="utf-8") != direct_mermaid:
             raise RuntimeError(
                 "written installed-wheel Mermaid graph differs from direct rendering"
+            )
+
+        explanation_result = _run(
+            [
+                starshine_command,
+                "explain",
+                str(workflow_path),
+                "--layer-name",
+                "zones",
+                "--layer-name",
+                "sites",
+                "--layer-name",
+                "unused",
+                "--format",
+                "json",
+            ]
+        )
+        if json.loads(explanation_result.stdout) != direct_explanation:
+            raise RuntimeError(
+                "installed CLI workflow explanation differs from the public API explanation"
+            )
+        _run(
+            [
+                starshine_command,
+                "explain",
+                str(workflow_path),
+                "--layer-name",
+                "zones",
+                "--layer-name",
+                "sites",
+                "--layer-name",
+                "unused",
+                "--format",
+                "json",
+                "--output",
+                str(explanation_path),
+            ]
+        )
+        if json.loads(explanation_path.read_text(encoding="utf-8")) != direct_explanation:
+            raise RuntimeError(
+                "written installed-wheel explanation differs from direct explanation"
+            )
+
+        markdown_result = _run(
+            [
+                starshine_command,
+                "explain",
+                str(workflow_path),
+                "--layer-name",
+                "zones",
+                "--layer-name",
+                "sites",
+                "--layer-name",
+                "unused",
+            ]
+        )
+        if markdown_result.stdout != direct_markdown:
+            raise RuntimeError(
+                "installed CLI Markdown explanation differs from the public renderer"
+            )
+        _run(
+            [
+                starshine_command,
+                "explain",
+                str(workflow_path),
+                "--layer-name",
+                "zones",
+                "--layer-name",
+                "sites",
+                "--layer-name",
+                "unused",
+                "--output",
+                str(explanation_markdown_path),
+            ]
+        )
+        if explanation_markdown_path.read_text(encoding="utf-8") != direct_markdown:
+            raise RuntimeError(
+                "written installed-wheel Markdown explanation differs from direct rendering"
             )
 
         inspection_result = _run([starshine_command, "inspect", str(zones_path)])

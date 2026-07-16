@@ -123,3 +123,12 @@ provenance and step ordering into a smaller node-and-edge report. Graphs intenti
 parameter values, feature content, and paths. Use the plan when reviewing defaults and CRS behavior,
 and use the graph when a compact dependency view or Mermaid diagram is more useful. See
 `docs/WORKFLOW_GRAPH.md` and `schemas/workflow-graph-v1.schema.json`.
+
+
+## Explanations derived from plans and graphs
+
+`explain_workflow()` and `starshine explain` reuse the canonical plan and its graph digest, then
+organize input provenance, direct dependencies, provided/default parameter sources, terminal output
+status, and reviewed CRS behavior into a smaller explanation report. The Markdown renderer is aimed
+at code review, teaching, and reproducibility notes. See `docs/WORKFLOW_EXPLAIN.md` and
+`schemas/workflow-explanation-v1.schema.json`.

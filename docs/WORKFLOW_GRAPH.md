@@ -90,3 +90,10 @@ A graph is also not an execution manifest. Use:
 - `starshine plan` for resolved defaults and detailed pre-execution metadata;
 - `starshine graph` for a reviewable dependency view;
 - `starshine run --manifest` for post-execution reproducibility evidence.
+
+
+## From graph to explanation
+
+Workflow explanations retain the graph digest as evidence while adding registry-resolved parameter
+provenance, step summaries, and execution-time limitations. Use `starshine graph` for compact data
+flow and `starshine explain` for a review narrative.

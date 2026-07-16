@@ -2,6 +2,11 @@
 
 from ._version import __version__
 from .errors import WorkflowDiagnostic, WorkflowValidationError
+from .explain import (
+    WORKFLOW_EXPLANATION_VERSION,
+    explain_workflow,
+    render_workflow_explanation_markdown,
+)
 from .geopackage import list_geopackage_layers, read_geopackage, write_geopackage
 from .graph import (
     WORKFLOW_GRAPH_VERSION,
@@ -27,6 +32,7 @@ from .workflow import run_workflow, validate_workflow
 
 __all__ = [
     "WorkflowDiagnostic",
+    "WORKFLOW_EXPLANATION_VERSION",
     "WorkflowValidationError",
     "OPERATOR_REGISTRY",
     "WORKFLOW_GRAPH_VERSION",
@@ -39,6 +45,7 @@ __all__ = [
     "build_manifest",
     "digest_json",
     "dissolve_features",
+    "explain_workflow",
     "join_points_to_polygons",
     "nearest_features",
     "inspect_feature_collection",
@@ -46,6 +53,7 @@ __all__ = [
     "plan_workflow",
     "list_geopackage_layers",
     "read_geopackage",
+    "render_workflow_explanation_markdown",
     "render_workflow_mermaid",
     "reproject_features",
     "run_workflow",

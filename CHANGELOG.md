@@ -29,7 +29,10 @@ All notable public changes are documented here.
 - benchmark corpus version 5, identifying reports that include projected geometry metrics;
 - deterministic `build_workflow_graph()` and `render_workflow_mermaid()` APIs plus `starshine graph`,
   with schema-checked JSON graphs, safely escaped Mermaid output, plan-derived dependencies, and
-  clean installed-wheel coverage.
+  clean installed-wheel coverage;
+- deterministic `explain_workflow()` and Markdown rendering plus `starshine explain`, with
+  plan-derived parameter provenance, graph-linked evidence, execution-time limitations, a
+  machine-readable Schema, and clean installed-wheel coverage.
 
 ## [0.3.0] - 2026-07-14
 

@@ -31,6 +31,7 @@ The public 0.3 line provides:
 - a declarative operator registry and machine-readable catalog with no dynamic `eval`;
 - deterministic data-free workflow plans with dependencies, defaults, layer provenance, and digests;
 - schema-checked JSON workflow graphs and safely escaped Mermaid dependency views;
+- data-free Workflow Explain reports with parameter provenance and review-ready Markdown;
 - optional path-free reproducibility manifests;
 - optional GeoPackage input/output with explicit layer, CRS, and overwrite rules;
 - deterministic GeoJSON inspection reports with counts, bounds, CRS, fields, and digests;
@@ -122,6 +123,24 @@ Mermaid is the default output. Use `--format json` for a schema-checked graph re
 or a user interface. See [workflow graphs](docs/WORKFLOW_GRAPH.md), the
 [workflow graph schema](schemas/workflow-graph-v1.schema.json), and the tracked
 [Mermaid example](examples/plan.workflow.mmd).
+
+## Explain a workflow for review or teaching
+
+The explain command converts the canonical plan and graph evidence into a step-by-step Markdown
+narrative without loading feature data:
+
+```bash
+starshine explain examples/plan.workflow.json \
+  --layer-name source \
+  --layer-name mask \
+  --layer-name unused
+```
+
+Use `--format json` for a Schema-checked explanation report containing input provenance, direct
+dependencies, provided/default parameter sources, output-CRS behavior, terminal outputs, and
+execution-time limitations. See [workflow explanations](docs/WORKFLOW_EXPLAIN.md), the
+[explanation schema](schemas/workflow-explanation-v1.schema.json), and the tracked
+[Markdown example](examples/plan.workflow.explanation.md).
 
 ## Inspect a GeoJSON collection without running a workflow
 
