@@ -31,7 +31,7 @@ Changelog = "https://github.com/liu2024whu-bit/starshine/blob/main/CHANGELOG.md"
 [project.optional-dependencies]
 dev = [
   "jsonschema>=4.23,<5",
-  "pytest>=8,<9",
+  "pytest>=8,<10",
   "ruff>=0.5,<1",
   "tomli>=2,<3; python_version < '3.11'",
 ]
