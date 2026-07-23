@@ -203,7 +203,7 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
     direct_contract_markdown = starshine_geo.render_workflow_contract_markdown(direct_contract)
     if "## Layer `zones`" not in direct_contract_markdown:
         raise RuntimeError(f"unexpected Markdown workflow contract: {direct_contract_markdown}")
-    if "`point_count` (collision policy: overwrite)" not in direct_contract_markdown:
+    if "`site_count` (collision policy: overwrite)" not in direct_contract_markdown:
         raise RuntimeError("workflow contract omitted field-write policy")
 
     nearest_candidates = {
