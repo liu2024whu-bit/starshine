@@ -6,6 +6,11 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Any, Callable, Mapping
 
+from .contract_specs import (
+    FieldRequirementSpec,
+    FieldWriteSpec,
+    InputContractSpec,
+)
 from .crs import parse_crs, require_projected_crs
 from .errors import ValidationError
 from .geojson import FeatureCollection
@@ -34,9 +39,14 @@ class InputSpec:
 
     name: str
     description: str
+    contract: InputContractSpec = InputContractSpec()
 
     def as_dict(self) -> dict[str, Any]:
-        return {"name": self.name, "description": self.description}
+        return {
+            "name": self.name,
+            "description": self.description,
+            "contract": self.contract.as_dict(),
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -267,7 +277,21 @@ _OPERATOR_SPECS = (
     OperatorSpec(
         name="buffer",
         summary="Buffer every input feature in an explicitly projected working CRS.",
-        inputs=(InputSpec("input", "FeatureCollection to buffer."),),
+        inputs=(
+            InputSpec(
+                "input",
+                "FeatureCollection to buffer.",
+                InputContractSpec(
+                    crs_mode="parameter",
+                    crs_parameter="source_crs",
+                    written_fields=(
+                        FieldWriteSpec(name="starshine:buffer_distance", collision_policy="overwrite"),
+                        FieldWriteSpec(name="starshine:work_crs", collision_policy="overwrite"),
+                    ),
+                    notes=("The work_crs parameter must describe a projected CRS.",),
+                ),
+            ),
+        ),
         parameters=(
             ParameterSpec(
                 "distance",
@@ -304,7 +328,17 @@ _OPERATOR_SPECS = (
     OperatorSpec(
         name="dissolve",
         summary="Union all input geometries, optionally grouped by one property field.",
-        inputs=(InputSpec("input", "FeatureCollection whose geometries will be dissolved."),),
+        inputs=(
+            InputSpec(
+                "input",
+                "FeatureCollection whose geometries will be dissolved.",
+                InputContractSpec(
+                    notes=(
+                        "A missing group_field property is treated as null rather than rejected.",
+                    ),
+                ),
+            ),
+        ),
         parameters=(
             ParameterSpec(
                 "group_field",
@@ -325,7 +359,19 @@ _OPERATOR_SPECS = (
     OperatorSpec(
         name="geometry_metrics",
         summary="Attach projected area and length values without changing feature geometry.",
-        inputs=(InputSpec("input", "FeatureCollection whose geometry and order are preserved."),),
+        inputs=(
+            InputSpec(
+                "input",
+                "FeatureCollection whose geometry and order are preserved.",
+                InputContractSpec(
+                    crs_mode="projected",
+                    written_fields=(
+                        FieldWriteSpec(parameter="area_field", collision_policy="reject"),
+                        FieldWriteSpec(parameter="length_field", collision_policy="reject"),
+                    ),
+                ),
+            ),
+        ),
         parameters=(
             ParameterSpec(
                 "area_field",
@@ -349,8 +395,35 @@ _OPERATOR_SPECS = (
         name="summarize_points_within",
         summary="Count Point features covered by each polygon feature.",
         inputs=(
-            InputSpec("polygons", "Polygon FeatureCollection whose properties are preserved."),
-            InputSpec("points", "Point FeatureCollection to count."),
+            InputSpec(
+                "polygons",
+                "Polygon FeatureCollection whose properties are preserved.",
+                InputContractSpec(
+                    required_fields=(
+                        FieldRequirementSpec(
+                            parameter="polygon_id_field",
+                            unique=True,
+                            non_null=True,
+                        ),
+                    ),
+                    written_fields=(
+                        FieldWriteSpec(parameter="count_field", collision_policy="overwrite"),
+                    ),
+                    notes=(
+                        "The current operator does not enforce polygon geometry or CRS equivalence.",
+                    ),
+                ),
+            ),
+            InputSpec(
+                "points",
+                "Point FeatureCollection to count.",
+                InputContractSpec(
+                    geometry_types=("Point",),
+                    notes=(
+                        "The current operator does not enforce CRS equivalence with polygons.",
+                    ),
+                ),
+            ),
         ),
         parameters=(
             ParameterSpec(
@@ -380,10 +453,31 @@ _OPERATOR_SPECS = (
             InputSpec(
                 "points",
                 "Point FeatureCollection whose properties and order are preserved.",
+                InputContractSpec(
+                    geometry_types=("Point",),
+                    crs_mode="declared",
+                    equivalent_crs_to="polygons",
+                    written_fields=(
+                        FieldWriteSpec(parameter="output_field", collision_policy="reject"),
+                    ),
+                ),
             ),
             InputSpec(
                 "polygons",
                 "Polygon or MultiPolygon FeatureCollection in an equivalent CRS.",
+                InputContractSpec(
+                    geometry_types=("Polygon", "MultiPolygon"),
+                    crs_mode="declared",
+                    equivalent_crs_to="points",
+                    required_fields=(
+                        FieldRequirementSpec(
+                            parameter="polygon_id_field",
+                            unique=True,
+                            non_null=True,
+                            finite_json_scalar=True,
+                        ),
+                    ),
+                ),
             ),
         ),
         parameters=(
@@ -432,10 +526,33 @@ _OPERATOR_SPECS = (
             "Attach the nearest candidate identifier and projected distance to each source feature."
         ),
         inputs=(
-            InputSpec("source", "FeatureCollection whose properties and order are preserved."),
+            InputSpec(
+                "source",
+                "FeatureCollection whose properties and order are preserved.",
+                InputContractSpec(
+                    crs_mode="projected",
+                    equivalent_crs_to="candidates",
+                    written_fields=(
+                        FieldWriteSpec(parameter="nearest_id_field", collision_policy="reject"),
+                        FieldWriteSpec(parameter="distance_field", collision_policy="reject"),
+                    ),
+                ),
+            ),
             InputSpec(
                 "candidates",
                 "FeatureCollection containing uniquely identified nearest-match candidates.",
+                InputContractSpec(
+                    crs_mode="projected",
+                    equivalent_crs_to="source",
+                    required_fields=(
+                        FieldRequirementSpec(
+                            parameter="candidate_id_field",
+                            unique=True,
+                            non_null=True,
+                            finite_json_scalar=True,
+                        ),
+                    ),
+                ),
             ),
         ),
         parameters=(
@@ -479,7 +596,16 @@ _OPERATOR_SPECS = (
     OperatorSpec(
         name="reproject",
         summary="Transform every geometry to a target CRS while preserving properties and order.",
-        inputs=(InputSpec("input", "FeatureCollection to transform."),),
+        inputs=(
+            InputSpec(
+                "input",
+                "FeatureCollection to transform.",
+                InputContractSpec(
+                    crs_mode="declared_or_parameter",
+                    crs_parameter="source_crs",
+                ),
+            ),
+        ),
         parameters=(
             ParameterSpec(
                 "target_crs",
@@ -508,8 +634,23 @@ _OPERATOR_SPECS = (
         name="clip",
         summary="Intersect each input feature with the union of a polygon mask collection.",
         inputs=(
-            InputSpec("input", "FeatureCollection whose properties and order are preserved."),
-            InputSpec("mask", "Polygon or MultiPolygon FeatureCollection in an equivalent CRS."),
+            InputSpec(
+                "input",
+                "FeatureCollection whose properties and order are preserved.",
+                InputContractSpec(
+                    crs_mode="declared",
+                    equivalent_crs_to="mask",
+                ),
+            ),
+            InputSpec(
+                "mask",
+                "Polygon or MultiPolygon FeatureCollection in an equivalent CRS.",
+                InputContractSpec(
+                    geometry_types=("Polygon", "MultiPolygon"),
+                    crs_mode="declared",
+                    equivalent_crs_to="input",
+                ),
+            ),
         ),
         parameters=(),
         output_crs="input layer; mask must declare an equivalent CRS",

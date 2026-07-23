@@ -32,6 +32,7 @@ The public 0.3 line provides:
 - deterministic data-free workflow plans with dependencies, defaults, layer provenance, and digests;
 - schema-checked JSON workflow graphs and safely escaped Mermaid dependency views;
 - data-free Workflow Explain reports with parameter provenance and review-ready Markdown;
+- planner-derived external-layer contracts for geometry, CRS, and property preparation;
 - optional path-free reproducibility manifests;
 - optional GeoPackage input/output with explicit layer, CRS, and overwrite rules;
 - deterministic GeoJSON inspection reports with counts, bounds, CRS, fields, and digests;
@@ -141,6 +142,23 @@ dependencies, provided/default parameter sources, output-CRS behavior, terminal 
 execution-time limitations. See [workflow explanations](docs/WORKFLOW_EXPLAIN.md), the
 [explanation schema](schemas/workflow-explanation-v1.schema.json), and the tracked
 [Markdown example](examples/plan.workflow.explanation.md).
+
+## Prepare external layers with a workflow contract
+
+The contract command converts registry input metadata and the canonical plan into a deterministic
+checklist without reading feature data:
+
+```bash
+starshine contract examples/plan.workflow.json \
+  --layer-name source \
+  --layer-name mask \
+  --layer-name unused
+```
+
+Markdown is the default output. Use `--format json` for a schema-checked report suitable for CI or a
+data-loading interface. See [workflow input contracts](docs/WORKFLOW_CONTRACTS.md), the
+[contract schema](schemas/workflow-contract-v1.schema.json), and the tracked
+[Markdown example](examples/plan.workflow.contract.md).
 
 ## Inspect a GeoJSON collection without running a workflow
 

@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from ._version import __version__
+from .contracts import build_workflow_contract, render_workflow_contract_markdown
 from .errors import StarshineError, WorkflowValidationError
 from .explain import explain_workflow, render_workflow_explanation_markdown
 from .graph import build_workflow_graph, render_workflow_mermaid
@@ -151,6 +152,31 @@ def build_parser() -> argparse.ArgumentParser:
         help="Optionally write the workflow explanation instead of printing it",
     )
     _add_diagnostic_format(explain_parser)
+
+    contract_parser = subparsers.add_parser(
+        "contract",
+        help="Describe external layer geometry, CRS, and field requirements",
+    )
+    contract_parser.add_argument("workflow", type=Path)
+    contract_parser.add_argument(
+        "--layer-name",
+        action="append",
+        default=[],
+        metavar="NAME",
+        help="Declare an available external layer name; repeat for multiple layers",
+    )
+    contract_parser.add_argument(
+        "--format",
+        choices=("json", "markdown"),
+        default="markdown",
+        help="Choose a machine-readable JSON report or Markdown preparation checklist",
+    )
+    contract_parser.add_argument(
+        "--output",
+        type=Path,
+        help="Optionally write the workflow input contract instead of printing it",
+    )
+    _add_diagnostic_format(contract_parser)
     return parser
 
 
@@ -282,6 +308,25 @@ def _explain_command(args: argparse.Namespace) -> int:
     return 0
 
 
+def _contract_command(args: argparse.Namespace) -> int:
+    if args.output is not None and args.output.resolve() == args.workflow.resolve():
+        raise StarshineError("workflow contract output must not overwrite the workflow file")
+    workflow = read_json(args.workflow)
+    contract = build_workflow_contract(workflow, _parse_layer_names(args.layer_name))
+    if args.format == "json":
+        content = json.dumps(contract, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    else:
+        content = render_workflow_contract_markdown(contract)
+
+    if args.output is None:
+        print(content, end="")
+    else:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(content, encoding="utf-8")
+        print(args.output)
+    return 0
+
+
 def _run_command(args: argparse.Namespace) -> int:
     workflow = read_json(args.workflow)
     layers = _parse_layers(args.layer)
@@ -317,6 +362,8 @@ def main(argv: list[str] | None = None) -> int:
             return _graph_command(args)
         if args.command == "explain":
             return _explain_command(args)
+        if args.command == "contract":
+            return _contract_command(args)
         return _run_command(args)
     except StarshineError as exc:
         _print_error(exc, getattr(args, "diagnostic_format", "text"))

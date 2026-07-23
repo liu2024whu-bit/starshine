@@ -73,6 +73,6 @@ Union all input geometries, optionally grouped by one property field.
 ## Evidence
 
 - Workflow digest: `sha256:ce8caa2b82cb5c54059f4b48db3763620c3ced37263081ad457252121dff66ef`
-- Plan digest: `sha256:84cc18b4e6d5d6fa1cbe14f8ed47627af71af07962aaf8faa78afd667225f6be`
-- Graph digest: `sha256:aaca2c7994a9ca0631ff50ed81ebd1c08024679078090a9dca429e33578ec57b`
-- Explanation digest: `sha256:dc16fc72e33861f6114939649d526151a7542b07f4c7bb8a549c3dd33336c9f4`
+- Plan digest: `sha256:515d855bf7acfdd88ad9ec71909a60d552c8dfd051f2a2ce038c5d6f68e66339`
+- Graph digest: `sha256:cbf41366749f7adb962f64ac0b4e205ff018818f66a73e5234b18e411388e664`
+- Explanation digest: `sha256:c1123630ca5c8d9bfb6199a4fb3b7ee74eaaf2b52a68b8faac14b95692806e24`

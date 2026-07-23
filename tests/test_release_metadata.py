@@ -56,6 +56,7 @@ def test_cli_reports_installed_version(capsys):
 
 def test_top_level_api_exports_public_operator_surfaces():
     assert callable(starshine_geo.build_workflow_graph)
+    assert callable(starshine_geo.build_workflow_contract)
     assert callable(starshine_geo.clip_features)
     assert callable(starshine_geo.calculate_geometry_metrics)
     assert callable(starshine_geo.dissolve_features)
@@ -65,12 +66,15 @@ def test_top_level_api_exports_public_operator_surfaces():
     assert callable(starshine_geo.reproject_features)
     assert callable(starshine_geo.operator_catalog)
     assert callable(starshine_geo.plan_workflow)
+    assert callable(starshine_geo.render_workflow_contract_markdown)
     assert callable(starshine_geo.render_workflow_explanation_markdown)
     assert callable(starshine_geo.render_workflow_mermaid)
+    assert starshine_geo.WORKFLOW_CONTRACT_VERSION == 1
     assert starshine_geo.WORKFLOW_EXPLANATION_VERSION == 1
     assert starshine_geo.WORKFLOW_GRAPH_VERSION == 1
     assert starshine_geo.WORKFLOW_PLAN_VERSION == 1
     assert "build_workflow_graph" in starshine_geo.__all__
+    assert "build_workflow_contract" in starshine_geo.__all__
     assert "clip_features" in starshine_geo.__all__
     assert "calculate_geometry_metrics" in starshine_geo.__all__
     assert "dissolve_features" in starshine_geo.__all__
@@ -80,8 +84,10 @@ def test_top_level_api_exports_public_operator_surfaces():
     assert "reproject_features" in starshine_geo.__all__
     assert "operator_catalog" in starshine_geo.__all__
     assert "plan_workflow" in starshine_geo.__all__
+    assert "render_workflow_contract_markdown" in starshine_geo.__all__
     assert "render_workflow_explanation_markdown" in starshine_geo.__all__
     assert "render_workflow_mermaid" in starshine_geo.__all__
+    assert "WORKFLOW_CONTRACT_VERSION" in starshine_geo.__all__
     assert "WORKFLOW_EXPLANATION_VERSION" in starshine_geo.__all__
     assert "WORKFLOW_GRAPH_VERSION" in starshine_geo.__all__
     assert "WORKFLOW_PLAN_VERSION" in starshine_geo.__all__

@@ -61,6 +61,11 @@ def test_operator_catalog_is_stable_and_defensive():
         for operator in first["operators"]
         for parameter in operator["parameters"]
     )
+    assert all(
+        "contract" in input_spec
+        for operator in first["operators"]
+        for input_spec in operator["inputs"]
+    )
 
     first["operators"][0]["parameters"][0]["schema"]["exclusiveMinimum"] = -1
     assert operator_catalog()["operators"][0]["parameters"][0]["schema"] == {
@@ -92,6 +97,23 @@ def test_runtime_registry_and_workflow_schema_describe_the_same_contracts():
                 workflow_schema,
             )
             assert parameter.required is (parameter.name in required_parameters)
+
+
+def test_operator_input_contract_parameter_references_are_valid():
+    for spec in OPERATOR_REGISTRY.values():
+        parameter_names = {parameter.name for parameter in spec.parameters}
+        input_names = set(spec.input_names)
+        for input_spec in spec.inputs:
+            contract = input_spec.contract
+            if contract.crs_parameter is not None:
+                assert contract.crs_parameter in parameter_names
+            if contract.equivalent_crs_to is not None:
+                assert contract.equivalent_crs_to in input_names
+            for requirement in contract.required_fields:
+                assert requirement.parameter in parameter_names
+            for write in contract.written_fields:
+                if write.parameter is not None:
+                    assert write.parameter in parameter_names
 
 
 def test_compatibility_maps_are_derived_from_registry():

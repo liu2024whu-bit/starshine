@@ -1,6 +1,11 @@
 """Public geospatial workflow core for Starshine."""
 
 from ._version import __version__
+from .contracts import (
+    WORKFLOW_CONTRACT_VERSION,
+    build_workflow_contract,
+    render_workflow_contract_markdown,
+)
 from .errors import WorkflowDiagnostic, WorkflowValidationError
 from .explain import (
     WORKFLOW_EXPLANATION_VERSION,
@@ -32,6 +37,7 @@ from .workflow import run_workflow, validate_workflow
 
 __all__ = [
     "WorkflowDiagnostic",
+    "WORKFLOW_CONTRACT_VERSION",
     "WORKFLOW_EXPLANATION_VERSION",
     "WorkflowValidationError",
     "OPERATOR_REGISTRY",
@@ -39,6 +45,7 @@ __all__ = [
     "WORKFLOW_PLAN_VERSION",
     "__version__",
     "buffer_features",
+    "build_workflow_contract",
     "build_workflow_graph",
     "clip_features",
     "calculate_geometry_metrics",
@@ -53,6 +60,7 @@ __all__ = [
     "plan_workflow",
     "list_geopackage_layers",
     "read_geopackage",
+    "render_workflow_contract_markdown",
     "render_workflow_explanation_markdown",
     "render_workflow_mermaid",
     "reproject_features",

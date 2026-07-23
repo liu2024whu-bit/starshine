@@ -35,7 +35,8 @@
       "additionalProperties": false,
       "required": [
         "name",
-        "description"
+        "description",
+        "contract"
       ],
       "properties": {
         "name": {
@@ -43,6 +44,9 @@
         },
         "description": {
           "$ref": "#/$defs/nonEmptyString"
+        },
+        "contract": {
+          "$ref": "#/$defs/inputContract"
         }
       }
     },
@@ -111,6 +115,140 @@
         },
         "deterministic": {
           "type": "boolean"
+        }
+      }
+    },
+    "fieldRequirementSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "parameter",
+        "unique",
+        "non_null",
+        "finite_json_scalar"
+      ],
+      "properties": {
+        "parameter": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "unique": {
+          "type": "boolean"
+        },
+        "non_null": {
+          "type": "boolean"
+        },
+        "finite_json_scalar": {
+          "type": "boolean"
+        }
+      }
+    },
+    "fieldWriteSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "collision_policy"
+      ],
+      "properties": {
+        "parameter": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "collision_policy": {
+          "type": "string",
+          "enum": [
+            "reject",
+            "overwrite"
+          ]
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "parameter"
+          ],
+          "not": {
+            "required": [
+              "name"
+            ]
+          }
+        },
+        {
+          "required": [
+            "name"
+          ],
+          "not": {
+            "required": [
+              "parameter"
+            ]
+          }
+        }
+      ]
+    },
+    "inputContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "geometry_types",
+        "crs",
+        "required_fields",
+        "written_fields",
+        "notes"
+      ],
+      "properties": {
+        "geometry_types": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "uniqueItems": true
+        },
+        "crs": {
+          "$ref": "#/$defs/inputCrsContract"
+        },
+        "required_fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/fieldRequirementSpec"
+          }
+        },
+        "written_fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/fieldWriteSpec"
+          }
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        }
+      }
+    },
+    "inputCrsContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "none",
+            "declared",
+            "projected",
+            "parameter",
+            "declared_or_parameter"
+          ]
+        },
+        "parameter": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "equivalent_to_input": {
+          "$ref": "#/$defs/nonEmptyString"
         }
       }
     }

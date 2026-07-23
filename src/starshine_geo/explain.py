@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import json
 from copy import deepcopy
 from typing import Any, Iterable
 
+from ._markdown import inline_code
 from .errors import ValidationError
 from .graph import _build_workflow_graph_from_plan
 from .manifest import digest_json
@@ -93,15 +93,6 @@ def explain_workflow(
     return explanation
 
 
-def _inline_code(value: Any, *, quote_strings: bool = True) -> str:
-    if isinstance(value, str) and not quote_strings:
-        text = value
-    else:
-        text = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-    text = " ".join(text.splitlines()).replace("`", "\\`")
-    return f"`{text}`"
-
-
 def _validate_explanation_for_render(explanation: WorkflowExplanation) -> list[dict[str, Any]]:
     if not isinstance(explanation, dict) or explanation.get("schema_version") != 1:
         raise ValidationError("workflow explanation must use schema version 1")
@@ -126,12 +117,12 @@ def render_workflow_explanation_markdown(explanation: WorkflowExplanation) -> st
         values = explanation.get(name, [])
         if not values:
             return "none"
-        return ", ".join(_inline_code(value, quote_strings=False) for value in values)
+        return ", ".join(inline_code(value, quote_strings=False) for value in values)
 
     lines = [
         "# Starshine Workflow Explanation",
         "",
-        f"- Workflow version: {_inline_code(explanation['workflow_version'])}",
+        f"- Workflow version: {inline_code(explanation['workflow_version'])}",
         f"- Steps: {explanation['step_count']}",
         f"- Required external layers: {layer_list('required_external_layers')}",
         f"- Unused external layers: {layer_list('unused_external_layers')}",
@@ -144,7 +135,7 @@ def render_workflow_explanation_markdown(explanation: WorkflowExplanation) -> st
     for step in steps:
         lines.extend(
             [
-                f"## Step {step['index']}: {_inline_code(step['operation'], quote_strings=False)}",
+                f"## Step {step['index']}: {inline_code(step['operation'], quote_strings=False)}",
                 "",
                 str(step["summary"]),
                 "",
@@ -154,20 +145,20 @@ def render_workflow_explanation_markdown(explanation: WorkflowExplanation) -> st
         )
         for item in step["inputs"]:
             if item["source_kind"] == "external":
-                source = f"external layer {_inline_code(item['layer'], quote_strings=False)}"
+                source = f"external layer {inline_code(item['layer'], quote_strings=False)}"
             else:
                 source = (
-                    f"layer {_inline_code(item['layer'], quote_strings=False)} produced by step "
+                    f"layer {inline_code(item['layer'], quote_strings=False)} produced by step "
                     f"{item['producer_step']}"
                 )
-            lines.append(f"- {_inline_code(item['name'], quote_strings=False)}: {source}")
+            lines.append(f"- {inline_code(item['name'], quote_strings=False)}: {source}")
 
         lines.extend(["", "### Parameters", ""])
         if step["parameters"]:
             for parameter in step["parameters"]:
                 lines.append(
-                    f"- {_inline_code(parameter['name'], quote_strings=False)} = "
-                    f"{_inline_code(parameter['value'])} ({parameter['source']})"
+                    f"- {inline_code(parameter['name'], quote_strings=False)} = "
+                    f"{inline_code(parameter['value'])} ({parameter['source']})"
                 )
         else:
             lines.append("- none")
@@ -178,7 +169,7 @@ def render_workflow_explanation_markdown(explanation: WorkflowExplanation) -> st
             [
                 "",
                 f"- Direct dependencies: {dependency_text}",
-                f"- Output layer: {_inline_code(step['output'], quote_strings=False)}",
+                f"- Output layer: {inline_code(step['output'], quote_strings=False)}",
                 f"- Output CRS behavior: {step['output_crs']}",
                 "- Deterministic: " + ("yes" if step["deterministic"] else "no"),
                 "- Terminal output: " + ("yes" if step["terminal"] else "no"),
@@ -195,10 +186,10 @@ def render_workflow_explanation_markdown(explanation: WorkflowExplanation) -> st
             "",
             "## Evidence",
             "",
-            f"- Workflow digest: {_inline_code(explanation['workflow_digest'], quote_strings=False)}",
-            f"- Plan digest: {_inline_code(explanation['plan_digest'], quote_strings=False)}",
-            f"- Graph digest: {_inline_code(explanation['graph_digest'], quote_strings=False)}",
-            f"- Explanation digest: {_inline_code(explanation['explanation_digest'], quote_strings=False)}",
+            f"- Workflow digest: {inline_code(explanation['workflow_digest'], quote_strings=False)}",
+            f"- Plan digest: {inline_code(explanation['plan_digest'], quote_strings=False)}",
+            f"- Graph digest: {inline_code(explanation['graph_digest'], quote_strings=False)}",
+            f"- Explanation digest: {inline_code(explanation['explanation_digest'], quote_strings=False)}",
             "",
         ]
     )

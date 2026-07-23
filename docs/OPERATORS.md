@@ -2,7 +2,7 @@
 
 Starshine keeps its bounded workflow operations in one declarative runtime registry. Each
 `OperatorSpec` combines the executable adapter with the public input names, parameter validation,
-JSON-compatible parameter schemas, defaults, sensitivity annotations, output-CRS behavior, and a
+JSON-compatible parameter schemas, defaults, sensitivity annotations, per-input data contracts, output-CRS behavior, and a
 short description. Runtime execution and workflow planning resolve defaults from this same entry.
 
 The registry is intentionally **not** a dynamic plugin loader. Workflow JSON cannot import Python
@@ -187,3 +187,8 @@ A new bounded operator should arrive through a public issue and include, in one 
 
 This contract makes the registry a controlled extension point without turning workflow files into a
 code-loading mechanism.
+
+
+## Input contract metadata
+
+Every catalog input now publishes a `contract` object describing geometry restrictions, CRS rules, parameter-named required fields, fields written by the operator, collision policy, and focused notes. `build_workflow_contract()` resolves this metadata with planner defaults and external-layer provenance. See [workflow input contracts](WORKFLOW_CONTRACTS.md).

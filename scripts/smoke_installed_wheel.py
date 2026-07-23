@@ -50,6 +50,7 @@ def _assert_installed_location() -> Path:
 def _assert_public_imports() -> None:
     expected_callables = (
         "buffer_features",
+        "build_workflow_contract",
         "build_workflow_graph",
         "build_manifest",
         "clip_features",
@@ -64,6 +65,7 @@ def _assert_public_imports() -> None:
         "plan_workflow",
         "list_geopackage_layers",
         "read_geopackage",
+        "render_workflow_contract_markdown",
         "render_workflow_explanation_markdown",
         "render_workflow_mermaid",
         "reproject_features",
@@ -191,6 +193,19 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
     if '`polygon_id_field` = `"id"` (provided)' not in direct_markdown:
         raise RuntimeError("workflow explanation omitted provided parameter provenance")
 
+    direct_contract = starshine_geo.build_workflow_contract(
+        workflow, {"zones", "sites", "unused"}
+    )
+    if direct_contract.get("plan_digest") != direct_plan.get("plan_digest"):
+        raise RuntimeError(f"workflow contract does not reference the plan: {direct_contract}")
+    if direct_contract.get("required_external_layers") != ["sites", "zones"]:
+        raise RuntimeError(f"unexpected workflow contract layers: {direct_contract}")
+    direct_contract_markdown = starshine_geo.render_workflow_contract_markdown(direct_contract)
+    if "## Layer `zones`" not in direct_contract_markdown:
+        raise RuntimeError(f"unexpected Markdown workflow contract: {direct_contract_markdown}")
+    if "`site_count` (collision policy: overwrite)" not in direct_contract_markdown:
+        raise RuntimeError("workflow contract omitted field-write policy")
+
     nearest_candidates = {
         "type": "FeatureCollection",
         "starshine:crs": "EPSG:3857",
@@ -294,6 +309,8 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
         graph_path = root / "workflow.graph.json"
         explanation_path = root / "workflow.explanation.json"
         explanation_markdown_path = root / "workflow.explanation.md"
+        contract_path = root / "workflow.contract.json"
+        contract_markdown_path = root / "workflow.contract.md"
         mermaid_path = root / "workflow.mmd"
         invalid_path = root / "invalid-workflow.json"
         reproject_workflow_path = root / "reproject-workflow.json"
@@ -598,6 +615,76 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
             raise RuntimeError(
                 "written installed-wheel Markdown explanation differs from direct rendering"
             )
+
+        contract_result = _run(
+            [
+                starshine_command,
+                "contract",
+                str(workflow_path),
+                "--layer-name",
+                "zones",
+                "--layer-name",
+                "sites",
+                "--layer-name",
+                "unused",
+                "--format",
+                "json",
+            ]
+        )
+        if json.loads(contract_result.stdout) != direct_contract:
+            raise RuntimeError("installed CLI workflow contract differs from the public API contract")
+        _run(
+            [
+                starshine_command,
+                "contract",
+                str(workflow_path),
+                "--layer-name",
+                "zones",
+                "--layer-name",
+                "sites",
+                "--layer-name",
+                "unused",
+                "--format",
+                "json",
+                "--output",
+                str(contract_path),
+            ]
+        )
+        if json.loads(contract_path.read_text(encoding="utf-8")) != direct_contract:
+            raise RuntimeError("written installed-wheel contract differs from direct contract")
+
+        contract_markdown_result = _run(
+            [
+                starshine_command,
+                "contract",
+                str(workflow_path),
+                "--layer-name",
+                "zones",
+                "--layer-name",
+                "sites",
+                "--layer-name",
+                "unused",
+            ]
+        )
+        if contract_markdown_result.stdout != direct_contract_markdown:
+            raise RuntimeError("installed CLI Markdown contract differs from the public renderer")
+        _run(
+            [
+                starshine_command,
+                "contract",
+                str(workflow_path),
+                "--layer-name",
+                "zones",
+                "--layer-name",
+                "sites",
+                "--layer-name",
+                "unused",
+                "--output",
+                str(contract_markdown_path),
+            ]
+        )
+        if contract_markdown_path.read_text(encoding="utf-8") != direct_contract_markdown:
+            raise RuntimeError("written installed-wheel Markdown contract differs from direct rendering")
 
         inspection_result = _run([starshine_command, "inspect", str(zones_path)])
         cli_inspection = json.loads(inspection_result.stdout)

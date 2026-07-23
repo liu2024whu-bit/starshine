@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/liu2024whu-bit/starshine/schemas/workflow-contract-v1.schema.json",
+  "title": "Starshine Geo workflow input contract version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "workflow_version",
+    "workflow_digest",
+    "operator_catalog_version",
+    "operator_catalog_digest",
+    "plan_digest",
+    "declared_external_layers",
+    "required_external_layers",
+    "unused_external_layers",
+    "layer_count",
+    "layers",
+    "remaining_checks",
+    "contract_digest"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "workflow_version": {"const": 1},
+    "workflow_digest": {"$ref": "#/$defs/digest"},
+    "operator_catalog_version": {"const": 1},
+    "operator_catalog_digest": {"$ref": "#/$defs/digest"},
+    "plan_digest": {"$ref": "#/$defs/digest"},
+    "declared_external_layers": {"$ref": "#/$defs/layerList"},
+    "required_external_layers": {"$ref": "#/$defs/layerList"},
+    "unused_external_layers": {"$ref": "#/$defs/layerList"},
+    "layer_count": {"type": "integer", "minimum": 0},
+    "layers": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/layer"}
+    },
+    "remaining_checks": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/nonEmptyString"}
+    },
+    "contract_digest": {"$ref": "#/$defs/digest"}
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "layerList": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/nonEmptyString"},
+      "uniqueItems": true
+    },
+    "layer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "required", "unused", "use_count", "uses"],
+      "properties": {
+        "name": {"$ref": "#/$defs/nonEmptyString"},
+        "required": {"type": "boolean"},
+        "unused": {"type": "boolean"},
+        "use_count": {"type": "integer", "minimum": 0},
+        "uses": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/use"}
+        }
+      }
+    },
+    "use": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "step_index",
+        "operation",
+        "input_name",
+        "geometry_types",
+        "crs",
+        "required_fields",
+        "written_fields",
+        "notes"
+      ],
+      "properties": {
+        "step_index": {"type": "integer", "minimum": 0},
+        "operation": {"$ref": "#/$defs/nonEmptyString"},
+        "input_name": {"$ref": "#/$defs/nonEmptyString"},
+        "geometry_types": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/nonEmptyString"},
+          "uniqueItems": true
+        },
+        "crs": {"$ref": "#/$defs/crs"},
+        "required_fields": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/requiredField"}
+        },
+        "written_fields": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/writtenField"}
+        },
+        "notes": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/nonEmptyString"}
+        }
+      }
+    },
+    "crs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["none", "declared", "projected", "parameter", "declared_or_parameter"]
+        },
+        "parameter": {"$ref": "#/$defs/nonEmptyString"},
+        "value": {},
+        "equivalent_to_layer": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "requiredField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "source_parameter",
+        "unique",
+        "non_null",
+        "finite_json_scalar"
+      ],
+      "properties": {
+        "name": {"$ref": "#/$defs/nonEmptyString"},
+        "source_parameter": {"$ref": "#/$defs/nonEmptyString"},
+        "unique": {"type": "boolean"},
+        "non_null": {"type": "boolean"},
+        "finite_json_scalar": {"type": "boolean"}
+      }
+    },
+    "writtenField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "collision_policy"],
+      "properties": {
+        "name": {"$ref": "#/$defs/nonEmptyString"},
+        "source_parameter": {"$ref": "#/$defs/nonEmptyString"},
+        "collision_policy": {"type": "string", "enum": ["reject", "overwrite"]}
+      }
+    }
+  }
+}
