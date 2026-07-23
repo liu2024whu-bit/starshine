@@ -63,11 +63,13 @@ def _assert_public_imports() -> None:
         "inspect_feature_collection",
         "operator_catalog",
         "plan_workflow",
+        "preflight_workflow_inputs",
         "list_geopackage_layers",
         "read_geopackage",
         "render_workflow_contract_markdown",
         "render_workflow_explanation_markdown",
         "render_workflow_mermaid",
+        "render_workflow_preflight_markdown",
         "reproject_features",
         "run_workflow",
         "summarize_points_within",
@@ -206,6 +208,19 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
     if "`site_count` (collision policy: overwrite)" not in direct_contract_markdown:
         raise RuntimeError("workflow contract omitted field-write policy")
 
+    direct_preflight = starshine_geo.preflight_workflow_inputs(
+        workflow, {"zones": zones, "sites": sites, "unused": {"type": "FeatureCollection", "features": []}}
+    )
+    if not direct_preflight.get("valid") or direct_preflight.get("error_count") != 0:
+        raise RuntimeError(f"unexpected workflow input preflight: {direct_preflight}")
+    if direct_preflight.get("contract_digest") != direct_contract.get("contract_digest"):
+        raise RuntimeError(f"workflow preflight does not reference the contract: {direct_preflight}")
+    direct_preflight_markdown = starshine_geo.render_workflow_preflight_markdown(
+        direct_preflight
+    )
+    if "Status: **PASS**" not in direct_preflight_markdown:
+        raise RuntimeError(f"unexpected Markdown workflow preflight: {direct_preflight_markdown}")
+
     nearest_candidates = {
         "type": "FeatureCollection",
         "starshine:crs": "EPSG:3857",
@@ -311,6 +326,8 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
         explanation_markdown_path = root / "workflow.explanation.md"
         contract_path = root / "workflow.contract.json"
         contract_markdown_path = root / "workflow.contract.md"
+        preflight_path = root / "workflow.preflight.json"
+        preflight_markdown_path = root / "workflow.preflight.md"
         mermaid_path = root / "workflow.mmd"
         invalid_path = root / "invalid-workflow.json"
         reproject_workflow_path = root / "reproject-workflow.json"
@@ -685,6 +702,75 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
         )
         if contract_markdown_path.read_text(encoding="utf-8") != direct_contract_markdown:
             raise RuntimeError("written installed-wheel Markdown contract differs from direct rendering")
+
+        preflight_result = _run(
+            [
+                starshine_command,
+                "preflight",
+                str(workflow_path),
+                "--layer",
+                f"zones={zones_path}",
+                "--layer",
+                f"sites={sites_path}",
+                "--format",
+                "json",
+            ]
+        )
+        cli_preflight = json.loads(preflight_result.stdout)
+        expected_preflight = starshine_geo.preflight_workflow_inputs(
+            workflow, {"zones": zones, "sites": sites}
+        )
+        if cli_preflight != expected_preflight:
+            raise RuntimeError("installed CLI workflow preflight differs from the public API report")
+        _run(
+            [
+                starshine_command,
+                "preflight",
+                str(workflow_path),
+                "--layer",
+                f"zones={zones_path}",
+                "--layer",
+                f"sites={sites_path}",
+                "--format",
+                "json",
+                "--output",
+                str(preflight_path),
+            ]
+        )
+        if json.loads(preflight_path.read_text(encoding="utf-8")) != expected_preflight:
+            raise RuntimeError("written installed-wheel preflight differs from direct preflight")
+
+        preflight_markdown_result = _run(
+            [
+                starshine_command,
+                "preflight",
+                str(workflow_path),
+                "--layer",
+                f"zones={zones_path}",
+                "--layer",
+                f"sites={sites_path}",
+            ]
+        )
+        expected_preflight_markdown = starshine_geo.render_workflow_preflight_markdown(
+            expected_preflight
+        )
+        if preflight_markdown_result.stdout != expected_preflight_markdown:
+            raise RuntimeError("installed CLI Markdown preflight differs from the public renderer")
+        _run(
+            [
+                starshine_command,
+                "preflight",
+                str(workflow_path),
+                "--layer",
+                f"zones={zones_path}",
+                "--layer",
+                f"sites={sites_path}",
+                "--output",
+                str(preflight_markdown_path),
+            ]
+        )
+        if preflight_markdown_path.read_text(encoding="utf-8") != expected_preflight_markdown:
+            raise RuntimeError("written installed-wheel Markdown preflight differs from direct rendering")
 
         inspection_result = _run([starshine_command, "inspect", str(zones_path)])
         cli_inspection = json.loads(inspection_result.stdout)

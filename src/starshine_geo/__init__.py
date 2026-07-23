@@ -23,6 +23,11 @@ from .manifest import build_manifest, digest_json
 from .metrics import calculate_geometry_metrics
 from .operator_registry import OPERATOR_REGISTRY, operator_catalog
 from .planning import WORKFLOW_PLAN_VERSION, plan_workflow
+from .preflight import (
+    WORKFLOW_PREFLIGHT_VERSION,
+    preflight_workflow_inputs,
+    render_workflow_preflight_markdown,
+)
 from .operators import (
     buffer_features,
     clip_features,
@@ -43,6 +48,7 @@ __all__ = [
     "OPERATOR_REGISTRY",
     "WORKFLOW_GRAPH_VERSION",
     "WORKFLOW_PLAN_VERSION",
+    "WORKFLOW_PREFLIGHT_VERSION",
     "__version__",
     "buffer_features",
     "build_workflow_contract",
@@ -58,11 +64,13 @@ __all__ = [
     "inspect_feature_collection",
     "operator_catalog",
     "plan_workflow",
+    "preflight_workflow_inputs",
     "list_geopackage_layers",
     "read_geopackage",
     "render_workflow_contract_markdown",
     "render_workflow_explanation_markdown",
     "render_workflow_mermaid",
+    "render_workflow_preflight_markdown",
     "reproject_features",
     "run_workflow",
     "summarize_points_within",

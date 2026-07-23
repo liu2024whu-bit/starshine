@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/liu2024whu-bit/starshine/schemas/workflow-preflight-v1.schema.json",
+  "title": "Starshine Geo workflow input preflight version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "workflow_version",
+    "workflow_digest",
+    "operator_catalog_version",
+    "operator_catalog_digest",
+    "plan_digest",
+    "contract_digest",
+    "valid",
+    "layer_count",
+    "checked_layer_count",
+    "error_count",
+    "warning_count",
+    "layers",
+    "findings",
+    "remaining_checks",
+    "preflight_digest"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "workflow_version": {"const": 1},
+    "workflow_digest": {"$ref": "#/$defs/digest"},
+    "operator_catalog_version": {"const": 1},
+    "operator_catalog_digest": {"$ref": "#/$defs/digest"},
+    "plan_digest": {"$ref": "#/$defs/digest"},
+    "contract_digest": {"$ref": "#/$defs/digest"},
+    "valid": {"type": "boolean"},
+    "layer_count": {"type": "integer", "minimum": 0},
+    "checked_layer_count": {"type": "integer", "minimum": 0},
+    "error_count": {"type": "integer", "minimum": 0},
+    "warning_count": {"type": "integer", "minimum": 0},
+    "layers": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/layer"}
+    },
+    "findings": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/finding"}
+    },
+    "remaining_checks": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "preflight_digest": {"$ref": "#/$defs/digest"}
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "layer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "required",
+        "unused",
+        "status",
+        "collection_digest",
+        "feature_count",
+        "declared_crs",
+        "geometry_counts",
+        "error_count",
+        "warning_count"
+      ],
+      "properties": {
+        "name": {"$ref": "#/$defs/nonEmptyString"},
+        "required": {"type": "boolean"},
+        "unused": {"type": "boolean"},
+        "status": {"enum": ["passed", "failed", "skipped"]},
+        "collection_digest": {
+          "anyOf": [
+            {"$ref": "#/$defs/digest"},
+            {"type": "null"}
+          ]
+        },
+        "feature_count": {
+          "anyOf": [
+            {"type": "integer", "minimum": 0},
+            {"type": "null"}
+          ]
+        },
+        "declared_crs": {
+          "anyOf": [
+            {"type": "string", "minLength": 1},
+            {"type": "null"}
+          ]
+        },
+        "geometry_counts": {
+          "type": "object",
+          "additionalProperties": {"type": "integer", "minimum": 1}
+        },
+        "error_count": {"type": "integer", "minimum": 0},
+        "warning_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "severity",
+        "code",
+        "message",
+        "layer",
+        "occurrence_count"
+      ],
+      "properties": {
+        "severity": {"enum": ["error", "warning"]},
+        "code": {"$ref": "#/$defs/nonEmptyString"},
+        "message": {"$ref": "#/$defs/nonEmptyString"},
+        "layer": {"$ref": "#/$defs/nonEmptyString"},
+        "occurrence_count": {"type": "integer", "minimum": 1},
+        "step_index": {"type": "integer", "minimum": 0},
+        "operation": {"$ref": "#/$defs/nonEmptyString"},
+        "input_name": {"$ref": "#/$defs/nonEmptyString"},
+        "field": {"$ref": "#/$defs/nonEmptyString"},
+        "feature_indexes": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {"type": "integer", "minimum": 0}
+        }
+      }
+    }
+  }
+}

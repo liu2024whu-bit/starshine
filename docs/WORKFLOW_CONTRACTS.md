@@ -60,3 +60,9 @@ Unused declared layers remain visible with zero uses.
 ## Scope
 
 A contract is a preparation checklist, not proof that loaded data conforms. Actual geometry types, CRS equivalence, property values, collisions, spatial relationships, distances, and output counts remain execution-time checks. Use `starshine inspect` for one loaded collection and `starshine run --manifest` for post-execution evidence.
+
+## Checking real inputs
+
+A contract describes preparation requirements without reading data. Use `starshine preflight` when
+the external GeoJSON files are available and those requirements should be checked before execution.
+See `docs/WORKFLOW_PREFLIGHT.md`.
