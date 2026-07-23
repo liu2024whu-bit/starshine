@@ -37,6 +37,7 @@ provenance does not make private source code or data part of the implementation 
 - [x] deterministic data-free workflow planning with dependencies and resolved defaults
 - [x] deterministic JSON and Mermaid workflow graph export derived from planning
 - [x] data-free Workflow Explain reports and Markdown review narratives
+- [x] planner-derived external-layer geometry, CRS, and field contracts
 - [x] CRS-safe nearest-feature matching with deterministic ties and synthetic benchmark coverage
 - [x] deterministic point-in-polygon spatial join with explicit ambiguity handling
 - [x] projected area and length metrics with explicit CRS and field-collision rules

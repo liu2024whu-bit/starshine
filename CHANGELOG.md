@@ -33,6 +33,9 @@ All notable public changes are documented here.
 - deterministic `explain_workflow()` and Markdown rendering plus `starshine explain`, with
   plan-derived parameter provenance, graph-linked evidence, execution-time limitations, a
   machine-readable Schema, and clean installed-wheel coverage.
+- deterministic `build_workflow_contract()` and `starshine contract`, deriving external-layer
+  geometry, CRS, required-field, and field-write preparation rules from the canonical planner and
+  declarative operator input metadata.
 
 ## [0.3.0] - 2026-07-14
 

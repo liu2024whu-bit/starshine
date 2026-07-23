@@ -33,6 +33,7 @@ starshine operators --output operators.json
 starshine plan examples/plan.workflow.json --layer-name source --layer-name mask
 starshine graph examples/plan.workflow.json --layer-name source --layer-name mask
 starshine explain examples/plan.workflow.json --layer-name source --layer-name mask
+starshine contract examples/plan.workflow.json --layer-name source --layer-name mask
 ```
 
 The release-readiness check verifies that package metadata, citation metadata, the dated
@@ -58,7 +59,7 @@ the downloaded wheel and run `scripts/smoke_installed_wheel.py`, which verifies:
 - `starshine --version` matches installed package metadata;
 - top-level public callables are available;
 - the installed operator catalog includes the reviewed registry and matches the CLI output;
-- the installed workflow planner, graph exporter, and explanation renderer match their CLI forms without loading data;
+- the installed workflow planner, graph exporter, explanation renderer, and input-contract builder match their CLI forms without loading data;
 - reprojection, projected geometry metrics, nearest-feature matching, and point-in-polygon joining
   work through both the installed API and workflow CLI;
 - the installed inspection API and `starshine inspect` command produce matching reports;

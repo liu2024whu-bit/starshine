@@ -132,3 +132,8 @@ organize input provenance, direct dependencies, provided/default parameter sourc
 status, and reviewed CRS behavior into a smaller explanation report. The Markdown renderer is aimed
 at code review, teaching, and reproducibility notes. See `docs/WORKFLOW_EXPLAIN.md` and
 `schemas/workflow-explanation-v1.schema.json`.
+
+
+## Input contracts derived from plans and registry metadata
+
+`build_workflow_contract()` and `starshine contract` reuse the canonical plan, then resolve declarative input requirements stored beside each registered operator input. The report focuses on external-layer geometry, CRS, required-field, and field-write preparation. It does not load data or duplicate workflow validation. See `docs/WORKFLOW_CONTRACTS.md` and `schemas/workflow-contract-v1.schema.json`.
