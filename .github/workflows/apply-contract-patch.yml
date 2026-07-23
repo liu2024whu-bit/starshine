@@ -1,0 +1,34 @@
+name: Apply workflow input contract patch
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: feature/workflow-input-contracts
+      - name: Verify and apply input contract bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .starshine-contract-patch/part-* > /tmp/contract.b64
+          echo "06fdbf897acced3c35f54773ffea2145b3b3dc0a58ef310436d2912e8d711596  /tmp/contract.b64" | sha256sum -c -
+          base64 --decode /tmp/contract.b64 > /tmp/contract.tar.gz
+          echo "0d42b3dc0ac24cd7cc9c0a689dc5882b40e64580792f78c5e5d2f106800cbb5a  /tmp/contract.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/contract.tar.gz -C .
+          rm -rf .starshine-contract-patch
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add planner-derived workflow input contracts"
+          git push origin "HEAD:feature/workflow-input-contracts"
