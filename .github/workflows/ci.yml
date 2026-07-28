@@ -132,8 +132,10 @@ jobs:
           retention-days: 14
       - uses: actions/upload-artifact@v4
         with:
-          name: starshine-wheel-smoke-script
-          path: scripts/smoke_installed_wheel.py
+          name: starshine-wheel-smoke-scripts
+          path: |
+            scripts/smoke_installed_wheel.py
+            scripts/smoke_installed_preflight_sarif.py
           if-no-files-found: error
           retention-days: 14
 
@@ -154,7 +156,7 @@ jobs:
           path: dist
       - uses: actions/download-artifact@v4
         with:
-          name: starshine-wheel-smoke-script
+          name: starshine-wheel-smoke-scripts
           path: smoke
       - name: Install the built wheel
         shell: bash
@@ -168,10 +170,14 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          script="$(find smoke -name smoke_installed_wheel.py -print -quit)"
-          test -n "$script"
-          python "$script" \
+          core_script="$(find smoke -name smoke_installed_wheel.py -print -quit)"
+          sarif_script="$(find smoke -name smoke_installed_preflight_sarif.py -print -quit)"
+          test -n "$core_script"
+          test -n "$sarif_script"
+          python "$core_script" \
             2>&1 | tee wheel-smoke-${{ matrix.python-version }}.log
+          python "$sarif_script" \
+            2>&1 | tee wheel-sarif-smoke-${{ matrix.python-version }}.log
       - name: Upload wheel-smoke diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
@@ -180,5 +186,6 @@ jobs:
           path: |
             wheel-install-${{ matrix.python-version }}.log
             wheel-smoke-${{ matrix.python-version }}.log
+            wheel-sarif-smoke-${{ matrix.python-version }}.log
           if-no-files-found: warn
           retention-days: 7
