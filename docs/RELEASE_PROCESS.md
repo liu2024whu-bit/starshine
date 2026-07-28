@@ -75,7 +75,7 @@ dependency, or exposes the console entry point correctly.
 
 CI therefore builds the wheel once and passes that exact artifact to clean Python 3.10, 3.11, and
 3.12 jobs. Those jobs do not check out the repository and do not use `pip install -e`. They install
-the downloaded wheel and run `scripts/smoke_installed_wheel.py`, which verifies:
+the downloaded wheel and run the public installed-wheel smoke scripts, which verify:
 
 - the package imports from the installed environment rather than the working tree;
 - `starshine --version` matches installed package metadata;
@@ -91,9 +91,9 @@ the downloaded wheel and run `scripts/smoke_installed_wheel.py`, which verifies:
 - a self-created point-within-polygon workflow runs through both the Python API and CLI;
 - the generated result and reproducibility manifest contain the expected public values.
 
-Installation and smoke output are retained as short CI artifacts when a matrix job fails. The smoke
-script is also required to be present in the source distribution so third parties can repeat the same
-check after building locally.
+Installation and smoke output are retained as short CI artifacts when a matrix job fails. Both smoke
+scripts are required to be present in the source distribution so third parties can repeat the same
+checks after building locally.
 
 ## GitHub release
 
