@@ -1,6 +1,0 @@
-scripts/verify_teaching_examples.py:38:9: TRY004 Prefer `TypeError` exception for invalid type
-src/starshine_geo/contracts.py:212:21: ISC004 Unparenthesized implicit string concatenation in collection
-src/starshine_geo/operator_registry.py:43:35: RUF009 Do not perform function call `InputContractSpec` in dataclass defaults
-Found 3 errors.
-No fixes available (1 hidden fix can be enabled with the `--unsafe-fixes` option).
-exit_code=1
