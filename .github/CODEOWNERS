@@ -6,6 +6,7 @@
 /SECURITY.md @liu2024whu-bit
 /docs/RELEASE_PROCESS.md @liu2024whu-bit
 /pyproject.toml @liu2024whu-bit
+/requirements/ @liu2024whu-bit
 /scripts/audit_public_repository.py @liu2024whu-bit
 /scripts/check_release_artifacts.py @liu2024whu-bit
 /scripts/check_release_readiness.py @liu2024whu-bit

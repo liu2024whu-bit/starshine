@@ -92,6 +92,7 @@ def _check_sdist(path: Path, version: str) -> None:
             names,
             (
                 "/pyproject.toml",
+                "/requirements/ci-validation.txt",
                 "/README.md",
                 "/LICENSE",
                 "/benchmarks/corpus.py",

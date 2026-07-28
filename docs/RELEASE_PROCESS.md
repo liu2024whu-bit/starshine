@@ -20,7 +20,7 @@ Before a release:
 
 ```bash
 python -m pip install --upgrade pip
-python -m pip install -e ".[dev,geopackage,release]"
+python -m pip install --constraint requirements/ci-validation.txt -e ".[dev,geopackage,release]"
 python scripts/audit_public_repository.py
 python scripts/check_release_readiness.py
 python scripts/verify_teaching_examples.py
@@ -43,8 +43,28 @@ same current version. The artifact inspector then checks that exactly one wheel 
 distribution were produced, that their versions match package metadata, that expected public files
 are present, and that no unsafe archive paths, ignored caches, private-artifact directories, or
 unexpectedly large members were packaged. The source distribution must include the current
-versioned release notes, the synthetic teaching inputs, their expected inspection report, focused
-documentation, and the public verification scripts.
+versioned release notes, the reviewed CI constraints, the synthetic teaching inputs, their expected
+inspection report, focused documentation, and the public verification scripts.
+
+## CI validation dependency policy
+
+Pull-request and `main` CI resolve the direct validation tools through
+`requirements/ci-validation.txt`. The file pins Ruff, pytest, jsonschema, build, and twine to one
+reviewed baseline so an unrelated upstream release cannot silently change the evidence produced for
+the same Starshine commit. It is a constraints file rather than a complete lockfile: runtime
+requirements and transitive packages continue to resolve within the bounds declared by
+`pyproject.toml`.
+
+The separate `Latest Compatible Dependencies` workflow runs weekly and on manual dispatch without
+the constraints file. It installs the newest `dev` and `release` tool versions permitted by
+`pyproject.toml`, runs the supported-Python test matrix, and rebuilds and inspects the distribution.
+A failure there is a compatibility signal; it must not be fixed by weakening normal CI or silently
+widening package bounds.
+
+Constraint updates require a focused public issue and pull request. Review the candidate versions,
+run both the constrained CI path and the latest-compatible path, record any upper-bound decision,
+and change only the direct pins that have been verified. Do not use this file to pin Starshine's
+runtime dependencies or to mask an incompatibility that belongs in `pyproject.toml`.
 
 ## Installed-wheel verification
 
