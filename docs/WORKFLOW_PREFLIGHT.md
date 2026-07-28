@@ -48,6 +48,24 @@ The command exits with:
 
 The output path cannot overwrite the workflow or any input layer.
 
+## SARIF output
+
+Use `--format sarif` when a repository or CI system should consume the same completed findings as
+SARIF 2.1.0. SARIF conversion is implemented in a separate adapter and does not alter preflight
+validation. Repository-relative file locations require an explicit root:
+
+```bash
+starshine preflight examples/plan.workflow.json \
+  --layer source=examples/data/clip-source.geojson \
+  --layer mask=examples/data/clip-mask.geojson \
+  --format sarif \
+  --sarif-root . \
+  --output preflight.sarif
+```
+
+See [workflow preflight SARIF](WORKFLOW_PREFLIGHT_SARIF.md) and the tracked
+[SARIF example](../examples/plan.workflow.preflight.sarif).
+
 ## Checks
 
 Preflight currently checks:

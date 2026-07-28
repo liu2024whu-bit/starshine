@@ -38,7 +38,11 @@ All notable public changes are documented here.
   declarative operator input metadata;
 - deterministic `preflight_workflow_inputs()` and `starshine preflight`, checking loaded external
   GeoJSON layers against registry contracts with aggregated findings, distinct CLI exit codes,
-  schema-checked JSON and Markdown reports, and clean installed-wheel coverage.
+  schema-checked JSON and Markdown reports, and clean installed-wheel coverage;
+- deterministic `build_workflow_preflight_sarif()` and `starshine preflight --format sarif`,
+  converting completed findings to SARIF 2.1.0 with repository-relative locations, logical workflow
+  context, stable rules and fingerprints, explicit upload boundaries, and clean installed-wheel
+  coverage.
 
 ### Changed
 

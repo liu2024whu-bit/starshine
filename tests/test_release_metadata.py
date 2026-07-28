@@ -56,6 +56,7 @@ def test_cli_reports_installed_version(capsys):
 
 def test_top_level_api_exports_public_operator_surfaces():
     assert callable(starshine_geo.build_workflow_graph)
+    assert callable(starshine_geo.build_workflow_preflight_sarif)
     assert callable(starshine_geo.build_workflow_contract)
     assert callable(starshine_geo.clip_features)
     assert callable(starshine_geo.calculate_geometry_metrics)
@@ -76,7 +77,10 @@ def test_top_level_api_exports_public_operator_surfaces():
     assert starshine_geo.WORKFLOW_GRAPH_VERSION == 1
     assert starshine_geo.WORKFLOW_PLAN_VERSION == 1
     assert starshine_geo.WORKFLOW_PREFLIGHT_VERSION == 1
+    assert starshine_geo.SARIF_VERSION == "2.1.0"
+    assert starshine_geo.SARIF_SCHEMA_URI.endswith("sarif-2.1.0.json")
     assert "build_workflow_graph" in starshine_geo.__all__
+    assert "build_workflow_preflight_sarif" in starshine_geo.__all__
     assert "build_workflow_contract" in starshine_geo.__all__
     assert "clip_features" in starshine_geo.__all__
     assert "calculate_geometry_metrics" in starshine_geo.__all__
@@ -97,6 +101,8 @@ def test_top_level_api_exports_public_operator_surfaces():
     assert "WORKFLOW_GRAPH_VERSION" in starshine_geo.__all__
     assert "WORKFLOW_PLAN_VERSION" in starshine_geo.__all__
     assert "WORKFLOW_PREFLIGHT_VERSION" in starshine_geo.__all__
+    assert "SARIF_VERSION" in starshine_geo.__all__
+    assert "SARIF_SCHEMA_URI" in starshine_geo.__all__
 
 
 def test_release_readiness_check_matches_current_public_metadata():
