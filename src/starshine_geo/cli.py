@@ -16,6 +16,7 @@ from .manifest import build_manifest
 from .operator_registry import operator_catalog
 from .planning import plan_workflow
 from .preflight import preflight_workflow_inputs, render_workflow_preflight_markdown
+from .preflight_sarif import build_workflow_preflight_sarif
 from .workflow import run_workflow, validate_workflow
 
 
@@ -187,14 +188,22 @@ def build_parser() -> argparse.ArgumentParser:
     preflight_parser.add_argument("--layer", action="append", default=[], metavar="NAME=PATH")
     preflight_parser.add_argument(
         "--format",
-        choices=("json", "markdown"),
+        choices=("json", "markdown", "sarif"),
         default="markdown",
-        help="Choose a machine-readable JSON report or Markdown validation summary",
+        help="Choose JSON, Markdown, or GitHub-compatible SARIF output",
     )
     preflight_parser.add_argument(
         "--output",
         type=Path,
         help="Optionally write the workflow preflight report instead of printing it",
+    )
+    preflight_parser.add_argument(
+        "--sarif-root",
+        type=Path,
+        help=(
+            "Repository root used to produce relative SARIF artifact URIs; "
+            "valid only with --format sarif"
+        ),
     )
     _add_diagnostic_format(preflight_parser)
     return parser
@@ -228,6 +237,17 @@ def _parse_layer_names(values: list[str]) -> set[str]:
             raise StarshineError(f"invalid or duplicate layer name: {name!r}")
         names.add(name)
     return names
+
+
+def _repository_relative_uri(path: Path, root: Path) -> str:
+    try:
+        relative = path.resolve().relative_to(root.resolve())
+    except ValueError as exc:
+        raise StarshineError("SARIF workflow and input paths must be contained by --sarif-root") from exc
+    uri = relative.as_posix()
+    if not uri or uri == ".":
+        raise StarshineError("SARIF artifact paths must identify files below --sarif-root")
+    return uri
 
 
 def _print_error(exc: StarshineError, diagnostic_format: str) -> None:
@@ -355,6 +375,14 @@ def _contract_command(args: argparse.Namespace) -> int:
 
 
 def _preflight_command(args: argparse.Namespace) -> int:
+    if args.format != "sarif" and args.sarif_root is not None:
+        raise StarshineError("--sarif-root requires --format sarif")
+    if args.format == "sarif":
+        if args.sarif_root is None:
+            raise StarshineError("--format sarif requires --sarif-root")
+        if not args.sarif_root.is_dir():
+            raise StarshineError("--sarif-root must identify an existing directory")
+
     layers, paths = _parse_layer_bindings(args.layer)
     if args.output is not None:
         output = args.output.resolve()
@@ -367,6 +395,18 @@ def _preflight_command(args: argparse.Namespace) -> int:
     report = preflight_workflow_inputs(workflow, layers)
     if args.format == "json":
         content = json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    elif args.format == "sarif":
+        root = args.sarif_root
+        workflow_uri = _repository_relative_uri(args.workflow, root)
+        artifact_uris = {
+            name: _repository_relative_uri(path, root) for name, path in paths.items()
+        }
+        sarif = build_workflow_preflight_sarif(
+            report,
+            artifact_uris,
+            automation_id=f"starshine/preflight/{workflow_uri}",
+        )
+        content = json.dumps(sarif, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     else:
         content = render_workflow_preflight_markdown(report)
 
