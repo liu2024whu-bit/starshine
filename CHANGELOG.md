@@ -40,6 +40,12 @@ All notable public changes are documented here.
   GeoJSON layers against registry contracts with aggregated findings, distinct CLI exit codes,
   schema-checked JSON and Markdown reports, and clean installed-wheel coverage.
 
+### Changed
+
+- pull-request and `main` CI now use reviewed direct-tool constraints for Ruff, pytest, jsonschema,
+  build, and twine, while a separate weekly/manual workflow checks the latest versions permitted by
+  the project dependency bounds.
+
 ## [0.3.0] - 2026-07-14
 
 ### Added
