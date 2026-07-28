@@ -35,6 +35,7 @@ starshine graph examples/plan.workflow.json --layer-name source --layer-name mas
 starshine explain examples/plan.workflow.json --layer-name source --layer-name mask
 starshine contract examples/plan.workflow.json --layer-name source --layer-name mask
 starshine preflight examples/plan.workflow.json --layer source=examples/data/clip-source.geojson --layer mask=examples/data/clip-mask.geojson
+starshine preflight examples/plan.workflow.json --layer source=examples/data/clip-source.geojson --layer mask=examples/data/clip-mask.geojson --format sarif --sarif-root . --output preflight.sarif
 ```
 
 The release-readiness check verifies that package metadata, citation metadata, the dated
@@ -82,6 +83,7 @@ the downloaded wheel and run `scripts/smoke_installed_wheel.py`, which verifies:
 - the installed operator catalog includes the reviewed registry and matches the CLI output;
 - the installed workflow planner, graph exporter, explanation renderer, and input-contract builder match their CLI forms without loading data;
 - the installed input-preflight API and CLI agree when checking real synthetic GeoJSON layers;
+- the installed SARIF adapter and CLI agree on repository-relative locations and empty passing results;
 - reprojection, projected geometry metrics, nearest-feature matching, and point-in-polygon joining
   work through both the installed API and workflow CLI;
 - the installed inspection API and `starshine inspect` command produce matching reports;
