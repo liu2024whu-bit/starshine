@@ -1,0 +1,72 @@
+name: Apply final preflight maintenance fixes
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/workflow-input-preflight
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[dev]'
+      - name: Apply reviewed maintenance fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("scripts/verify_teaching_examples.py")
+          text = path.read_text(encoding="utf-8")
+          text = text.replace(
+              'raise RuntimeError(f"expected an object in {path}")',
+              'raise TypeError(f"expected an object in {path}")',
+          )
+          path.write_text(text, encoding="utf-8")
+
+          path = Path("src/starshine_geo/contracts.py")
+          lines = path.read_text(encoding="utf-8").splitlines()
+          marker = '                    f"### Step {use[\'step_index\']}: {inline_code(use[\'operation\'], quote_strings=False)} / "'
+          indexes = [index for index, line in enumerate(lines) if line == marker]
+          if len(indexes) != 1:
+              raise SystemExit(f"expected one workflow contract heading, found {len(indexes)}")
+          index = indexes[0]
+          replacement = [
+              "                    (",
+              '                        f"### Step {use[\'step_index\']}: "',
+              '                        f"{inline_code(use[\'operation\'], quote_strings=False)} / "',
+              '                        f"{inline_code(use[\'input_name\'], quote_strings=False)}"',
+              "                    ),",
+          ]
+          lines[index:index + 2] = replacement
+          path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+          path = Path("src/starshine_geo/operator_registry.py")
+          text = path.read_text(encoding="utf-8")
+          text = text.replace(
+              "from dataclasses import dataclass",
+              "from dataclasses import dataclass, field",
+          )
+          text = text.replace(
+              "    contract: InputContractSpec = InputContractSpec()",
+              "    contract: InputContractSpec = field(default_factory=InputContractSpec)",
+          )
+          path.write_text(text, encoding="utf-8")
+          PY
+          ruff check .
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/verify_teaching_examples.py src/starshine_geo/contracts.py src/starshine_geo/operator_registry.py
+          git commit -m "Complete Ruff modernization and preflight cleanup"
+          git push origin "HEAD:feature/workflow-input-preflight"
