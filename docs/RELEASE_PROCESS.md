@@ -20,7 +20,7 @@ Before a release:
 
 ```bash
 python -m pip install --upgrade pip
-python -m pip install -e ".[dev,geopackage,release]"
+python -m pip install --constraint requirements/ci-validation.txt -e ".[dev,geopackage,release]"
 python scripts/audit_public_repository.py
 python scripts/check_release_readiness.py
 python scripts/verify_teaching_examples.py
@@ -43,8 +43,8 @@ same current version. The artifact inspector then checks that exactly one wheel 
 distribution were produced, that their versions match package metadata, that expected public files
 are present, and that no unsafe archive paths, ignored caches, private-artifact directories, or
 unexpectedly large members were packaged. The source distribution must include the current
-versioned release notes, the synthetic teaching inputs, their expected inspection report, focused
-documentation, and the public verification scripts.
+versioned release notes, the reviewed CI constraints, the synthetic teaching inputs, their expected
+inspection report, focused documentation, and the public verification scripts.
 
 ## CI validation dependency policy
 
