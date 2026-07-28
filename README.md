@@ -34,6 +34,7 @@ The public 0.3 line provides:
 - data-free Workflow Explain reports with parameter provenance and review-ready Markdown;
 - planner-derived external-layer contracts for geometry, CRS, and property preparation;
 - actual input preflight reports for geometry, CRS, field, uniqueness, and collision checks;
+- deterministic SARIF 2.1.0 export for repository-relative CI and code-scanning integration;
 - optional path-free reproducibility manifests;
 - optional GeoPackage input/output with explicit layer, CRS, and overwrite rules;
 - deterministic GeoJSON inspection reports with counts, bounds, CRS, fields, and digests;
@@ -172,11 +173,14 @@ starshine preflight examples/plan.workflow.json \
   --layer mask=examples/data/clip-mask.geojson
 ```
 
-Markdown is the default output. Use `--format json` for a schema-checked CI report. A completed
-preflight returns exit code `0` when valid and `1` when contract violations are reported. See
-[workflow input preflight](docs/WORKFLOW_PREFLIGHT.md), the
+Markdown is the default output. Use `--format json` for the canonical schema-checked report or
+`--format sarif --sarif-root .` for repository-relative SARIF 2.1.0. A completed preflight returns
+exit code `0` when valid and `1` when contract violations are reported. See
+[workflow input preflight](docs/WORKFLOW_PREFLIGHT.md),
+[SARIF integration](docs/WORKFLOW_PREFLIGHT_SARIF.md), the
 [preflight schema](schemas/workflow-preflight-v1.schema.json), and the tracked
-[Markdown example](examples/plan.workflow.preflight.md).
+[Markdown](examples/plan.workflow.preflight.md) and
+[SARIF](examples/plan.workflow.preflight.sarif) examples.
 
 ## Inspect a GeoJSON collection without running a workflow
 
