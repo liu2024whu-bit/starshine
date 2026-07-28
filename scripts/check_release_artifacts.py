@@ -131,6 +131,7 @@ def _check_sdist(path: Path, version: str) -> None:
                 "/schemas/workflow-v1.schema.json",
                 "/scripts/check_release_readiness.py",
                 "/scripts/smoke_installed_wheel.py",
+                "/scripts/smoke_installed_preflight_sarif.py",
                 "/scripts/verify_teaching_examples.py",
                 "/examples/reproject.workflow.json",
                 "/examples/clip.workflow.json",
