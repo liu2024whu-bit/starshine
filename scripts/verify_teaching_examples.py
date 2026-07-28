@@ -35,7 +35,7 @@ def _run(arguments: list[str], *, expected_returncode: int = 0) -> subprocess.Co
 def _read_json(path: Path) -> dict[str, Any]:
     value = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(value, dict):
-        raise RuntimeError(f"expected an object in {path}")
+        raise TypeError(f"expected an object in {path}")
     return value
 
 
