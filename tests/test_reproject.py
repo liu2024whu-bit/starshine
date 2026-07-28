@@ -4,7 +4,6 @@ from starshine_geo import reproject_features, run_workflow
 from starshine_geo.errors import ValidationError, WorkflowValidationError
 from starshine_geo.workflow import validate_workflow
 
-
 WGS84_POINTS = {
     "type": "FeatureCollection",
     "starshine:crs": "EPSG:4326",

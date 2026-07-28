@@ -4,7 +4,6 @@ import starshine_geo.workflow as workflow_module
 from starshine_geo.errors import WorkflowValidationError
 from starshine_geo.workflow import run_workflow, validate_workflow
 
-
 BUFFER_LAYER = {
     "type": "FeatureCollection",
     "starshine:crs": "EPSG:4326",

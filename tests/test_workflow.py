@@ -8,7 +8,6 @@ from starshine_geo.errors import (
 )
 from starshine_geo.workflow import run_workflow, validate_workflow
 
-
 LAYERS = {
     "zones": {
         "type": "FeatureCollection",

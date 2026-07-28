@@ -5,7 +5,7 @@ from jsonschema import Draft202012Validator
 
 from starshine_geo import OPERATOR_REGISTRY, operator_catalog
 from starshine_geo.cli import main
-from starshine_geo.workflow import OPERATORS, OPERATOR_INPUTS, OPERATOR_PARAMETER_SPECS
+from starshine_geo.workflow import OPERATOR_INPUTS, OPERATOR_PARAMETER_SPECS, OPERATORS
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG_SCHEMA_PATH = ROOT / "schemas" / "operator-catalog-v1.schema.json"
