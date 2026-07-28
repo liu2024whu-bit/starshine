@@ -15,6 +15,7 @@ from .io import read_json, write_json
 from .manifest import build_manifest
 from .operator_registry import operator_catalog
 from .planning import plan_workflow
+from .preflight import preflight_workflow_inputs, render_workflow_preflight_markdown
 from .workflow import run_workflow, validate_workflow
 
 
@@ -177,20 +178,46 @@ def build_parser() -> argparse.ArgumentParser:
         help="Optionally write the workflow input contract instead of printing it",
     )
     _add_diagnostic_format(contract_parser)
+
+    preflight_parser = subparsers.add_parser(
+        "preflight",
+        help="Check actual GeoJSON inputs against planner-derived workflow contracts",
+    )
+    preflight_parser.add_argument("workflow", type=Path)
+    preflight_parser.add_argument("--layer", action="append", default=[], metavar="NAME=PATH")
+    preflight_parser.add_argument(
+        "--format",
+        choices=("json", "markdown"),
+        default="markdown",
+        help="Choose a machine-readable JSON report or Markdown validation summary",
+    )
+    preflight_parser.add_argument(
+        "--output",
+        type=Path,
+        help="Optionally write the workflow preflight report instead of printing it",
+    )
+    _add_diagnostic_format(preflight_parser)
     return parser
 
 
-def _parse_layers(values: list[str]) -> dict[str, dict]:
-    layers = {}
+def _parse_layer_bindings(values: list[str]) -> tuple[dict[str, dict], dict[str, Path]]:
+    layers: dict[str, dict] = {}
+    paths: dict[str, Path] = {}
     for value in values:
         if "=" not in value:
             raise StarshineError("--layer must use NAME=PATH")
-        name, path = value.split("=", 1)
+        name, path_value = value.split("=", 1)
         name = name.strip()
+        path = Path(path_value)
         if not name or name in layers:
             raise StarshineError(f"invalid or duplicate layer name: {name!r}")
         layers[name] = read_json(path)
-    return layers
+        paths[name] = path
+    return layers, paths
+
+
+def _parse_layers(values: list[str]) -> dict[str, dict]:
+    return _parse_layer_bindings(values)[0]
 
 
 def _parse_layer_names(values: list[str]) -> set[str]:
@@ -327,6 +354,31 @@ def _contract_command(args: argparse.Namespace) -> int:
     return 0
 
 
+def _preflight_command(args: argparse.Namespace) -> int:
+    layers, paths = _parse_layer_bindings(args.layer)
+    if args.output is not None:
+        output = args.output.resolve()
+        if output == args.workflow.resolve():
+            raise StarshineError("workflow preflight output must not overwrite the workflow file")
+        if any(output == path.resolve() for path in paths.values()):
+            raise StarshineError("workflow preflight output must not overwrite an input layer")
+
+    workflow = read_json(args.workflow)
+    report = preflight_workflow_inputs(workflow, layers)
+    if args.format == "json":
+        content = json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    else:
+        content = render_workflow_preflight_markdown(report)
+
+    if args.output is None:
+        print(content, end="")
+    else:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(content, encoding="utf-8")
+        print(args.output)
+    return 0 if report["valid"] else 1
+
+
 def _run_command(args: argparse.Namespace) -> int:
     workflow = read_json(args.workflow)
     layers = _parse_layers(args.layer)
@@ -364,6 +416,8 @@ def main(argv: list[str] | None = None) -> int:
             return _explain_command(args)
         if args.command == "contract":
             return _contract_command(args)
+        if args.command == "preflight":
+            return _preflight_command(args)
         return _run_command(args)
     except StarshineError as exc:
         _print_error(exc, getattr(args, "diagnostic_format", "text"))

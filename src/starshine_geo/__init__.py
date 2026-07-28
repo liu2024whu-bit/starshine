@@ -22,7 +22,6 @@ from .inspection import inspect_feature_collection
 from .manifest import build_manifest, digest_json
 from .metrics import calculate_geometry_metrics
 from .operator_registry import OPERATOR_REGISTRY, operator_catalog
-from .planning import WORKFLOW_PLAN_VERSION, plan_workflow
 from .operators import (
     buffer_features,
     clip_features,
@@ -33,36 +32,45 @@ from .operators import (
     summarize_points_within,
     validate_feature_collection,
 )
+from .planning import WORKFLOW_PLAN_VERSION, plan_workflow
+from .preflight import (
+    WORKFLOW_PREFLIGHT_VERSION,
+    preflight_workflow_inputs,
+    render_workflow_preflight_markdown,
+)
 from .workflow import run_workflow, validate_workflow
 
 __all__ = [
-    "WorkflowDiagnostic",
+    "OPERATOR_REGISTRY",
     "WORKFLOW_CONTRACT_VERSION",
     "WORKFLOW_EXPLANATION_VERSION",
-    "WorkflowValidationError",
-    "OPERATOR_REGISTRY",
     "WORKFLOW_GRAPH_VERSION",
     "WORKFLOW_PLAN_VERSION",
+    "WORKFLOW_PREFLIGHT_VERSION",
+    "WorkflowDiagnostic",
+    "WorkflowValidationError",
     "__version__",
     "buffer_features",
+    "build_manifest",
     "build_workflow_contract",
     "build_workflow_graph",
-    "clip_features",
     "calculate_geometry_metrics",
-    "build_manifest",
+    "clip_features",
     "digest_json",
     "dissolve_features",
     "explain_workflow",
-    "join_points_to_polygons",
-    "nearest_features",
     "inspect_feature_collection",
+    "join_points_to_polygons",
+    "list_geopackage_layers",
+    "nearest_features",
     "operator_catalog",
     "plan_workflow",
-    "list_geopackage_layers",
+    "preflight_workflow_inputs",
     "read_geopackage",
     "render_workflow_contract_markdown",
     "render_workflow_explanation_markdown",
     "render_workflow_mermaid",
+    "render_workflow_preflight_markdown",
     "reproject_features",
     "run_workflow",
     "summarize_points_within",

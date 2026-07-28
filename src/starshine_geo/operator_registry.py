@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Callable, Mapping
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from types import MappingProxyType
-from typing import Any, Callable, Mapping
+from typing import Any
 
 from .contract_specs import (
     FieldRequirementSpec,
@@ -39,7 +40,7 @@ class InputSpec:
 
     name: str
     description: str
-    contract: InputContractSpec = InputContractSpec()
+    contract: InputContractSpec = field(default_factory=InputContractSpec)
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -673,11 +674,11 @@ def operator_catalog() -> dict[str, Any]:
 
 
 __all__ = [
-    "InputSpec",
     "OPERATOR_CATALOG_VERSION",
     "OPERATOR_REGISTRY",
+    "WORKFLOW_VERSION",
+    "InputSpec",
     "OperatorSpec",
     "ParameterSpec",
-    "WORKFLOW_VERSION",
     "operator_catalog",
 ]

@@ -4,7 +4,6 @@ from copy import deepcopy
 from starshine_geo.cli import main
 from starshine_geo.manifest import build_manifest
 
-
 POINTS = {
     "type": "FeatureCollection",
     "starshine:crs": "EPSG:3857",

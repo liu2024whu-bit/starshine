@@ -27,12 +27,13 @@ The public 0.3 line provides:
 - buffer, dissolve, point-within-polygon summary and join, projected geometry metrics, explicit
   reprojection, CRS-safe clipping, and deterministic nearest-feature matching;
 - a versioned JSON workflow format and operator-specific machine-readable schema;
-- structured preflight diagnostics for structure, inputs, parameters, and CRS rules;
+- structured workflow diagnostics for structure, inputs, parameters, and CRS rules;
 - a declarative operator registry and machine-readable catalog with no dynamic `eval`;
 - deterministic data-free workflow plans with dependencies, defaults, layer provenance, and digests;
 - schema-checked JSON workflow graphs and safely escaped Mermaid dependency views;
 - data-free Workflow Explain reports with parameter provenance and review-ready Markdown;
 - planner-derived external-layer contracts for geometry, CRS, and property preparation;
+- actual input preflight reports for geometry, CRS, field, uniqueness, and collision checks;
 - optional path-free reproducibility manifests;
 - optional GeoPackage input/output with explicit layer, CRS, and overwrite rules;
 - deterministic GeoJSON inspection reports with counts, bounds, CRS, fields, and digests;
@@ -159,6 +160,23 @@ Markdown is the default output. Use `--format json` for a schema-checked report 
 data-loading interface. See [workflow input contracts](docs/WORKFLOW_CONTRACTS.md), the
 [contract schema](schemas/workflow-contract-v1.schema.json), and the tracked
 [Markdown example](examples/plan.workflow.contract.md).
+
+## Preflight actual workflow inputs
+
+The preflight command loads external GeoJSON layers and checks them against the planner-derived
+contract without executing spatial operators:
+
+```bash
+starshine preflight examples/plan.workflow.json \
+  --layer source=examples/data/clip-source.geojson \
+  --layer mask=examples/data/clip-mask.geojson
+```
+
+Markdown is the default output. Use `--format json` for a schema-checked CI report. A completed
+preflight returns exit code `0` when valid and `1` when contract violations are reported. See
+[workflow input preflight](docs/WORKFLOW_PREFLIGHT.md), the
+[preflight schema](schemas/workflow-preflight-v1.schema.json), and the tracked
+[Markdown example](examples/plan.workflow.preflight.md).
 
 ## Inspect a GeoJSON collection without running a workflow
 

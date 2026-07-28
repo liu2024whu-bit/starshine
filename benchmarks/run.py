@@ -3,10 +3,11 @@ from __future__ import annotations
 import argparse
 import json
 import platform
+from collections.abc import Callable
 from pathlib import Path
 from statistics import median
 from time import perf_counter_ns
-from typing import Any, Callable
+from typing import Any
 
 import starshine_geo
 from starshine_geo import digest_json, run_workflow, validate_workflow

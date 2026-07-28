@@ -3,7 +3,6 @@ from pathlib import Path
 
 from starshine_geo.cli import main
 
-
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_DIR = ROOT / "tests" / "fixtures" / "workflows"
 

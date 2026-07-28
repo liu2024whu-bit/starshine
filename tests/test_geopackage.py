@@ -9,7 +9,6 @@ from starshine_geo.geopackage import (
     write_geopackage,
 )
 
-
 COLLECTION = {
     "type": "FeatureCollection",
     "starshine:crs": "EPSG:3857",

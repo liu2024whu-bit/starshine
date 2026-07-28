@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from copy import deepcopy
-from typing import Any, Iterable
+from typing import Any
 
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry

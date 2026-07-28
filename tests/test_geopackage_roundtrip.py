@@ -8,7 +8,6 @@ pytest.importorskip("pyogrio")
 from starshine_geo import list_geopackage_layers, read_geopackage, write_geopackage
 from starshine_geo.errors import ValidationError
 
-
 COLLECTION = {
     "type": "FeatureCollection",
     "starshine:crs": "EPSG:3857",

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from copy import deepcopy
-from typing import Any, Iterable
+from typing import Any
 
 from ._markdown import inline_code
 from .contract_specs import InputContractSpec
@@ -208,8 +209,11 @@ def render_workflow_contract_markdown(contract: WorkflowContract) -> str:
         for use in layer["uses"]:
             lines.extend(
                 [
-                    f"### Step {use['step_index']}: {inline_code(use['operation'], quote_strings=False)} / "
-                    f"{inline_code(use['input_name'], quote_strings=False)}",
+                    (
+                        f"### Step {use['step_index']}: "
+                        f"{inline_code(use['operation'], quote_strings=False)} / "
+                        f"{inline_code(use['input_name'], quote_strings=False)}"
+                    ),
                     "",
                 ]
             )
