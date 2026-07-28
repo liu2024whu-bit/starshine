@@ -12,6 +12,7 @@
 /scripts/check_release_readiness.py @liu2024whu-bit
 /docs/releases/ @liu2024whu-bit
 /scripts/smoke_installed_wheel.py @liu2024whu-bit
+/scripts/smoke_installed_preflight_sarif.py @liu2024whu-bit
 /examples/teaching/ @liu2024whu-bit
 /docs/TEACHING_FAILURES.md @liu2024whu-bit
 /scripts/verify_teaching_examples.py @liu2024whu-bit
