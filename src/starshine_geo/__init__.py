@@ -38,10 +38,17 @@ from .preflight import (
     preflight_workflow_inputs,
     render_workflow_preflight_markdown,
 )
+from .preflight_sarif import (
+    SARIF_SCHEMA_URI,
+    SARIF_VERSION,
+    build_workflow_preflight_sarif,
+)
 from .workflow import run_workflow, validate_workflow
 
 __all__ = [
     "OPERATOR_REGISTRY",
+    "SARIF_SCHEMA_URI",
+    "SARIF_VERSION",
     "WORKFLOW_CONTRACT_VERSION",
     "WORKFLOW_EXPLANATION_VERSION",
     "WORKFLOW_GRAPH_VERSION",
@@ -54,6 +61,7 @@ __all__ = [
     "build_manifest",
     "build_workflow_contract",
     "build_workflow_graph",
+    "build_workflow_preflight_sarif",
     "calculate_geometry_metrics",
     "clip_features",
     "digest_json",
