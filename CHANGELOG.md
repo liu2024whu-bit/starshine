@@ -4,51 +4,49 @@ All notable public changes are documented here.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-29
+
 ### Added
 
 - a CRS-safe `clip_features()` API and bounded `clip` workflow operation with explicit polygon-mask,
   equivalent-CRS, property-preservation, feature-order, boundary-contact, and empty-result rules;
 - synthetic clip examples, Workflow Schema fixtures, installed-wheel coverage, and a fifth public
   benchmark case;
-- benchmark corpus version 2, which identifies reports containing the new clip case;
+- benchmark corpus versions 2 through 5, expanding the deterministic public suite to eight cases for
+  clip, nearest-feature matching, point-in-polygon attribution, and projected geometry metrics;
 - a deterministic `plan_workflow()` API and `starshine plan` command with schema-checked dependency,
-  layer-provenance, terminal-output, resolved-default, and digest reporting;
-- registry-level sensitive-parameter annotations so future plan reports can redact values before
-  serialization and hashing;
+  layer-provenance, terminal-output, resolved-default, parameter-source, and digest reporting;
+- registry-level sensitive-parameter annotations so plans redact marked values before serialization
+  and hashing;
 - a CRS-safe `nearest_features()` API and bounded `nearest` workflow operation with deterministic
-  tie-breaking, optional distance limits, explicit no-match fields, planner/catalog integration,
-  synthetic examples, installed-wheel coverage, and a sixth public benchmark case;
-- benchmark corpus version 3, identifying reports that include nearest-feature matching;
+  tie-breaking, optional distance limits, explicit no-match fields, and projected-CRS safeguards;
 - a deterministic `join_points_to_polygons()` API and bounded point-in-polygon workflow operation
-  with boundary-inclusive matching, explicit ambiguity policy, retained unmatched points, planner
-  integration, synthetic examples, installed-wheel coverage, and a seventh public benchmark case;
-- benchmark corpus version 4, identifying reports that include point-in-polygon attribution;
+  with boundary-inclusive matching, explicit ambiguity policy, and retained unmatched points;
 - a focused `calculate_geometry_metrics()` API and `geometry_metrics` workflow operation with
-  projected-CRS requirements, collision-safe output fields, synthetic examples, planner/catalog
-  integration, installed-wheel coverage, and an eighth public benchmark case;
-- benchmark corpus version 5, identifying reports that include projected geometry metrics;
+  projected-CRS requirements and collision-safe area and length output fields;
 - deterministic `build_workflow_graph()` and `render_workflow_mermaid()` APIs plus `starshine graph`,
-  with schema-checked JSON graphs, safely escaped Mermaid output, plan-derived dependencies, and
-  clean installed-wheel coverage;
+  with schema-checked JSON graphs and safely escaped Mermaid output derived from canonical plans;
 - deterministic `explain_workflow()` and Markdown rendering plus `starshine explain`, with
-  plan-derived parameter provenance, graph-linked evidence, execution-time limitations, a
-  machine-readable Schema, and clean installed-wheel coverage;
+  plan-derived parameter provenance, graph-linked evidence, and explicit execution-time limitations;
 - deterministic `build_workflow_contract()` and `starshine contract`, deriving external-layer
-  geometry, CRS, required-field, and field-write preparation rules from the canonical planner and
-  declarative operator input metadata;
-- deterministic `preflight_workflow_inputs()` and `starshine preflight`, checking loaded external
-  GeoJSON layers against registry contracts with aggregated findings, distinct CLI exit codes,
-  schema-checked JSON and Markdown reports, and clean installed-wheel coverage;
+  geometry, CRS, required-field, and field-write preparation rules from planner and registry metadata;
+- deterministic `preflight_workflow_inputs()` and `starshine preflight`, checking actual external
+  GeoJSON layers for structure, geometry types, CRS rules, required fields, uniqueness, nullability,
+  finite scalar values, and output-field collisions without executing operators;
 - deterministic `build_workflow_preflight_sarif()` and `starshine preflight --format sarif`,
   converting completed findings to SARIF 2.1.0 with repository-relative locations, logical workflow
-  context, stable rules and fingerprints, explicit upload boundaries, and clean installed-wheel
-  coverage.
+  context, stable rules and fingerprints, strict path boundaries, and clean installed-wheel coverage.
 
 ### Changed
 
 - pull-request and `main` CI now use reviewed direct-tool constraints for Ruff, pytest, jsonschema,
   build, and twine, while a separate weekly/manual workflow checks the latest versions permitted by
-  the project dependency bounds.
+  the project dependency bounds;
+- installed-wheel verification now exercises planning, graph, explanation, contracts, preflight,
+  SARIF, clipping, nearest matching, spatial joins, projected metrics, inspection, execution, and
+  manifests through public APIs and CLI commands on Python 3.10, 3.11, and 3.12;
+- release archives now require the complete 0.4 public documentation, schemas, synthetic examples,
+  CI constraints, and both installed-wheel smoke scripts.
 
 ## [0.3.0] - 2026-07-14
 

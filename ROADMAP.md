@@ -21,18 +21,17 @@ provenance does not make private source code or data part of the implementation 
 - [x] standalone public workflow validation command
 - [x] public-boundary audit and reproducible release-artifact checks
 
-## 0.2.x — Maintenance and external reproduction
+## 0.3 — Declarative registry and external reproduction
 
-- [x] small vector benchmark fixtures with machine-readable result summaries
+- [x] deterministic small-vector benchmark fixtures and machine-readable reports
 - [x] installation smoke tests from built wheels on all supported Python versions
 - [x] deterministic GeoJSON inspection reports and installed-wheel CLI coverage
-- [ ] third-party reproduction notes from an environment not used by the maintainer
 - [x] synthetic teaching examples for CRS and geometry failure modes
-
-## 0.3 — Extensible community research preview
-
 - [x] declarative operator registry with a machine-readable, schema-checked catalog
 - [x] explicit reprojection API and bounded workflow operation
+
+## 0.4 — Bounded analysis and workflow assurance
+
 - [x] CRS-safe clip API and bounded workflow operation with synthetic benchmark coverage
 - [x] deterministic data-free workflow planning with dependencies and resolved defaults
 - [x] deterministic JSON and Mermaid workflow graph export derived from planning
@@ -43,11 +42,20 @@ provenance does not make private source code or data part of the implementation 
 - [x] CRS-safe nearest-feature matching with deterministic ties and synthetic benchmark coverage
 - [x] deterministic point-in-polygon spatial join with explicit ambiguity handling
 - [x] projected area and length metrics with explicit CRS and field-collision rules
-- [ ] additional geometry-derived operators designed through public issues
-- [ ] optional read-only database adapter specified from public interfaces and synthetic fixtures
-- [ ] reviewed external-operator boundary without dynamic workflow code loading
-- [ ] additional documentation examples for education and research replication
+- [x] reviewed CI validation-tool constraints and scheduled latest-compatible checks
+
+## 0.5 — Maintainable input and performance boundaries
+
+- [ ] allow `starshine preflight` to read explicitly selected GeoPackage layers through the existing
+  adapter while keeping the core API FeatureCollection-only
+- [ ] split Preflight finding aggregation, checks, and rendering into internal modules before adding a
+  new independent check family
+- [ ] add a read-only Geometry Quality Report without automatic repair
+- [ ] evaluate STRtree acceleration for nearest matching and point-in-polygon joins against the
+  existing deterministic semantics and benchmark corpus
+- [ ] publish third-party reproduction notes from an environment not used by the maintainer
+- [ ] specify any read-only database adapter through public interfaces and synthetic fixtures
 
 The public repository will remain intentionally focused. Features enter Starshine only after an
 independent public specification, licensing and data review, synthetic or redistributable fixtures,
-security checks, and normal pull-request validation.
+security checks, architecture review, and normal pull-request validation.

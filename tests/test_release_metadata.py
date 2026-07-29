@@ -108,5 +108,5 @@ def test_top_level_api_exports_public_operator_surfaces():
 def test_release_readiness_check_matches_current_public_metadata():
     summary = check_release_readiness(ROOT)
     assert summary["version"] == _project_version()
-    assert summary["release_date"] == "2026-07-14"
+    assert summary["release_date"] == "2026-07-29"
     assert summary["release_notes"] == f"docs/releases/{_project_version()}.md"
