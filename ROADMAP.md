@@ -48,8 +48,8 @@ provenance does not make private source code or data part of the implementation 
 
 - [ ] allow `starshine preflight` to read explicitly selected GeoPackage layers through the existing
   adapter while keeping the core API FeatureCollection-only
-- [ ] split Preflight finding aggregation, checks, and rendering into internal modules before adding a
-  new independent check family
+- [x] split Preflight finding aggregation, checks, report assembly, and rendering into one-way
+  internal modules before adding a new independent check family
 - [ ] add a read-only Geometry Quality Report without automatic repair
 - [ ] evaluate STRtree acceleration for nearest matching and point-in-polygon joins against the
   existing deterministic semantics and benchmark corpus

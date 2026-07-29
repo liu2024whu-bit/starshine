@@ -4,6 +4,12 @@ All notable public changes are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- Workflow Preflight internals are split into a compact public facade, immutable report model,
+  finding aggregation, per-layer checks, report assembly, and Markdown rendering modules, with
+  architecture tests preventing circular or reversed dependencies while preserving public output.
+
 ## [0.4.0] - 2026-07-29
 
 ### Added
