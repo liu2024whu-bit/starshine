@@ -4,6 +4,11 @@ Starshine uses a deliberately small modular architecture.
 
 - `geojson.py` validates and normalizes the public data contract.
 - `inspection.py` produces deterministic collection-level reports after validation.
+- `geometry_quality.py` is the compact public facade for read-only geometry-quality assessment.
+- `_geometry_quality_model.py` owns the report version/type; `_geometry_quality_findings.py` owns bounded aggregation.
+- `_geometry_quality_coordinates.py` inspects coordinate structure without retaining positions.
+- `_geometry_quality_report.py` owns CRS metadata, geometry checks, duplicate grouping, counts, and digests.
+- `_geometry_quality_render.py` renders completed reports without importing geometry or checker code.
 - `crs.py` centralizes CRS parsing, projected-coordinate requirements, and transforms.
 - `operators.py` implements independently testable transformation, overlay, attribution, summary,
   and proximity operations.
@@ -24,6 +29,19 @@ Starshine uses a deliberately small modular architecture.
 - `cli.py` provides reproducible file-based execution and explicit file-format adaptation.
 
 The workflow layer does not import functions from arbitrary module names and does not use `eval`, `exec`, shell commands, or user-provided Python. Each operator returns an in-memory FeatureCollection; the CLI is the only component that writes a selected result to disk.
+
+## Geometry Quality dependency direction
+
+Geometry Quality follows a separate one-way import graph:
+
+`geometry_quality.py → _geometry_quality_report.py → _geometry_quality_coordinates.py / _geometry_quality_findings.py / _geometry_quality_model.py`
+
+`geometry_quality.py → _geometry_quality_render.py → _geometry_quality_model.py`
+
+The report builder does not import Workflow, operators, Preflight, or the renderer. The renderer does
+not import CRS, GeoJSON, Shapely, or report assembly. Internal modules never import the public facade.
+Focused AST tests enforce this graph so geometry diagnostics remain independent from workflow input
+contracts and future file adapters.
 
 ## Workflow Preflight dependency direction
 
@@ -50,3 +68,4 @@ second validation path or an import cycle.
 6. **Public/private separation.** Experimental modules and unreleased data do not silently leak into the public core.
 7. **Output adapters stay separate.** Format-specific conversion such as Mermaid, Markdown, and SARIF must not become a second validation or execution path.
 8. **Teaching artifacts stay external to runtime.** Intentional failures live under `examples/teaching/` and exercise public contracts without becoming package dependencies.
+9. **Diagnosis is not repair.** Geometry-quality reports expose invalid, empty, duplicate, or dimensionally inconsistent geometry but never modify source data.

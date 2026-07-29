@@ -55,6 +55,7 @@ def test_cli_reports_installed_version(capsys):
 
 
 def test_top_level_api_exports_public_operator_surfaces():
+    assert callable(starshine_geo.assess_geometry_quality)
     assert callable(starshine_geo.build_workflow_graph)
     assert callable(starshine_geo.build_workflow_preflight_sarif)
     assert callable(starshine_geo.build_workflow_contract)
@@ -68,10 +69,12 @@ def test_top_level_api_exports_public_operator_surfaces():
     assert callable(starshine_geo.operator_catalog)
     assert callable(starshine_geo.plan_workflow)
     assert callable(starshine_geo.preflight_workflow_inputs)
+    assert callable(starshine_geo.render_geometry_quality_markdown)
     assert callable(starshine_geo.render_workflow_contract_markdown)
     assert callable(starshine_geo.render_workflow_explanation_markdown)
     assert callable(starshine_geo.render_workflow_mermaid)
     assert callable(starshine_geo.render_workflow_preflight_markdown)
+    assert starshine_geo.GEOMETRY_QUALITY_REPORT_VERSION == 1
     assert starshine_geo.WORKFLOW_CONTRACT_VERSION == 1
     assert starshine_geo.WORKFLOW_EXPLANATION_VERSION == 1
     assert starshine_geo.WORKFLOW_GRAPH_VERSION == 1
@@ -79,6 +82,7 @@ def test_top_level_api_exports_public_operator_surfaces():
     assert starshine_geo.WORKFLOW_PREFLIGHT_VERSION == 1
     assert starshine_geo.SARIF_VERSION == "2.1.0"
     assert starshine_geo.SARIF_SCHEMA_URI.endswith("sarif-2.1.0.json")
+    assert "assess_geometry_quality" in starshine_geo.__all__
     assert "build_workflow_graph" in starshine_geo.__all__
     assert "build_workflow_preflight_sarif" in starshine_geo.__all__
     assert "build_workflow_contract" in starshine_geo.__all__
@@ -92,10 +96,12 @@ def test_top_level_api_exports_public_operator_surfaces():
     assert "operator_catalog" in starshine_geo.__all__
     assert "plan_workflow" in starshine_geo.__all__
     assert "preflight_workflow_inputs" in starshine_geo.__all__
+    assert "render_geometry_quality_markdown" in starshine_geo.__all__
     assert "render_workflow_contract_markdown" in starshine_geo.__all__
     assert "render_workflow_explanation_markdown" in starshine_geo.__all__
     assert "render_workflow_mermaid" in starshine_geo.__all__
     assert "render_workflow_preflight_markdown" in starshine_geo.__all__
+    assert "GEOMETRY_QUALITY_REPORT_VERSION" in starshine_geo.__all__
     assert "WORKFLOW_CONTRACT_VERSION" in starshine_geo.__all__
     assert "WORKFLOW_EXPLANATION_VERSION" in starshine_geo.__all__
     assert "WORKFLOW_GRAPH_VERSION" in starshine_geo.__all__

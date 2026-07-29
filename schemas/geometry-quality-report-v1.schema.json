@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/liu2024whu-bit/starshine/schemas/geometry-quality-report-v1.schema.json",
+  "title": "Starshine Geo geometry quality report version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "collection_digest",
+    "collection_digest_status",
+    "quality_digest",
+    "feature_count",
+    "parsed_geometry_count",
+    "valid_geometry_count",
+    "invalid_geometry_count",
+    "geometry_counts",
+    "coordinate_dimension_counts",
+    "total_coordinate_count",
+    "max_coordinate_count",
+    "duplicate_geometry_group_count",
+    "duplicate_feature_count",
+    "declared_crs",
+    "crs_status",
+    "valid",
+    "error_count",
+    "warning_count",
+    "findings"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "collection_digest": {
+      "anyOf": [
+        {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        {"type": "null"}
+      ]
+    },
+    "collection_digest_status": {"enum": ["available", "unavailable"]},
+    "quality_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "feature_count": {"type": "integer", "minimum": 0},
+    "parsed_geometry_count": {"type": "integer", "minimum": 0},
+    "valid_geometry_count": {"type": "integer", "minimum": 0},
+    "invalid_geometry_count": {"type": "integer", "minimum": 0},
+    "geometry_counts": {
+      "type": "object",
+      "additionalProperties": {"type": "integer", "minimum": 1}
+    },
+    "coordinate_dimension_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["2D", "3D", "mixed", "unsupported", "unknown"],
+      "properties": {
+        "2D": {"type": "integer", "minimum": 0},
+        "3D": {"type": "integer", "minimum": 0},
+        "mixed": {"type": "integer", "minimum": 0},
+        "unsupported": {"type": "integer", "minimum": 0},
+        "unknown": {"type": "integer", "minimum": 0}
+      }
+    },
+    "total_coordinate_count": {"type": "integer", "minimum": 0},
+    "max_coordinate_count": {"type": "integer", "minimum": 0},
+    "duplicate_geometry_group_count": {"type": "integer", "minimum": 0},
+    "duplicate_feature_count": {"type": "integer", "minimum": 0},
+    "declared_crs": {
+      "anyOf": [{"type": "string", "minLength": 1}, {"type": "null"}]
+    },
+    "crs_status": {"enum": ["missing", "invalid", "valid"]},
+    "valid": {"type": "boolean"},
+    "error_count": {"type": "integer", "minimum": 0},
+    "warning_count": {"type": "integer", "minimum": 0},
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["severity", "code", "message", "occurrence_count"],
+        "properties": {
+          "severity": {"enum": ["error", "warning"]},
+          "code": {"type": "string", "minLength": 1},
+          "message": {"type": "string", "minLength": 1},
+          "occurrence_count": {"type": "integer", "minimum": 1},
+          "geometry_type": {"type": "string", "minLength": 1},
+          "feature_indexes": {
+            "type": "array",
+            "items": {"type": "integer", "minimum": 0},
+            "uniqueItems": true,
+            "minItems": 1,
+            "maxItems": 20
+          }
+        }
+      }
+    }
+   },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"collection_digest_status": {"const": "available"}},
+        "required": ["collection_digest_status"]
+      },
+      "then": {
+        "properties": {
+          "collection_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+        }
+      },
+      "else": {
+        "properties": {"collection_digest": {"type": "null"}}
+      }
+    }
+  ]
+}
