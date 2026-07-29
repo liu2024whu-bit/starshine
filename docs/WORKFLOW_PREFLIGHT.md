@@ -66,6 +66,22 @@ starshine preflight examples/plan.workflow.json \
 See [workflow preflight SARIF](WORKFLOW_PREFLIGHT_SARIF.md) and the tracked
 [SARIF example](../examples/plan.workflow.preflight.sarif).
 
+## Internal architecture
+
+The public functions remain in `preflight.py`, but implementation responsibilities are isolated:
+
+- `_preflight_model.py` defines the report version, type, and fixed execution-time limitations;
+- `_preflight_findings.py` aggregates identical findings and bounded feature-index samples;
+- `_preflight_checks.py` validates one collection or one contract use at a time;
+- `_preflight_report.py` coordinates the canonical contract, cross-layer CRS equivalence, counts, and
+  deterministic report digest;
+- `_preflight_render.py` renders an already completed report;
+- `preflight_sarif.py` consumes the public report contract and never imports checker internals.
+
+The dependency graph is tested from source syntax. Internal modules cannot import the public facade,
+and presentation modules cannot import contracts, CRS, GeoJSON, geometry, or workflow execution.
+This separation reduces merge conflicts and leaves future input adapters outside the core API.
+
 ## Checks
 
 Preflight currently checks:

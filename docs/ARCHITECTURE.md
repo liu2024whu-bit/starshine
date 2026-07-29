@@ -14,11 +14,31 @@ Starshine uses a deliberately small modular architecture.
 - `graph.py` converts canonical plans into schema-checked JSON and safe Mermaid views.
 - `explain.py` turns canonical plan and graph evidence into structured and Markdown explanations.
 - `contract_specs.py` stores declarative per-input data requirements; `contracts.py` resolves them against canonical plans.
-- `preflight.py` checks loaded external layers against resolved contracts without running operators.
-- `preflight_sarif.py` converts completed preflight reports to deterministic SARIF without adding validation logic.
+- `preflight.py` is the compact public facade for actual-input checking and Markdown rendering.
+- `_preflight_model.py` owns the report version, type alias, and shared execution-time limitations.
+- `_preflight_findings.py` aggregates repeated findings without retaining property values.
+- `_preflight_checks.py` owns per-layer structure, geometry, CRS, and field checks.
+- `_preflight_report.py` coordinates contracts, cross-layer equivalence, counts, and report digests.
+- `_preflight_render.py` renders completed reports without importing validation or geometry code.
+- `preflight_sarif.py` consumes the public facade and converts completed reports to deterministic SARIF.
 - `cli.py` provides reproducible file-based execution and explicit file-format adaptation.
 
 The workflow layer does not import functions from arbitrary module names and does not use `eval`, `exec`, shell commands, or user-provided Python. Each operator returns an in-memory FeatureCollection; the CLI is the only component that writes a selected result to disk.
+
+## Workflow Preflight dependency direction
+
+The Preflight implementation follows one import direction:
+
+`preflight.py → _preflight_report.py → _preflight_checks.py / _preflight_findings.py`
+
+`preflight.py → _preflight_render.py → _preflight_model.py`
+
+`preflight_sarif.py → preflight.py`
+
+The model and finding modules do not import the facade. Rendering does not import contracts, CRS,
+GeoJSON, geometry, or report assembly. SARIF does not reach into checker internals. Focused AST-based
+tests enforce this graph so a later GeoPackage adapter or geometry-quality report cannot create a
+second validation path or an import cycle.
 
 ## Design principles
 

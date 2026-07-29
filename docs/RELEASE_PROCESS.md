@@ -82,7 +82,8 @@ the downloaded wheel and run the public installed-wheel smoke scripts, which ver
 - top-level public callables are available;
 - the installed operator catalog includes the reviewed registry and matches the CLI output;
 - the installed workflow planner, graph exporter, explanation renderer, and input-contract builder match their CLI forms without loading data;
-- the installed input-preflight API and CLI agree when checking real synthetic GeoJSON layers;
+- the installed input-preflight facade, internal checking/report modules, and CLI agree when
+  checking real synthetic GeoJSON layers;
 - the installed SARIF adapter and CLI agree on repository-relative locations and empty passing results;
 - reprojection, projected geometry metrics, nearest-feature matching, and point-in-polygon joining
   work through both the installed API and workflow CLI;

@@ -42,6 +42,12 @@
 /schemas/workflow-contract-v1.schema.json @liu2024whu-bit
 /docs/WORKFLOW_CONTRACTS.md @liu2024whu-bit
 /src/starshine_geo/preflight.py @liu2024whu-bit
+/src/starshine_geo/_preflight_model.py @liu2024whu-bit
+/src/starshine_geo/_preflight_findings.py @liu2024whu-bit
+/src/starshine_geo/_preflight_checks.py @liu2024whu-bit
+/src/starshine_geo/_preflight_report.py @liu2024whu-bit
+/src/starshine_geo/_preflight_render.py @liu2024whu-bit
+/tests/test_preflight_architecture.py @liu2024whu-bit
 /src/starshine_geo/preflight_sarif.py @liu2024whu-bit
 /schemas/workflow-preflight-v1.schema.json @liu2024whu-bit
 /docs/WORKFLOW_PREFLIGHT.md @liu2024whu-bit
