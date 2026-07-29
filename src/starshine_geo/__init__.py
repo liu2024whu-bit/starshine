@@ -13,6 +13,11 @@ from .explain import (
     render_workflow_explanation_markdown,
 )
 from .geopackage import list_geopackage_layers, read_geopackage, write_geopackage
+from .geometry_quality import (
+    GEOMETRY_QUALITY_REPORT_VERSION,
+    assess_geometry_quality,
+    render_geometry_quality_markdown,
+)
 from .graph import (
     WORKFLOW_GRAPH_VERSION,
     build_workflow_graph,
@@ -46,6 +51,7 @@ from .preflight_sarif import (
 from .workflow import run_workflow, validate_workflow
 
 __all__ = [
+    "GEOMETRY_QUALITY_REPORT_VERSION",
     "OPERATOR_REGISTRY",
     "SARIF_SCHEMA_URI",
     "SARIF_VERSION",
@@ -57,6 +63,7 @@ __all__ = [
     "WorkflowDiagnostic",
     "WorkflowValidationError",
     "__version__",
+    "assess_geometry_quality",
     "buffer_features",
     "build_manifest",
     "build_workflow_contract",
@@ -75,6 +82,7 @@ __all__ = [
     "plan_workflow",
     "preflight_workflow_inputs",
     "read_geopackage",
+    "render_geometry_quality_markdown",
     "render_workflow_contract_markdown",
     "render_workflow_explanation_markdown",
     "render_workflow_mermaid",

@@ -136,6 +136,7 @@ jobs:
           path: |
             scripts/smoke_installed_wheel.py
             scripts/smoke_installed_preflight_sarif.py
+            scripts/smoke_installed_geometry_quality.py
           if-no-files-found: error
           retention-days: 14
 
@@ -172,12 +173,16 @@ jobs:
           set -o pipefail
           core_script="$(find smoke -name smoke_installed_wheel.py -print -quit)"
           sarif_script="$(find smoke -name smoke_installed_preflight_sarif.py -print -quit)"
+          quality_script="$(find smoke -name smoke_installed_geometry_quality.py -print -quit)"
           test -n "$core_script"
           test -n "$sarif_script"
+          test -n "$quality_script"
           python "$core_script" \
             2>&1 | tee wheel-smoke-${{ matrix.python-version }}.log
           python "$sarif_script" \
             2>&1 | tee wheel-sarif-smoke-${{ matrix.python-version }}.log
+          python "$quality_script" \
+            2>&1 | tee wheel-quality-smoke-${{ matrix.python-version }}.log
       - name: Upload wheel-smoke diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
@@ -187,5 +192,6 @@ jobs:
             wheel-install-${{ matrix.python-version }}.log
             wheel-smoke-${{ matrix.python-version }}.log
             wheel-sarif-smoke-${{ matrix.python-version }}.log
+            wheel-quality-smoke-${{ matrix.python-version }}.log
           if-no-files-found: warn
           retention-days: 7

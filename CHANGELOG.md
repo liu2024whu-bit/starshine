@@ -4,6 +4,15 @@ All notable public changes are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- a read-only `assess_geometry_quality()` API and `starshine quality` command with schema-checked JSON
+  and Markdown reports for invalid topology, empty and duplicate geometry, coordinate dimensions,
+  coordinate-count statistics, CRS metadata status, bounded unique finding samples, canonical digest
+  availability, fixed-byte-order normalized duplicate keys, and privacy-preserving report digests;
+- a synthetic mixed-quality GeoJSON example, tracked reports, focused documentation, architecture and
+  package-surface tests, release-archive requirements, and clean installed-wheel coverage.
+
 ### Changed
 
 - Workflow Preflight internals are split into a compact public facade, immutable report model,

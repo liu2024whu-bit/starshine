@@ -1,0 +1,36 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"name": "private-site-a"},
+      "geometry": {"type": "Point", "coordinates": [1, 2]}
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "private-site-b"},
+      "geometry": {"type": "Point", "coordinates": [1, 2]}
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "private-bowtie"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[0, 0], [2, 2], [0, 2], [2, 0], [0, 0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "private-empty"},
+      "geometry": {"type": "Polygon", "coordinates": []}
+    },
+    {
+      "type": "Feature",
+      "properties": {"name": "private-3d"},
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [[0, 0, 5], [3, 4, 5]]
+      }
+    }
+  ]
+}

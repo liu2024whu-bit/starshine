@@ -38,6 +38,7 @@ The public 0.4 line provides:
 - optional path-free reproducibility manifests;
 - optional GeoPackage input/output with explicit layer, CRS, and overwrite rules;
 - deterministic GeoJSON inspection reports with counts, bounds, CRS, fields, and digests;
+- read-only geometry-quality reports for invalid topology, empty and duplicate geometry, coordinate dimensions, CRS metadata, and bounded finding samples;
 - synthetic teaching cases for CRS misuse, invalid geometry, and malformed properties;
 - a deterministic synthetic small-vector benchmark corpus with schema-checked JSON reports;
 - self-created sample data and reproducible command-line examples;
@@ -202,6 +203,25 @@ Reports include feature and geometry counts, sorted property fields, declared CR
 bounds, and a deterministic collection digest. See the
 [inspection contract](docs/INSPECTION.md) and
 [inspection report schema](schemas/inspection-report-v1.schema.json).
+
+## Assess geometry quality without repairing data
+
+The quality command diagnoses geometry problems while preserving the source collection exactly as
+provided:
+
+```bash
+starshine quality examples/geometry-quality.geojson
+```
+
+Markdown is the default. Use `--format json` for the schema-checked report and automation-friendly
+exit codes: `0` for no error-level geometry findings, `1` for a completed report with errors, and `2`
+for source or argument failures. The report detects empty and topologically invalid geometries,
+malformed coordinate structures, mixed dimensions, duplicate normalized geometries, and CRS metadata
+status without copying coordinates or property values. See [geometry quality](docs/GEOMETRY_QUALITY.md),
+the [report schema](schemas/geometry-quality-report-v1.schema.json), and the tracked
+[JSON](examples/geometry-quality.report.json) and [Markdown](examples/geometry-quality.report.md)
+examples. A complete professional review sequence is documented in the
+[reproducible vector quality gate](docs/VECTOR_QUALITY_GATE.md).
 
 ## Learn from intentional CRS and geometry failures
 

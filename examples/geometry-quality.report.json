@@ -1,0 +1,70 @@
+{
+  "collection_digest": "sha256:8f889db5a3012df32f80fdec07ed0ce4ea57ea1c501f00b9f14e8c7754e1d9b7",
+  "collection_digest_status": "available",
+  "coordinate_dimension_counts": {
+    "2D": 3,
+    "3D": 1,
+    "mixed": 0,
+    "unknown": 1,
+    "unsupported": 0
+  },
+  "crs_status": "missing",
+  "declared_crs": null,
+  "duplicate_feature_count": 2,
+  "duplicate_geometry_group_count": 1,
+  "error_count": 2,
+  "feature_count": 5,
+  "findings": [
+    {
+      "code": "missing_declared_crs",
+      "message": "The collection does not declare starshine:crs.",
+      "occurrence_count": 1,
+      "severity": "warning"
+    },
+    {
+      "code": "topologically_invalid_geometry",
+      "feature_indexes": [
+        2
+      ],
+      "geometry_type": "Polygon",
+      "message": "A geometry is topologically invalid: Self-intersection.",
+      "occurrence_count": 1,
+      "severity": "error"
+    },
+    {
+      "code": "empty_geometry",
+      "feature_indexes": [
+        3
+      ],
+      "geometry_type": "Polygon",
+      "message": "A geometry is empty.",
+      "occurrence_count": 1,
+      "severity": "error"
+    },
+    {
+      "code": "duplicate_geometry",
+      "feature_indexes": [
+        0,
+        1
+      ],
+      "geometry_type": "Point",
+      "message": "Multiple features share an identical normalized geometry.",
+      "occurrence_count": 2,
+      "severity": "warning"
+    }
+  ],
+  "geometry_counts": {
+    "LineString": 1,
+    "Point": 2,
+    "Polygon": 2
+  },
+  "invalid_geometry_count": 2,
+  "max_coordinate_count": 5,
+  "parsed_geometry_count": 5,
+  "quality_digest": "sha256:c7a1eb1884b58eaf73d79ce2da823f1bf35029bf267970e84306f10356c32765",
+  "schema_version": 1,
+  "total_coordinate_count": 9,
+  "valid": false,
+  "valid_geometry_count": 3,
+  "warning_count": 3
+}

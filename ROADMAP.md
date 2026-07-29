@@ -50,7 +50,7 @@ provenance does not make private source code or data part of the implementation 
   adapter while keeping the core API FeatureCollection-only
 - [x] split Preflight finding aggregation, checks, report assembly, and rendering into one-way
   internal modules before adding a new independent check family
-- [ ] add a read-only Geometry Quality Report without automatic repair
+- [x] add a read-only Geometry Quality Report without automatic repair
 - [ ] evaluate STRtree acceleration for nearest matching and point-in-polygon joins against the
   existing deterministic semantics and benchmark corpus
 - [ ] publish third-party reproduction notes from an environment not used by the maintainer

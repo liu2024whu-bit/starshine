@@ -9,6 +9,7 @@ from ._version import __version__
 from .contracts import build_workflow_contract, render_workflow_contract_markdown
 from .errors import StarshineError, WorkflowValidationError
 from .explain import explain_workflow, render_workflow_explanation_markdown
+from .geometry_quality import assess_geometry_quality, render_geometry_quality_markdown
 from .graph import build_workflow_graph, render_workflow_mermaid
 from .inspection import inspect_feature_collection
 from .io import read_json, write_json
@@ -75,6 +76,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="Optionally write the inspection report instead of printing it",
     )
     _add_diagnostic_format(inspect_parser)
+
+    quality_parser = subparsers.add_parser(
+        "quality",
+        help="Assess GeoJSON geometry quality without repairing or transforming data",
+    )
+    quality_parser.add_argument("source", type=Path)
+    quality_parser.add_argument(
+        "--format",
+        choices=("json", "markdown"),
+        default="markdown",
+        help="Choose a machine-readable JSON report or Markdown summary",
+    )
+    quality_parser.add_argument(
+        "--output",
+        type=Path,
+        help="Optionally write the geometry-quality report instead of printing it",
+    )
+    _add_diagnostic_format(quality_parser)
 
     operators_parser = subparsers.add_parser(
         "operators",
@@ -294,6 +313,24 @@ def _inspect_command(args: argparse.Namespace) -> int:
     return 0
 
 
+def _quality_command(args: argparse.Namespace) -> int:
+    if args.output is not None and args.output.resolve() == args.source.resolve():
+        raise StarshineError("geometry-quality output must not overwrite the source GeoJSON")
+    report = assess_geometry_quality(read_json(args.source))
+    if args.format == "json":
+        content = json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    else:
+        content = render_geometry_quality_markdown(report)
+
+    if args.output is None:
+        print(content, end="")
+    else:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(content, encoding="utf-8")
+        print(args.output)
+    return 0 if report["valid"] else 1
+
+
 def _operators_command(args: argparse.Namespace) -> int:
     catalog = operator_catalog()
     if args.output is None:
@@ -446,6 +483,8 @@ def main(argv: list[str] | None = None) -> int:
             return _validate_command(args)
         if args.command == "inspect":
             return _inspect_command(args)
+        if args.command == "quality":
+            return _quality_command(args)
         if args.command == "operators":
             return _operators_command(args)
         if args.command == "plan":

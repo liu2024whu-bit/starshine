@@ -85,6 +85,8 @@ the downloaded wheel and run the public installed-wheel smoke scripts, which ver
 - the installed input-preflight facade, internal checking/report modules, and CLI agree when
   checking real synthetic GeoJSON layers;
 - the installed SARIF adapter and CLI agree on repository-relative locations and empty passing results;
+- the installed geometry-quality API, Markdown renderer, and CLI agree on invalid topology, duplicate
+  geometry, privacy boundaries, and exit codes;
 - reprojection, projected geometry metrics, nearest-feature matching, and point-in-polygon joining
   work through both the installed API and workflow CLI;
 - the installed inspection API and `starshine inspect` command produce matching reports;
@@ -92,9 +94,9 @@ the downloaded wheel and run the public installed-wheel smoke scripts, which ver
 - a self-created point-within-polygon workflow runs through both the Python API and CLI;
 - the generated result and reproducibility manifest contain the expected public values.
 
-Installation and smoke output are retained as short CI artifacts when a matrix job fails. Both smoke
-scripts are required to be present in the source distribution so third parties can repeat the same
-checks after building locally.
+Installation and smoke output are retained as short CI artifacts when a matrix job fails. All three
+smoke scripts are required to be present in the source distribution so third parties can repeat the
+same checks after building locally.
 
 ## GitHub release
 
