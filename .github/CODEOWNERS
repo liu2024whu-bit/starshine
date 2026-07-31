@@ -70,3 +70,8 @@
 /src/starshine_geo/_geometry_quality_report.py @liu2024whu-bit
 /src/starshine_geo/_geometry_quality_render.py @liu2024whu-bit
 /tests/test_geometry_quality_architecture.py @liu2024whu-bit
+/src/starshine_geo/_cli_layer_sources.py @liu2024whu-bit
+/tests/test_preflight_cli_layer_sources.py @liu2024whu-bit
+/tests/test_geopackage_preflight_cli.py @liu2024whu-bit
+/scripts/smoke_installed_geopackage_preflight.py @liu2024whu-bit
+/docs/GEOPACKAGE.md @liu2024whu-bit

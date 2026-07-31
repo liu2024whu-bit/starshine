@@ -5,6 +5,7 @@ import json
 import sys
 from pathlib import Path
 
+from ._cli_layer_sources import prepare_preflight_layer_bindings
 from ._version import __version__
 from .contracts import build_workflow_contract, render_workflow_contract_markdown
 from .errors import StarshineError, WorkflowValidationError
@@ -201,10 +202,28 @@ def build_parser() -> argparse.ArgumentParser:
 
     preflight_parser = subparsers.add_parser(
         "preflight",
-        help="Check actual GeoJSON inputs against planner-derived workflow contracts",
+        help="Check GeoJSON or selected GeoPackage inputs against workflow contracts",
     )
     preflight_parser.add_argument("workflow", type=Path)
-    preflight_parser.add_argument("--layer", action="append", default=[], metavar="NAME=PATH")
+    preflight_parser.add_argument(
+        "--layer",
+        action="append",
+        default=[],
+        metavar="NAME=PATH",
+        help="Bind one workflow layer to a GeoJSON file; repeat for multiple inputs",
+    )
+    preflight_parser.add_argument(
+        "--geopackage-layer",
+        "--gpkg-layer",
+        action="append",
+        nargs=3,
+        default=[],
+        metavar=("NAME", "PATH", "LAYER"),
+        help=(
+            "Bind one workflow layer to an explicitly selected GeoPackage vector layer; "
+            "repeat for multiple inputs"
+        ),
+    )
     preflight_parser.add_argument(
         "--format",
         choices=("json", "markdown", "sarif"),
@@ -420,7 +439,8 @@ def _preflight_command(args: argparse.Namespace) -> int:
         if not args.sarif_root.is_dir():
             raise StarshineError("--sarif-root must identify an existing directory")
 
-    layers, paths = _parse_layer_bindings(args.layer)
+    bindings = prepare_preflight_layer_bindings(args.layer, args.geopackage_layer)
+    paths = bindings.paths
     if args.output is not None:
         output = args.output.resolve()
         if output == args.workflow.resolve():
@@ -428,16 +448,22 @@ def _preflight_command(args: argparse.Namespace) -> int:
         if any(output == path.resolve() for path in paths.values()):
             raise StarshineError("workflow preflight output must not overwrite an input layer")
 
-    workflow = read_json(args.workflow)
-    report = preflight_workflow_inputs(workflow, layers)
-    if args.format == "json":
-        content = json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
-    elif args.format == "sarif":
+    workflow_uri: str | None = None
+    artifact_uris: dict[str, str] | None = None
+    if args.format == "sarif":
         root = args.sarif_root
         workflow_uri = _repository_relative_uri(args.workflow, root)
         artifact_uris = {
             name: _repository_relative_uri(path, root) for name, path in paths.items()
         }
+
+    workflow = read_json(args.workflow)
+    report = preflight_workflow_inputs(workflow, bindings.load())
+    if args.format == "json":
+        content = json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    elif args.format == "sarif":
+        if workflow_uri is None or artifact_uris is None:
+            raise RuntimeError("SARIF paths were not prepared before report conversion")
         sarif = build_workflow_preflight_sarif(
             report,
             artifact_uris,

@@ -165,8 +165,8 @@ data-loading interface. See [workflow input contracts](docs/WORKFLOW_CONTRACTS.m
 
 ## Preflight actual workflow inputs
 
-The preflight command loads external GeoJSON layers and checks them against the planner-derived
-contract without executing spatial operators:
+The preflight command loads external vector layers and checks them against the planner-derived
+contract without executing spatial operators. GeoJSON bindings use `NAME=PATH`:
 
 ```bash
 starshine preflight examples/plan.workflow.json \
@@ -174,8 +174,20 @@ starshine preflight examples/plan.workflow.json \
   --layer mask=examples/data/clip-mask.geojson
 ```
 
-Markdown is the default output. Use `--format json` for the canonical schema-checked report or
-`--format sarif --sarif-root .` for repository-relative SARIF 2.1.0. A completed preflight returns
+GeoPackage bindings require an explicit workflow name, package path, and vector layer. GeoJSON and
+GeoPackage sources may be mixed in one command:
+
+```bash
+starshine preflight examples/plan.workflow.json \
+  --layer source=examples/data/clip-source.geojson \
+  --gpkg-layer mask study.gpkg analysis_mask
+```
+
+Explicit selection prevents a package from silently changing behavior when another layer is added.
+The containing `.gpkg` file is used for overwrite protection and repository-relative SARIF evidence,
+while the core Preflight API remains FeatureCollection-only. Markdown is the default output. Use
+`--format json` for the canonical schema-checked report or `--format sarif --sarif-root .` for
+repository-relative SARIF 2.1.0. A completed preflight returns
 exit code `0` when valid and `1` when contract violations are reported. See
 [workflow input preflight](docs/WORKFLOW_PREFLIGHT.md),
 [SARIF integration](docs/WORKFLOW_PREFLIGHT_SARIF.md), the
@@ -404,7 +416,9 @@ points remain in the output with a configured scalar or `null` value. See the
 The public adapter converts selected GeoPackage layers to and from the same validated in-memory
 GeoJSON contract used by the workflow engine. Multi-layer packages require an explicit layer, CRS
 metadata is preserved and validated, and existing or input-file destinations require an explicit
-overwrite flag. See [GeoPackage adapter contract](docs/GEOPACKAGE.md).
+overwrite flag. `starshine preflight` can bind explicitly selected package layers through the CLI
+without importing file-format logic into the core Preflight implementation. See the
+[GeoPackage adapter contract](docs/GEOPACKAGE.md).
 
 ## Public development boundary
 
