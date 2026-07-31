@@ -75,13 +75,17 @@ result.
 Use `reproject` explicitly before `nearest` when inputs are not already in the same suitable projected
 CRS. Coordinate-system selection remains a domain decision rather than an inferred convenience.
 
-## Complexity and intended scale
+## Deterministic spatial index
 
-The current implementation compares each source geometry with every candidate geometry. This
-straightforward `O(source × candidates)` design keeps semantics easy to audit and is appropriate for
-the repository's small reproducible examples and benchmark corpus. A future spatial-index
-optimization must preserve the same tie-breaking, validation, and output contract and arrive through
-a separately reviewed public issue.
+Candidate geometries are stored once in an immutable STRtree. Starshine requests every exact nearest
+tie and then chooses the smallest original candidate index, so internal tree traversal order cannot
+replace the documented input-order rule. Positive `max_distance` values may narrow the tree query;
+zero remains an inclusive Starshine threshold applied after the exact distance is known.
+
+Expected GEOS query failures use a bounded exhaustive fallback with the established source/candidate
+error context. Unexpected programming errors remain visible. The public API, validation, planar
+distance semantics, output order, and null behavior are unchanged. See
+[deterministic spatial indexing](SPATIAL_INDEXING.md) for the design and differential evidence.
 
 ## Public implementation boundary
 

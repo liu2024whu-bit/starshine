@@ -85,12 +85,17 @@ interior point. Silently selecting one changes attribution semantics. Starshine 
 default and requires the workflow author to opt into the deterministic `first` policy when input
 order is an intentional priority rule.
 
-## Complexity and intended scale
+## Deterministic spatial index
 
-The initial implementation checks every point against every polygon. This transparent
-`O(points × polygons)` behavior is appropriate for the small auditable workflows and benchmark
-corpus. A future spatial-index optimization must preserve boundary, ordering, ambiguity, validation,
-and output contracts.
+Polygon geometries are stored once in an immutable STRtree. Each point queries the tree with the
+inverse `covered_by(point, polygon)` orientation of the public `polygon.covers(point)` contract.
+Returned indices are sorted by original polygon input order before `first` or `error` ambiguity
+handling, so tree traversal order is never observable.
+
+Expected GEOS query failures use a bounded exhaustive fallback with the established point/polygon
+error context. The public boundary-inclusive topology, ambiguity policy, output order, and unmatched
+behavior are unchanged. See [deterministic spatial indexing](SPATIAL_INDEXING.md) for the design and
+differential evidence.
 
 ## Public implementation boundary
 

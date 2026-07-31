@@ -25,7 +25,7 @@ The public 0.4 line provides:
 - validated GeoJSON FeatureCollection input;
 - projected-CRS checks for distance-based work;
 - buffer, dissolve, point-within-polygon summary and join, projected geometry metrics, explicit
-  reprojection, CRS-safe clipping, and deterministic nearest-feature matching;
+  reprojection, CRS-safe clipping, and deterministic STRtree-backed nearest-feature matching;
 - a versioned JSON workflow format and operator-specific machine-readable schema;
 - structured workflow diagnostics for structure, inputs, parameters, and CRS rules;
 - a declarative operator registry and machine-readable catalog with no dynamic `eval`;
@@ -40,7 +40,8 @@ The public 0.4 line provides:
 - deterministic GeoJSON inspection reports with counts, bounds, CRS, fields, and digests;
 - read-only geometry-quality reports for invalid topology, empty and duplicate geometry, coordinate dimensions, CRS metadata, and bounded finding samples;
 - synthetic teaching cases for CRS misuse, invalid geometry, and malformed properties;
-- a deterministic synthetic small-vector benchmark corpus with schema-checked JSON reports;
+- a deterministic synthetic vector benchmark corpus plus indexed-versus-exhaustive semantic and
+  timing evidence with schema-checked JSON reports;
 - self-created sample data and reproducible command-line examples;
 - public-boundary, package-build, and Python 3.10–3.12 source and built-wheel CI checks.
 
@@ -374,9 +375,11 @@ starshine run examples/nearest.workflow.json \
   --output examples/output/nearest-facilities.geojson
 ```
 
-Equal-distance ties use candidate input order. Empty candidate collections and matches beyond an
-optional inclusive distance limit produce explicit `null` fields instead of dropping source
-features. See the [nearest-feature contract](docs/NEAREST.md).
+Equal-distance ties use candidate input order even though the underlying STRtree does not promise
+query-result order. Empty candidate collections and matches beyond an optional inclusive distance
+limit produce explicit `null` fields instead of dropping source features. See the
+[nearest-feature contract](docs/NEAREST.md) and
+[spatial-index design](docs/SPATIAL_INDEXING.md).
 
 ## Calculate projected geometry metrics
 
@@ -406,9 +409,11 @@ starshine run examples/spatial-join.workflow.json \
 ```
 
 Ambiguous overlaps and shared-boundary matches fail by default. Workflows may explicitly select the
-deterministic `first` policy when polygon input order is an intentional priority rule. Unmatched
-points remain in the output with a configured scalar or `null` value. See the
-[point-in-polygon join contract](docs/SPATIAL_JOIN.md).
+deterministic `first` policy when polygon input order is an intentional priority rule. Indexed query
+results are sorted back to original polygon order before that policy is applied. Unmatched points
+remain in the output with a configured scalar or `null` value. See the
+[point-in-polygon join contract](docs/SPATIAL_JOIN.md) and
+[spatial-index design](docs/SPATIAL_INDEXING.md).
 
 
 ## Optional GeoPackage boundary

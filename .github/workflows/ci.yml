@@ -89,10 +89,16 @@ jobs:
       - run: python -m benchmarks.verify
       - run: python -m benchmarks.run --repeat 1 --output benchmark-report.json
       - run: python scripts/check_benchmark_report.py benchmark-report.json
+      - run: >-
+          python -m benchmarks.spatial_index --repeat 1
+          --output spatial-index-report.json
+      - run: python scripts/check_spatial_index_benchmark.py spatial-index-report.json
       - uses: actions/upload-artifact@v4
         with:
           name: starshine-vector-benchmark
-          path: benchmark-report.json
+          path: |
+            benchmark-report.json
+            spatial-index-report.json
           if-no-files-found: error
           retention-days: 14
 

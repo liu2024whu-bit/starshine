@@ -24,6 +24,11 @@ python -m pip install --constraint requirements/ci-validation.txt -e ".[dev,geop
 python scripts/audit_public_repository.py
 python scripts/check_release_readiness.py
 python scripts/verify_teaching_examples.py
+python -m benchmarks.verify
+python -m benchmarks.run --repeat 3 --output benchmark-report.json
+python scripts/check_benchmark_report.py benchmark-report.json
+python -m benchmarks.spatial_index --repeat 3 --output spatial-index-report.json
+python scripts/check_spatial_index_benchmark.py spatial-index-report.json
 ruff check .
 pytest
 python -m build
@@ -91,8 +96,8 @@ the downloaded wheel and run the public installed-wheel smoke scripts, which ver
 - separate clean-wheel jobs install the `geopackage` extra and verify explicit multi-layer and mixed
   Preflight bindings, repository-relative SARIF locations, pre-I/O duplicate checks, and source
   overwrite protection on every supported Python version;
-- reprojection, projected geometry metrics, nearest-feature matching, and point-in-polygon joining
-  work through both the installed API and workflow CLI;
+- reprojection, projected geometry metrics, deterministic STRtree-backed nearest matching, and
+  point-in-polygon joining work through both the installed API and workflow CLI;
 - the installed inspection API and `starshine inspect` command produce matching reports;
 - valid and invalid workflow diagnostics work through the installed console command;
 - a self-created point-within-polygon workflow runs through both the Python API and CLI;
@@ -100,7 +105,9 @@ the downloaded wheel and run the public installed-wheel smoke scripts, which ver
 
 Installation and smoke output are retained as short CI artifacts when a matrix job fails. All four
 smoke scripts are required to be present in the source distribution so third parties can repeat the
-same checks after building locally.
+same checks after building locally. The benchmark artifact contains both the complete corpus report
+and the indexed-versus-exhaustive report; semantic equality is mandatory while timing has no shared-
+runner threshold.
 
 ## GitHub release
 

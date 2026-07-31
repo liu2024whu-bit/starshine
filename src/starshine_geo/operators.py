@@ -8,6 +8,7 @@ from shapely.errors import GEOSException
 from shapely.geometry import Point
 from shapely.ops import unary_union
 
+from ._spatial_index import DeterministicSpatialIndex
 from .crs import geometry_transformer, parse_crs, require_projected_crs
 from .errors import ValidationError
 from .geojson import (
@@ -216,35 +217,23 @@ def nearest_features(
                     f"source feature {index} already contains output property: {field}"
                 )
 
+    spatial_index = DeterministicSpatialIndex(
+        geometry for _, geometry in candidate_records
+    )
     output = []
     for source_index, (feature, geometry) in enumerate(source_records):
-        nearest_identifier: Any = None
-        nearest_distance: float | None = None
-        for candidate_index, (identifier, candidate_geometry) in enumerate(candidate_records):
-            try:
-                distance = float(geometry.distance(candidate_geometry))
-            except GEOSException as exc:
-                raise ValidationError(
-                    "nearest distance failed for source feature "
-                    f"{source_index} and candidate {candidate_index}"
-                ) from exc
-            if not math.isfinite(distance):
-                raise ValidationError(
-                    "nearest distance is not finite for source feature "
-                    f"{source_index} and candidate {candidate_index}"
-                )
-            if nearest_distance is None or distance < nearest_distance:
-                nearest_distance = distance
-                nearest_identifier = identifier
-
+        match = spatial_index.nearest_first(
+            geometry,
+            source_index=source_index,
+            max_distance=max_distance,
+        )
         properties = dict(feature.get("properties") or {})
-        if nearest_distance is None or (
-            max_distance is not None and nearest_distance > max_distance
-        ):
+        if match is None:
             properties[nearest_id_field] = None
             properties[distance_field] = None
         else:
-            properties[nearest_id_field] = nearest_identifier
+            candidate_index, nearest_distance = match
+            properties[nearest_id_field] = candidate_records[candidate_index][0]
             properties[distance_field] = nearest_distance
         output.append(make_feature(geometry, properties))
 
@@ -318,29 +307,18 @@ def join_points_to_polygons(
                 f"point feature {index} already contains output property: {output_field}"
             )
 
+    spatial_index = DeterministicSpatialIndex(
+        geometry for _, geometry in polygon_records
+    )
     output = []
     for point_index, (feature, point) in enumerate(point_records):
+        matches = spatial_index.covering_indices(point, point_index=point_index)
+        if multiple_match == "error" and len(matches) > 1:
+            raise ValidationError(f"point feature {point_index} matches multiple polygons")
+
         matched_identifier: Any = unmatched_value
-        matched_count = 0
-        for polygon_index, (identifier, polygon) in enumerate(polygon_records):
-            try:
-                covered = polygon.covers(point)
-            except GEOSException as exc:
-                raise ValidationError(
-                    "point-in-polygon join failed for point feature "
-                    f"{point_index} and polygon {polygon_index}"
-                ) from exc
-            if not covered:
-                continue
-            matched_count += 1
-            if matched_count == 1:
-                matched_identifier = identifier
-                if multiple_match == "first":
-                    break
-            elif multiple_match == "error":
-                raise ValidationError(
-                    f"point feature {point_index} matches multiple polygons"
-                )
+        if matches:
+            matched_identifier = polygon_records[matches[0]][0]
 
         properties = dict(feature.get("properties") or {})
         properties[output_field] = matched_identifier
