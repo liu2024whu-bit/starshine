@@ -31,6 +31,35 @@ Rules:
 
 Use `list_geopackage_layers("study.gpkg")` to inspect layer names without loading feature rows.
 
+## Use selected layers in Workflow Preflight
+
+The CLI can adapt explicitly selected GeoPackage layers into the unchanged in-memory Preflight API:
+
+```bash
+starshine preflight workflow.json \
+  --gpkg-layer roads study.gpkg road_centerlines \
+  --geopackage-layer zones study.gpkg planning_zones
+```
+
+Each binding uses `NAME PATH LAYER`:
+
+- `NAME` is the logical external layer referenced by Workflow v1;
+- `PATH` is the containing `.gpkg` artifact;
+- `LAYER` is the exact vector layer to read.
+
+Selection is intentionally mandatory even when a package currently contains one layer. This keeps
+a reviewed command stable if another layer is later added to the same container. GeoJSON
+`--layer NAME=PATH` bindings and GeoPackage bindings may be mixed. Duplicate logical names across
+formats are rejected before any source is read or optional backend is loaded.
+
+The CLI validates output and SARIF paths before feature I/O. An output cannot overwrite a package
+source. SARIF points to the repository-relative `.gpkg` container; logical locations still identify
+the Workflow layer name. Multiple logical inputs may select different vector layers from the same
+package without modifying it.
+
+The Python `preflight_workflow_inputs()` function remains FeatureCollection-only. GeoPandas,
+Pyogrio, GDAL, and package paths therefore remain outside the Preflight dependency graph.
+
 ## Write a layer
 
 ```python
@@ -59,7 +88,9 @@ The base CI matrix runs on Python 3.10, 3.11, and 3.12 without installing the op
 It verifies lazy dependency loading, explicit layer selection, CRS validation, invalid layer
 handling, and overwrite guards.
 
-A dedicated Python 3.11 GeoPackage job installs `.[dev,geopackage]` and uses self-created point
-features to perform real write, layer-list, read, CRS, geometry, property, and explicit-overwrite
-round-trip checks. No private dataset, external service, database credential, or checked-in binary
-fixture is required.
+A dedicated Python 3.11 GeoPackage job installs `.[dev,geopackage]` and uses self-created features to
+perform real write, layer-list, read, CRS, geometry, property, explicit-overwrite, multi-layer
+Preflight, mixed-source, and SARIF checks. Separate clean Python 3.10, 3.11, and 3.12 jobs install the
+exact CI-built wheel with its `geopackage` extra and run the installed console command against a
+self-created multi-layer package. No private dataset, external service, database credential, or
+checked-in binary fixture is required.

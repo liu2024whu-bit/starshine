@@ -46,7 +46,7 @@ provenance does not make private source code or data part of the implementation 
 
 ## 0.5 — Maintainable input and performance boundaries
 
-- [ ] allow `starshine preflight` to read explicitly selected GeoPackage layers through the existing
+- [x] allow `starshine preflight` to read explicitly selected GeoPackage layers through the existing
   adapter while keeping the core API FeatureCollection-only
 - [x] split Preflight finding aggregation, checks, report assembly, and rendering into one-way
   internal modules before adding a new independent check family

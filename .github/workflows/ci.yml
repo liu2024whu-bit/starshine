@@ -137,6 +137,7 @@ jobs:
             scripts/smoke_installed_wheel.py
             scripts/smoke_installed_preflight_sarif.py
             scripts/smoke_installed_geometry_quality.py
+            scripts/smoke_installed_geopackage_preflight.py
           if-no-files-found: error
           retention-days: 14
 
@@ -193,5 +194,53 @@ jobs:
             wheel-smoke-${{ matrix.python-version }}.log
             wheel-sarif-smoke-${{ matrix.python-version }}.log
             wheel-quality-smoke-${{ matrix.python-version }}.log
+          if-no-files-found: warn
+          retention-days: 7
+
+  geopackage-preflight-wheel-smoke:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: starshine-geo-dist
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: starshine-wheel-smoke-scripts
+          path: smoke
+      - name: Install the built wheel with the GeoPackage extra
+        shell: bash
+        run: |
+          set -o pipefail
+          wheel="$(find dist -name '*.whl' -print -quit)"
+          test -n "$wheel"
+          python -m pip install --upgrade pip \
+            2>&1 | tee gpkg-wheel-install-${{ matrix.python-version }}.log
+          python -m pip install "${wheel}[geopackage]" \
+            2>&1 | tee -a gpkg-wheel-install-${{ matrix.python-version }}.log
+      - name: Run installed-wheel GeoPackage Preflight smoke check
+        shell: bash
+        run: |
+          set -o pipefail
+          script="$(find smoke -name smoke_installed_geopackage_preflight.py -print -quit)"
+          test -n "$script"
+          python "$script" \
+            2>&1 | tee gpkg-preflight-wheel-smoke-${{ matrix.python-version }}.log
+      - name: Upload GeoPackage Preflight wheel diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gpkg-preflight-wheel-failure-${{ matrix.python-version }}
+          path: |
+            gpkg-wheel-install-${{ matrix.python-version }}.log
+            gpkg-preflight-wheel-smoke-${{ matrix.python-version }}.log
           if-no-files-found: warn
           retention-days: 7

@@ -26,6 +26,7 @@ Starshine uses a deliberately small modular architecture.
 - `_preflight_report.py` coordinates contracts, cross-layer equivalence, counts, and report digests.
 - `_preflight_render.py` renders completed reports without importing validation or geometry code.
 - `preflight_sarif.py` consumes the public facade and converts completed reports to deterministic SARIF.
+- `_cli_layer_sources.py` prepares CLI input bindings and lazily adapts selected file-format sources.
 - `cli.py` provides reproducible file-based execution and explicit file-format adaptation.
 
 The workflow layer does not import functions from arbitrary module names and does not use `eval`, `exec`, shell commands, or user-provided Python. Each operator returns an in-memory FeatureCollection; the CLI is the only component that writes a selected result to disk.
@@ -54,9 +55,10 @@ The Preflight implementation follows one import direction:
 `preflight_sarif.py → preflight.py`
 
 The model and finding modules do not import the facade. Rendering does not import contracts, CRS,
-GeoJSON, geometry, or report assembly. SARIF does not reach into checker internals. Focused AST-based
-tests enforce this graph so a later GeoPackage adapter or geometry-quality report cannot create a
-second validation path or an import cycle.
+GeoJSON, geometry, or report assembly. SARIF does not reach into checker internals. The separate
+`_cli_layer_sources.py` adapter may depend on GeoJSON I/O and the public GeoPackage adapter, but no
+core Preflight module imports it or any file-format backend. Focused AST-based tests enforce this
+graph so file adaptation cannot create a second validation path or an import cycle.
 
 ## Design principles
 

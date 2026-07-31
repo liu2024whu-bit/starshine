@@ -12,6 +12,9 @@ All notable public changes are documented here.
   availability, fixed-byte-order normalized duplicate keys, and privacy-preserving report digests;
 - a synthetic mixed-quality GeoJSON example, tracked reports, focused documentation, architecture and
   package-surface tests, release-archive requirements, and clean installed-wheel coverage.
+- explicit GeoPackage layer bindings for `starshine preflight`, including mixed GeoJSON/GeoPackage
+  inputs, repository-relative SARIF locations, source-overwrite guards, real multi-layer integration
+  tests, and clean installed-wheel verification with the optional GeoPackage extra.
 
 ### Changed
 

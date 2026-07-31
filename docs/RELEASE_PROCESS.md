@@ -36,6 +36,7 @@ starshine explain examples/plan.workflow.json --layer-name source --layer-name m
 starshine contract examples/plan.workflow.json --layer-name source --layer-name mask
 starshine preflight examples/plan.workflow.json --layer source=examples/data/clip-source.geojson --layer mask=examples/data/clip-mask.geojson
 starshine preflight examples/plan.workflow.json --layer source=examples/data/clip-source.geojson --layer mask=examples/data/clip-mask.geojson --format sarif --sarif-root . --output preflight.sarif
+starshine preflight examples/plan.workflow.json --layer source=examples/data/clip-source.geojson --gpkg-layer mask study.gpkg analysis_mask
 ```
 
 The release-readiness check verifies that package metadata, citation metadata, the dated
@@ -87,6 +88,9 @@ the downloaded wheel and run the public installed-wheel smoke scripts, which ver
 - the installed SARIF adapter and CLI agree on repository-relative locations and empty passing results;
 - the installed geometry-quality API, Markdown renderer, and CLI agree on invalid topology, duplicate
   geometry, privacy boundaries, and exit codes;
+- separate clean-wheel jobs install the `geopackage` extra and verify explicit multi-layer and mixed
+  Preflight bindings, repository-relative SARIF locations, pre-I/O duplicate checks, and source
+  overwrite protection on every supported Python version;
 - reprojection, projected geometry metrics, nearest-feature matching, and point-in-polygon joining
   work through both the installed API and workflow CLI;
 - the installed inspection API and `starshine inspect` command produce matching reports;
@@ -94,7 +98,7 @@ the downloaded wheel and run the public installed-wheel smoke scripts, which ver
 - a self-created point-within-polygon workflow runs through both the Python API and CLI;
 - the generated result and reproducibility manifest contain the expected public values.
 
-Installation and smoke output are retained as short CI artifacts when a matrix job fails. All three
+Installation and smoke output are retained as short CI artifacts when a matrix job fails. All four
 smoke scripts are required to be present in the source distribution so third parties can repeat the
 same checks after building locally.
 

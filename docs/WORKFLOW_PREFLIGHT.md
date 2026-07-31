@@ -1,8 +1,10 @@
 # Workflow input preflight
 
-Starshine can check loaded external GeoJSON layers against the preparation rules published by the
-operator registry and resolved by the canonical workflow planner. Preflight reads and validates
-input collections, but it does not execute spatial operators or create produced layers.
+Starshine can check loaded external vector layers against the preparation rules published by the
+operator registry and resolved by the canonical workflow planner. The core API receives in-memory
+GeoJSON FeatureCollections; the CLI may adapt GeoJSON files or explicitly selected GeoPackage
+layers before calling it. Preflight validates collections but does not execute spatial operators or
+create produced layers.
 
 ## Python API
 
@@ -30,6 +32,21 @@ starshine preflight examples/plan.workflow.json \
   --layer mask=examples/data/clip-mask.geojson
 ```
 
+GeoPackage inputs use an explicit three-part binding. The long and short option names are
+equivalent, and formats may be mixed:
+
+```bash
+starshine preflight examples/plan.workflow.json \
+  --layer source=examples/data/clip-source.geojson \
+  --gpkg-layer mask study.gpkg analysis_mask
+```
+
+`NAME PATH LAYER` identifies the Workflow layer, the containing GeoPackage artifact, and the exact
+vector layer. Explicit selection is required even for a single-layer package. All logical names are
+validated together before feature I/O, so duplicates across GeoJSON and GeoPackage bindings fail
+before either source is opened. The optional GeoPackage backend is loaded only when such a binding
+is requested.
+
 Markdown is the default output. Use JSON for CI or another interface:
 
 ```bash
@@ -46,7 +63,8 @@ The command exits with:
 - `1` when the report is produced but one or more input-contract checks fail;
 - `2` for workflow, file, argument, or other Starshine errors.
 
-The output path cannot overwrite the workflow or any input layer.
+The output path cannot overwrite the workflow, a GeoJSON input, or a containing GeoPackage file.
+Output and repository-relative SARIF path guards run before feature data is loaded.
 
 ## SARIF output
 
@@ -76,11 +94,14 @@ The public functions remain in `preflight.py`, but implementation responsibiliti
 - `_preflight_report.py` coordinates the canonical contract, cross-layer CRS equivalence, counts, and
   deterministic report digest;
 - `_preflight_render.py` renders an already completed report;
-- `preflight_sarif.py` consumes the public report contract and never imports checker internals.
+- `preflight_sarif.py` consumes the public report contract and never imports checker internals;
+- `_cli_layer_sources.py` validates file bindings, exposes source paths before I/O, and lazily adapts
+  explicitly selected GeoPackage layers for the CLI.
 
-The dependency graph is tested from source syntax. Internal modules cannot import the public facade,
-and presentation modules cannot import contracts, CRS, GeoJSON, geometry, or workflow execution.
-This separation reduces merge conflicts and leaves future input adapters outside the core API.
+The dependency graph is tested from source syntax. Internal Preflight modules cannot import the CLI
+adapter or GeoPackage module, internal modules cannot import the public facade, and presentation
+modules cannot import contracts, CRS, GeoJSON, geometry, or workflow execution. This separation
+keeps file-format concerns outside the core report and prevents a second validation path.
 
 ## Checks
 
