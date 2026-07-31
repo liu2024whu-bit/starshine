@@ -15,6 +15,9 @@ All notable public changes are documented here.
 - explicit GeoPackage layer bindings for `starshine preflight`, including mixed GeoJSON/GeoPackage
   inputs, repository-relative SARIF locations, source-overwrite guards, real multi-layer integration
   tests, and clean installed-wheel verification with the optional GeoPackage extra.
+- deterministic STRtree acceleration for nearest-feature and point-in-polygon operators, with
+  input-order normalization, GEOS fallback diagnostics, independent differential tests, benchmark
+  corpus version 6, and a schema-checked indexed-versus-exhaustive comparison report.
 
 ### Changed
 

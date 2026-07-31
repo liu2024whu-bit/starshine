@@ -12,6 +12,8 @@ Starshine uses a deliberately small modular architecture.
 - `crs.py` centralizes CRS parsing, projected-coordinate requirements, and transforms.
 - `operators.py` implements independently testable transformation, overlay, attribution, summary,
   and proximity operations.
+- `_spatial_index.py` provides immutable deterministic STRtree queries without owning public GIS
+  validation, identifiers, CRS policy, or FeatureCollection assembly.
 - `metrics.py` keeps projected geometry measurement logic isolated from topology-changing operators.
 - `operator_registry.py` binds reviewed executors to public input, parameter, default, and sensitivity contracts.
 - `workflow.py` maps versioned JSON steps to an explicit operator registry.
@@ -43,6 +45,17 @@ The report builder does not import Workflow, operators, Preflight, or the render
 not import CRS, GeoJSON, Shapely, or report assembly. Internal modules never import the public facade.
 Focused AST tests enforce this graph so geometry diagnostics remain independent from workflow input
 contracts and future file adapters.
+
+## Spatial-index dependency direction
+
+Nearest and point-in-polygon acceleration follows one direction:
+
+`operators.py → _spatial_index.py → Shapely STRtree`
+
+The index module receives only validated Shapely geometries and original feature indexes. It does not
+import Workflow, the operator registry, Preflight, CLI, GeoPackage, SARIF, manifests, planning, or
+public facades. Raw STRtree result order is normalized before operators apply the established
+input-order tie and ambiguity policies. Focused AST and differential tests enforce this boundary.
 
 ## Workflow Preflight dependency direction
 

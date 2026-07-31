@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-CORPUS_VERSION = 5
+CORPUS_VERSION = 6
 CRS = "EPSG:3857"
 JsonObject = dict[str, Any]
 FeatureCollection = dict[str, Any]
@@ -332,12 +332,18 @@ def _clip_case() -> BenchmarkCase:
     )
 
 
-def _join_case() -> BenchmarkCase:
+def _join_grid_case(
+    *,
+    name: str,
+    rows: int,
+    columns: int,
+    description: str,
+) -> BenchmarkCase:
     polygons: list[JsonObject] = []
     points: list[JsonObject] = []
     expected_assignments: list[list[str]] = []
-    for row in range(4):
-        for column in range(4):
+    for row in range(rows):
+        for column in range(columns):
             origin_x = column * 100.0
             origin_y = row * 100.0
             zone_id = f"zone-{row}-{column}"
@@ -361,8 +367,8 @@ def _join_case() -> BenchmarkCase:
                 expected_assignments.append([point_id, zone_id])
 
     return BenchmarkCase(
-        name="join-points-64-zones-16",
-        description="Join 64 synthetic points to 16 non-overlapping polygon zones.",
+        name=name,
+        description=description,
         workflow={
             "version": 1,
             "steps": [
@@ -381,20 +387,50 @@ def _join_case() -> BenchmarkCase:
         output_layer="joined_points",
         expected_signature={
             "crs": CRS,
-            "feature_count": 64,
+            "feature_count": len(points),
             "assignments": expected_assignments,
         },
     )
 
-def _nearest_case() -> BenchmarkCase:
+
+def _join_case() -> BenchmarkCase:
+    return _join_grid_case(
+        name="join-points-64-zones-16",
+        rows=4,
+        columns=4,
+        description="Join 64 synthetic points to 16 non-overlapping polygon zones.",
+    )
+
+
+def _indexed_join_case() -> BenchmarkCase:
+    return _join_grid_case(
+        name="join-index-points-1024-zones-256",
+        rows=16,
+        columns=16,
+        description=(
+            "Join 1,024 synthetic points to 256 non-overlapping zones through the indexed "
+            "point-in-polygon path."
+        ),
+    )
+
+
+def _nearest_grid_case(
+    *,
+    name: str,
+    source_rows: int,
+    source_columns: int,
+    candidate_rows: int,
+    candidate_columns: int,
+    description: str,
+) -> BenchmarkCase:
     sources = [
         _point(
             column * 10.0,
             row * 10.0,
             source_id=f"source-{row}-{column}",
         )
-        for row in range(6)
-        for column in range(6)
+        for row in range(source_rows)
+        for column in range(source_columns)
     ]
     candidates = [
         _point(
@@ -402,8 +438,8 @@ def _nearest_case() -> BenchmarkCase:
             row * 20.0,
             candidate_id=f"candidate-{row}-{column}",
         )
-        for row in range(3)
-        for column in range(3)
+        for row in range(candidate_rows)
+        for column in range(candidate_columns)
     ]
     candidate_positions = [
         (
@@ -427,10 +463,8 @@ def _nearest_case() -> BenchmarkCase:
         expected_matches.append([source_id, nearest_id, round(float(nearest_distance), 6)])
 
     return BenchmarkCase(
-        name="nearest-grid-36-candidates-9",
-        description=(
-            "Match a 6 by 6 projected source grid to a 3 by 3 candidate grid with stable ties."
-        ),
+        name=name,
+        description=description,
         workflow={
             "version": 1,
             "steps": [
@@ -449,11 +483,37 @@ def _nearest_case() -> BenchmarkCase:
         output_layer="nearest_matches",
         expected_signature={
             "crs": CRS,
-            "feature_count": 36,
+            "feature_count": len(sources),
             "matches": expected_matches,
         },
     )
 
+
+def _nearest_case() -> BenchmarkCase:
+    return _nearest_grid_case(
+        name="nearest-grid-36-candidates-9",
+        source_rows=6,
+        source_columns=6,
+        candidate_rows=3,
+        candidate_columns=3,
+        description=(
+            "Match a 6 by 6 projected source grid to a 3 by 3 candidate grid with stable ties."
+        ),
+    )
+
+
+def _indexed_nearest_case() -> BenchmarkCase:
+    return _nearest_grid_case(
+        name="nearest-index-grid-900-candidates-225",
+        source_rows=30,
+        source_columns=30,
+        candidate_rows=15,
+        candidate_columns=15,
+        description=(
+            "Match 900 projected source points to 225 candidates through the deterministic "
+            "indexed nearest path."
+        ),
+    )
 
 def build_cases() -> tuple[BenchmarkCase, ...]:
     """Create the complete deterministic benchmark corpus from scratch."""
@@ -466,4 +526,6 @@ def build_cases() -> tuple[BenchmarkCase, ...]:
         _clip_case(),
         _join_case(),
         _nearest_case(),
+        _indexed_join_case(),
+        _indexed_nearest_case(),
     )

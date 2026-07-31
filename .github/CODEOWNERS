@@ -75,3 +75,11 @@
 /tests/test_geopackage_preflight_cli.py @liu2024whu-bit
 /scripts/smoke_installed_geopackage_preflight.py @liu2024whu-bit
 /docs/GEOPACKAGE.md @liu2024whu-bit
+/src/starshine_geo/_spatial_index.py @liu2024whu-bit
+/tests/test_spatial_index.py @liu2024whu-bit
+/tests/test_spatial_index_architecture.py @liu2024whu-bit
+/tests/test_spatial_index_benchmark.py @liu2024whu-bit
+/benchmarks/spatial_index.py @liu2024whu-bit
+/schemas/spatial-index-benchmark-v1.schema.json @liu2024whu-bit
+/scripts/check_spatial_index_benchmark.py @liu2024whu-bit
+/docs/SPATIAL_INDEXING.md @liu2024whu-bit

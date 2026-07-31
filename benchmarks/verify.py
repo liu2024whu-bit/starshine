@@ -55,7 +55,7 @@ def semantic_signature(case: BenchmarkCase, output: dict[str, Any]) -> dict[str,
             "cell_ids": [feature["properties"]["cell_id"] for feature in features],
             "bbox": inspection["bbox"],
         }
-    if case.name == "join-points-64-zones-16":
+    if case.name in {"join-points-64-zones-16", "join-index-points-1024-zones-256"}:
         return {
             **base,
             "assignments": [
@@ -66,7 +66,7 @@ def semantic_signature(case: BenchmarkCase, output: dict[str, Any]) -> dict[str,
                 for feature in features
             ],
         }
-    if case.name == "nearest-grid-36-candidates-9":
+    if case.name in {"nearest-grid-36-candidates-9", "nearest-index-grid-900-candidates-225"}:
         return {
             **base,
             "matches": [
