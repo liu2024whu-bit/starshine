@@ -25,7 +25,8 @@ The public 0.4 line provides:
 - validated GeoJSON FeatureCollection input;
 - projected-CRS checks for distance-based work;
 - buffer, dissolve, point-within-polygon summary and join, projected geometry metrics, explicit
-  reprojection, CRS-safe clipping, and deterministic STRtree-backed nearest-feature matching;
+  reprojection, CRS-safe clipping, deterministic pairwise intersection overlay, and STRtree-backed
+  nearest-feature matching;
 - a versioned JSON workflow format and operator-specific machine-readable schema;
 - structured workflow diagnostics for structure, inputs, parameters, and CRS rules;
 - a declarative operator registry and machine-readable catalog with no dynamic `eval`;
@@ -361,6 +362,26 @@ starshine run examples/clip.workflow.json \
 The operation preserves source property objects and retained feature order, drops empty
 intersections, and retains valid boundary-only intersections. See the
 [clip contract](docs/CLIP.md).
+
+## Intersect two layers with explicit pair provenance
+
+The `intersection` operator emits one feature for each non-empty left/right geometry intersection.
+It copies left-side properties, attaches one unique right-side identifier, and emits results in stable
+`left input order → right input order` regardless of STRtree traversal order:
+
+```bash
+starshine run examples/intersection.workflow.json \
+  --layer parcels=examples/data/intersection-parcels.geojson \
+  --layer zones=examples/data/intersection-zones.geojson \
+  --output-layer parcel_zone_intersections \
+  --output examples/output/parcel-zone-intersections.geojson
+```
+
+The operator requires equivalent declared CRS values, rejects right-identifier and output-field
+contract violations before producing results, normalizes non-empty intersection geometry, and
+retains lower-dimensional boundary contacts such as shared-edge `LineString` outputs. It never
+reprojects, repairs, snaps, or applies an implicit precision grid. See the
+[pairwise intersection contract](docs/INTERSECTION.md).
 
 ## Match each feature to its nearest candidate
 

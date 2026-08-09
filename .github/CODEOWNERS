@@ -83,3 +83,8 @@
 /schemas/spatial-index-benchmark-v1.schema.json @liu2024whu-bit
 /scripts/check_spatial_index_benchmark.py @liu2024whu-bit
 /docs/SPATIAL_INDEXING.md @liu2024whu-bit
+/src/starshine_geo/operators.py @liu2024whu-bit
+/tests/test_intersection.py @liu2024whu-bit
+/docs/INTERSECTION.md @liu2024whu-bit
+/examples/intersection.workflow.json @liu2024whu-bit
+/scripts/smoke_installed_intersection.py @liu2024whu-bit

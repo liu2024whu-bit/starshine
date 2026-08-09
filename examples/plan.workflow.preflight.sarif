@@ -11,9 +11,9 @@
         }
       ],
       "properties": {
-        "contractDigest": "sha256:9055b01b83a7933c82ec01a907c85691aa529e6fc81d69272aaba61bbce2a285",
+        "contractDigest": "sha256:babf381514dc0334fc57958cf4cde927fe0e3447adc82b68595f398adc396e20",
         "errorCount": 0,
-        "preflightDigest": "sha256:8084b5a44cae6e3ba30851770285e4f0a101c745689febaf33d86329e7ae5a15",
+        "preflightDigest": "sha256:4e512b027dbe608ba6d8e9ad237603af7a12798fa5aeb624e864f190bb127e09",
         "valid": true,
         "warningCount": 1,
         "workflowDigest": "sha256:ce8caa2b82cb5c54059f4b48db3763620c3ced37263081ad457252121dff66ef"
@@ -95,7 +95,7 @@
               }
             }
           ],
-          "semanticVersion": "0.4.0"
+          "semanticVersion": "0+unknown"
         }
       }
     }

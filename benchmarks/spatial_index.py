@@ -13,12 +13,18 @@ import shapely
 from shapely.geometry import shape
 
 import starshine_geo
-from starshine_geo import digest_json, join_points_to_polygons, nearest_features
+from starshine_geo import (
+    digest_json,
+    intersect_features,
+    join_points_to_polygons,
+    nearest_features,
+)
 
 from .corpus import CORPUS_VERSION, BenchmarkCase, build_cases
 
 Clock = Callable[[], int]
 _INDEX_CASES = (
+    "intersection-index-parcels-1600-zones-400",
     "join-index-points-1024-zones-256",
     "nearest-index-grid-900-candidates-225",
 )
@@ -48,6 +54,23 @@ def _nearest_signature(output: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _intersection_signature(output: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "crs": output.get("starshine:crs"),
+        "feature_count": len(output["features"]),
+        "geometry_types": sorted(
+            {feature["geometry"]["type"] for feature in output["features"]}
+        ),
+        "pairs": [
+            [
+                feature["properties"]["parcel_id"],
+                feature["properties"]["planning_zone"],
+            ]
+            for feature in output["features"]
+        ],
+    }
+
+
 def _join_signature(output: dict[str, Any]) -> dict[str, Any]:
     return {
         "crs": output.get("starshine:crs"),
@@ -63,6 +86,14 @@ def _join_signature(output: dict[str, Any]) -> dict[str, Any]:
 
 
 def _run_indexed(case: BenchmarkCase) -> dict[str, Any]:
+    if case.name == "intersection-index-parcels-1600-zones-400":
+        output = intersect_features(
+            case.layers["parcels"],
+            case.layers["zones"],
+            right_id_field="zone_id",
+            output_field="planning_zone",
+        )
+        return _intersection_signature(output)
     if case.name == "nearest-index-grid-900-candidates-225":
         output = nearest_features(
             case.layers["sources"],
@@ -82,6 +113,30 @@ def _run_indexed(case: BenchmarkCase) -> dict[str, Any]:
 
 
 def _run_reference(case: BenchmarkCase) -> dict[str, Any]:
+    if case.name == "intersection-index-parcels-1600-zones-400":
+        right = [
+            (feature["properties"]["zone_id"], shape(feature["geometry"]))
+            for feature in case.layers["zones"]["features"]
+        ]
+        pairs: list[list[str]] = []
+        geometry_types: set[str] = set()
+        for feature in case.layers["parcels"]["features"]:
+            left_geometry = shape(feature["geometry"])
+            parcel_id = feature["properties"]["parcel_id"]
+            for zone_id, right_geometry in right:
+                if not left_geometry.intersects(right_geometry):
+                    continue
+                intersection = left_geometry.intersection(right_geometry)
+                if intersection.is_empty:
+                    continue
+                geometry_types.add(intersection.normalize().geom_type)
+                pairs.append([parcel_id, zone_id])
+        return {
+            "crs": case.layers["parcels"].get("starshine:crs"),
+            "feature_count": len(pairs),
+            "geometry_types": sorted(geometry_types),
+            "pairs": pairs,
+        }
     if case.name == "nearest-index-grid-900-candidates-225":
         candidates = [
             (feature["properties"]["candidate_id"], shape(feature["geometry"]))
@@ -169,17 +224,15 @@ def build_report(*, repeats: int = 3, clock: Clock = perf_counter_ns) -> dict[st
 
         indexed_timing = _timing(indexed_samples)
         reference_timing = _timing(reference_samples)
-        source_count, candidate_count = (
-            (
-                len(case.layers["points"]["features"]),
-                len(case.layers["zones"]["features"]),
-            )
-            if name.startswith("join-")
-            else (
-                len(case.layers["sources"]["features"]),
-                len(case.layers["candidates"]["features"]),
-            )
-        )
+        if name.startswith("intersection-"):
+            source_count = len(case.layers["parcels"]["features"])
+            candidate_count = len(case.layers["zones"]["features"])
+        elif name.startswith("join-"):
+            source_count = len(case.layers["points"]["features"])
+            candidate_count = len(case.layers["zones"]["features"])
+        else:
+            source_count = len(case.layers["sources"]["features"])
+            candidate_count = len(case.layers["candidates"]["features"])
         indexed_median = indexed_timing["median_seconds"]
         reference_median = reference_timing["median_seconds"]
         observed_speedup = None if indexed_median == 0 else reference_median / indexed_median

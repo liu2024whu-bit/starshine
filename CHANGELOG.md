@@ -18,6 +18,10 @@ All notable public changes are documented here.
 - deterministic STRtree acceleration for nearest-feature and point-in-polygon operators, with
   input-order normalization, GEOS fallback diagnostics, independent differential tests, benchmark
   corpus version 6, and a schema-checked indexed-versus-exhaustive comparison report.
+- deterministic `intersect_features()` and Workflow `intersection` overlay with indexed candidate
+  discovery, strict pair ordering, right-identifier provenance, canonical result geometry, retained
+  boundary-only intersections, independent exhaustive references, benchmark corpus version 7, and
+  clean installed-wheel verification.
 
 ### Changed
 

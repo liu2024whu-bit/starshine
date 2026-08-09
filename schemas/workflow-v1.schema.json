@@ -33,6 +33,9 @@
             "$ref": "#/$defs/reprojectStep"
           },
           {
+            "$ref": "#/$defs/intersectionStep"
+          },
+          {
             "$ref": "#/$defs/clipStep"
           },
           {
@@ -467,6 +470,55 @@
             }
           },
           "default": {}
+        },
+        "output": {
+          "$ref": "#/$defs/outputName"
+        }
+      }
+    },
+    "intersectionStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation",
+        "inputs",
+        "parameters",
+        "output"
+      ],
+      "properties": {
+        "operation": {
+          "const": "intersection"
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "left",
+            "right"
+          ],
+          "properties": {
+            "left": {
+              "$ref": "#/$defs/layerReference"
+            },
+            "right": {
+              "$ref": "#/$defs/layerReference"
+            }
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "right_id_field"
+          ],
+          "properties": {
+            "right_id_field": {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            "output_field": {
+              "$ref": "#/$defs/nonEmptyString"
+            }
+          }
         },
         "output": {
           "$ref": "#/$defs/outputName"

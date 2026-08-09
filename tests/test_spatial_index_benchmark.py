@@ -26,10 +26,12 @@ def test_spatial_index_report_is_schema_checked_and_semantically_equal(tmp_path)
     Draft202012Validator(schema).validate(report)
 
     assert [case["name"] for case in report["cases"]] == [
+        "intersection-index-parcels-1600-zones-400",
         "join-index-points-1024-zones-256",
         "nearest-index-grid-900-candidates-225",
     ]
     assert [case["exhaustive_pair_count"] for case in report["cases"]] == [
+        640000,
         262144,
         202500,
     ]

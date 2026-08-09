@@ -147,6 +147,90 @@ def clip_features(
     return validate_feature_collection(make_collection(output, crs=input_crs_label))
 
 
+def intersect_features(
+    left: FeatureCollection,
+    right: FeatureCollection,
+    *,
+    right_id_field: str,
+    output_field: str = "intersection_id",
+) -> FeatureCollection:
+    """Emit one normalized non-empty geometry intersection for each left/right pair.
+
+    Both inputs must declare equivalent CRS values. Candidate discovery uses a deterministic
+    spatial-index wrapper, while exact intersections are emitted in ``(left_index, right_index)``
+    order. Left properties are copied and the matched right identifier is appended under
+    ``output_field``. Lower-dimensional boundary intersections are retained.
+    """
+    for label, value in {
+        "right_id_field": right_id_field,
+        "output_field": output_field,
+    }.items():
+        if not isinstance(value, str) or not value.strip():
+            raise ValidationError(f"{label} must be a non-empty string")
+
+    validated_left = validate_feature_collection(left)
+    validated_right = validate_feature_collection(right)
+    left_crs_label, left_crs = _required_declared_crs(validated_left, label="left")
+    _, right_crs = _required_declared_crs(validated_right, label="right")
+    if not left_crs.equals(right_crs):
+        raise ValidationError("intersection inputs must declare equivalent CRS values")
+
+    right_records: list[tuple[Any, Any]] = []
+    seen_identifiers: set[tuple[str, Any]] = set()
+    for right_index, (feature, geometry) in enumerate(iter_geometries(validated_right)):
+        properties = feature.get("properties") or {}
+        if right_id_field not in properties:
+            raise ValidationError(
+                f"right feature {right_index} is missing required property: {right_id_field}"
+            )
+        identifier = properties[right_id_field]
+        key = _json_scalar_key(
+            identifier,
+            index=right_index,
+            field=right_id_field,
+            entity="right feature",
+        )
+        if key in seen_identifiers:
+            raise ValidationError(f"duplicate right identifier: {identifier!r}")
+        seen_identifiers.add(key)
+        right_records.append((identifier, geometry))
+
+    left_records = list(iter_geometries(validated_left))
+    for left_index, (feature, _) in enumerate(left_records):
+        properties = feature.get("properties") or {}
+        if output_field in properties:
+            raise ValidationError(
+                f"left feature {left_index} already contains output property: {output_field}"
+            )
+
+    spatial_index = DeterministicSpatialIndex(
+        geometry for _, geometry in right_records
+    )
+    output = []
+    for left_index, (feature, left_geometry) in enumerate(left_records):
+        right_indices = spatial_index.intersecting_indices(
+            left_geometry, source_index=left_index
+        )
+        for right_index in right_indices:
+            right_identifier, right_geometry = right_records[right_index]
+            try:
+                intersection = left_geometry.intersection(right_geometry)
+                if intersection.is_empty:
+                    continue
+                intersection = intersection.normalize()
+            except GEOSException as exc:
+                raise ValidationError(
+                    "intersection failed for left feature "
+                    f"{left_index} and right feature {right_index}"
+                ) from exc
+
+            properties = dict(feature.get("properties") or {})
+            properties[output_field] = right_identifier
+            output.append(make_feature(intersection, properties))
+
+    return validate_feature_collection(make_collection(output, crs=left_crs_label))
+
+
 def nearest_features(
     source: FeatureCollection,
     candidates: FeatureCollection,
@@ -430,6 +514,7 @@ __all__ = [
     "buffer_features",
     "clip_features",
     "dissolve_features",
+    "intersect_features",
     "join_points_to_polygons",
     "nearest_features",
     "reproject_features",

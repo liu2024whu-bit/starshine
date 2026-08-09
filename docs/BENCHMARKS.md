@@ -12,6 +12,7 @@ unqualified production-throughput claims.
 - `summarize-zones-16-sites-64`: counts 64 points across 16 zones;
 - `multi-step-buffer-dissolve-36`: runs a two-step buffer and dissolve workflow;
 - `clip-grid-25`: clips a 5 by 5 polygon grid with one offset polygon mask;
+- `intersection-index-parcels-1600-zones-400`: intersects 1,600 parcels with 400 separated planning zones across 640,000 exhaustive pairs;
 - `nearest-grid-36-candidates-9`: matches 36 source points to nine candidates with stable ties;
 - `join-points-64-zones-16`: attributes 64 points to 16 non-overlapping polygon zones;
 - `join-index-points-1024-zones-256`: exercises indexed attribution across 262,144 possible pairs;
@@ -57,7 +58,7 @@ semantic result is equivalent. Use `semantic_digest` for correctness comparisons
 
 ## Compare STRtree and exhaustive references
 
-The focused spatial-index benchmark runs the two larger cases through both the indexed public API
+The focused spatial-index benchmark runs the three larger indexed cases through both the public API
 and an independent exhaustive implementation:
 
 ```bash
@@ -80,7 +81,7 @@ correctness failure.
 
 ## Comparing environments
 
-The current public corpus version is `6`. Keep `corpus_version`, `corpus_digest`, each `case_digest`,
+The current public corpus version is `7`. Keep `corpus_version`, `corpus_digest`, each `case_digest`,
 each `semantic_digest`, and `repeat_count` visible when comparing corpus reports. For spatial-index
 reports, also retain `shapely_version`, exhaustive pair counts, and both timing series. Compare timing
 only alongside the recorded environment.

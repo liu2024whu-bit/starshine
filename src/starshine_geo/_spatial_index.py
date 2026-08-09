@@ -34,6 +34,10 @@ def _query_covered_by(tree: STRtree, geometry: BaseGeometry) -> Any:
     return tree.query(geometry, predicate="covered_by")
 
 
+def _query_intersects(tree: STRtree, geometry: BaseGeometry) -> Any:
+    return tree.query(geometry, predicate="intersects")
+
+
 class DeterministicSpatialIndex:
     """Immutable STRtree wrapper that preserves Starshine input-order semantics.
 
@@ -119,6 +123,25 @@ class DeterministicSpatialIndex:
             raise RuntimeError("STRtree returned an out-of-range geometry index")
         return tuple(sorted(indices))
 
+    def intersecting_indices(
+        self,
+        geometry: BaseGeometry,
+        *,
+        source_index: int,
+    ) -> tuple[int, ...]:
+        """Return exact intersecting candidate indices in original input order."""
+        if self._tree is None:
+            return ()
+        try:
+            raw_indices = _query_intersects(self._tree, geometry)
+        except GEOSException:
+            return self._intersecting_reference(geometry, source_index=source_index)
+
+        indices = {int(raw_index) for raw_index in raw_indices}
+        if any(index < 0 or index >= len(self._geometries) for index in indices):
+            raise RuntimeError("STRtree returned an out-of-range geometry index")
+        return tuple(sorted(indices))
+
     def _nearest_reference(
         self,
         geometry: BaseGeometry,
@@ -150,6 +173,25 @@ class DeterministicSpatialIndex:
         if max_distance is not None and best_distance > max_distance:
             return None
         return best_index, best_distance
+
+    def _intersecting_reference(
+        self,
+        geometry: BaseGeometry,
+        *,
+        source_index: int,
+    ) -> tuple[int, ...]:
+        matches: list[int] = []
+        for candidate_index, candidate_geometry in enumerate(self._geometries):
+            try:
+                intersects = geometry.intersects(candidate_geometry)
+            except GEOSException as exc:
+                raise ValidationError(
+                    "intersection candidate query failed for left feature "
+                    f"{source_index} and right feature {candidate_index}"
+                ) from exc
+            if intersects:
+                matches.append(candidate_index)
+        return tuple(matches)
 
     def _covering_reference(
         self,

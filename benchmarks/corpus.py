@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-CORPUS_VERSION = 6
+CORPUS_VERSION = 7
 CRS = "EPSG:3857"
 JsonObject = dict[str, Any]
 FeatureCollection = dict[str, Any]
@@ -332,6 +332,61 @@ def _clip_case() -> BenchmarkCase:
     )
 
 
+def _intersection_case() -> BenchmarkCase:
+    right: list[JsonObject] = []
+    left: list[JsonObject] = []
+    expected_pairs: list[list[str]] = []
+    for row in range(20):
+        for column in range(20):
+            origin_x = column * 30.0
+            origin_y = row * 30.0
+            zone_id = f"zone-{row}-{column}"
+            right.append(_square(origin_x, origin_y, 20.0, zone_id=zone_id))
+            for cell_index, (offset_x, offset_y) in enumerate(
+                ((2.0, 2.0), (11.0, 2.0), (2.0, 11.0), (11.0, 11.0))
+            ):
+                parcel_id = f"parcel-{row}-{column}-{cell_index}"
+                left.append(
+                    _square(
+                        origin_x + offset_x,
+                        origin_y + offset_y,
+                        7.0,
+                        parcel_id=parcel_id,
+                    )
+                )
+                expected_pairs.append([parcel_id, zone_id])
+
+    return BenchmarkCase(
+        name="intersection-index-parcels-1600-zones-400",
+        description=(
+            "Intersect 1,600 parcel cells with 400 separated planning zones through indexed "
+            "pairwise candidate discovery."
+        ),
+        workflow={
+            "version": 1,
+            "steps": [
+                {
+                    "operation": "intersection",
+                    "inputs": {"left": "parcels", "right": "zones"},
+                    "parameters": {
+                        "right_id_field": "zone_id",
+                        "output_field": "planning_zone",
+                    },
+                    "output": "parcel_zone_intersections",
+                }
+            ],
+        },
+        layers={"parcels": _collection(left), "zones": _collection(right)},
+        output_layer="parcel_zone_intersections",
+        expected_signature={
+            "crs": CRS,
+            "feature_count": len(left),
+            "geometry_types": ["Polygon"],
+            "pairs": expected_pairs,
+        },
+    )
+
+
 def _join_grid_case(
     *,
     name: str,
@@ -524,6 +579,7 @@ def build_cases() -> tuple[BenchmarkCase, ...]:
         _summary_case(),
         _multi_step_case(),
         _clip_case(),
+        _intersection_case(),
         _join_case(),
         _nearest_case(),
         _indexed_join_case(),

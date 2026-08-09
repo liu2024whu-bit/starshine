@@ -1,0 +1,22 @@
+{
+  "type": "FeatureCollection",
+  "starshine:crs": "EPSG:3857",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"parcel_id": "parcel-a", "land_use": "residential"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {"parcel_id": "parcel-b", "land_use": "mixed"},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[10, 0], [20, 0], [20, 10], [10, 10], [10, 0]]]
+      }
+    }
+  ]
+}

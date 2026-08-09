@@ -20,6 +20,7 @@ from .operators import (
     buffer_features,
     clip_features,
     dissolve_features,
+    intersect_features,
     join_points_to_polygons,
     nearest_features,
     reproject_features,
@@ -260,6 +261,12 @@ def _execute_point_polygon_join(
     inputs: dict[str, FeatureCollection], parameters: dict[str, Any]
 ) -> FeatureCollection:
     return join_points_to_polygons(inputs["points"], inputs["polygons"], **parameters)
+
+
+def _execute_intersection(
+    inputs: dict[str, FeatureCollection], parameters: dict[str, Any]
+) -> FeatureCollection:
+    return intersect_features(inputs["left"], inputs["right"], **parameters)
 
 
 def _execute_nearest(
@@ -630,6 +637,62 @@ _OPERATOR_SPECS = (
         ),
         output_crs="target_crs parameter",
         executor=_execute_reproject,
+    ),
+    OperatorSpec(
+        name="intersection",
+        summary=(
+            "Emit one exact normalized intersection feature for each non-empty left/right pair."
+        ),
+        inputs=(
+            InputSpec(
+                "left",
+                "FeatureCollection whose properties are copied to every pairwise result.",
+                InputContractSpec(
+                    crs_mode="declared",
+                    equivalent_crs_to="right",
+                    written_fields=(
+                        FieldWriteSpec(parameter="output_field", collision_policy="reject"),
+                    ),
+                    notes=(
+                        "Non-empty lower-dimensional boundary intersections are retained.",
+                    ),
+                ),
+            ),
+            InputSpec(
+                "right",
+                "FeatureCollection providing unique identifiers for intersecting candidates.",
+                InputContractSpec(
+                    crs_mode="declared",
+                    equivalent_crs_to="left",
+                    required_fields=(
+                        FieldRequirementSpec(
+                            parameter="right_id_field",
+                            unique=True,
+                            non_null=True,
+                            finite_json_scalar=True,
+                        ),
+                    ),
+                ),
+            ),
+        ),
+        parameters=(
+            ParameterSpec(
+                "right_id_field",
+                "Right-side property containing a unique non-null finite JSON scalar identifier.",
+                {"type": "string", "minLength": 1, "pattern": "\\S"},
+                _validate_non_empty_string,
+                required=True,
+            ),
+            ParameterSpec(
+                "output_field",
+                "Output property that records the matched right-side identifier.",
+                {"type": "string", "minLength": 1, "pattern": "\\S"},
+                _validate_non_empty_string,
+                default="intersection_id",
+            ),
+        ),
+        output_crs="left input layer; right must declare an equivalent CRS",
+        executor=_execute_intersection,
     ),
     OperatorSpec(
         name="clip",

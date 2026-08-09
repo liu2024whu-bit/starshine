@@ -96,14 +96,15 @@ the downloaded wheel and run the public installed-wheel smoke scripts, which ver
 - separate clean-wheel jobs install the `geopackage` extra and verify explicit multi-layer and mixed
   Preflight bindings, repository-relative SARIF locations, pre-I/O duplicate checks, and source
   overwrite protection on every supported Python version;
-- reprojection, projected geometry metrics, deterministic STRtree-backed nearest matching, and
-  point-in-polygon joining work through both the installed API and workflow CLI;
+- reprojection, projected geometry metrics, deterministic STRtree-backed nearest matching,
+  point-in-polygon joining, and pairwise intersection overlay work through installed APIs and
+  workflow execution;
 - the installed inspection API and `starshine inspect` command produce matching reports;
 - valid and invalid workflow diagnostics work through the installed console command;
 - a self-created point-within-polygon workflow runs through both the Python API and CLI;
 - the generated result and reproducibility manifest contain the expected public values.
 
-Installation and smoke output are retained as short CI artifacts when a matrix job fails. All four
+Installation and smoke output are retained as short CI artifacts when a matrix job fails. All five
 smoke scripts are required to be present in the source distribution so third parties can repeat the
 same checks after building locally. The benchmark artifact contains both the complete corpus report
 and the indexed-versus-exhaustive report; semantic equality is mandatory while timing has no shared-

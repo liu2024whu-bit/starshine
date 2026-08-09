@@ -53,6 +53,8 @@ provenance does not make private source code or data part of the implementation 
 - [x] add a read-only Geometry Quality Report without automatic repair
 - [x] accelerate nearest matching and point-in-polygon joins with deterministic STRtree result
   normalization, independent differential references, and benchmark corpus version 6
+- [x] add exact pairwise intersection overlay with deterministic indexed candidate discovery,
+  right-side identifier provenance, canonical geometry, and retained boundary-only results
 - [ ] publish third-party reproduction notes from an environment not used by the maintainer
 - [ ] specify any read-only database adapter through public interfaces and synthetic fixtures
 

@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "steps": [
+    {
+      "operation": "intersection",
+      "inputs": {
+        "left": "parcels",
+        "right": "zones"
+      },
+      "parameters": {
+        "right_id_field": "zone_id",
+        "output_field": "planning_zone"
+      },
+      "output": "parcel_zone_intersections"
+    }
+  ]
+}
