@@ -41,5 +41,5 @@
 ## Evidence
 
 - Workflow digest: `sha256:ce8caa2b82cb5c54059f4b48db3763620c3ced37263081ad457252121dff66ef`
-- Contract digest: `sha256:026e690156bea9f63c46dc6bea64cd412184d669e8acc28f12d7b818e0089fbe`
-- Preflight digest: `sha256:0d05dccec910afaf36dd664508f5d99a991ce3dcf49d5334334634b80f4fa5b6`
+- Contract digest: `sha256:31f2803237bab6958882475d00ebf7a81048cb22593670c7c217a41a301d0737`
+- Preflight digest: `sha256:85787dbfd5d39dfa9118970232c7a482a3e09240f3c13c59d49cf44ea43fcf42`

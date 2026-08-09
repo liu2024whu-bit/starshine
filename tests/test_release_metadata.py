@@ -63,6 +63,7 @@ def test_top_level_api_exports_public_operator_surfaces():
     assert callable(starshine_geo.calculate_geometry_metrics)
     assert callable(starshine_geo.dissolve_features)
     assert callable(starshine_geo.explain_workflow)
+    assert callable(starshine_geo.intersect_features)
     assert callable(starshine_geo.join_points_to_polygons)
     assert callable(starshine_geo.nearest_features)
     assert callable(starshine_geo.reproject_features)
@@ -90,6 +91,7 @@ def test_top_level_api_exports_public_operator_surfaces():
     assert "calculate_geometry_metrics" in starshine_geo.__all__
     assert "dissolve_features" in starshine_geo.__all__
     assert "explain_workflow" in starshine_geo.__all__
+    assert "intersect_features" in starshine_geo.__all__
     assert "join_points_to_polygons" in starshine_geo.__all__
     assert "nearest_features" in starshine_geo.__all__
     assert "reproject_features" in starshine_geo.__all__

@@ -13,6 +13,7 @@ from starshine_geo import digest_json
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT / "schemas" / "spatial-index-benchmark-v1.schema.json"
 EXPECTED_NAMES = [
+    "intersection-index-parcels-1600-zones-400",
     "join-index-points-1024-zones-256",
     "nearest-index-grid-900-candidates-225",
 ]

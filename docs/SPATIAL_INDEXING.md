@@ -1,7 +1,7 @@
 # Deterministic spatial indexing
 
 Starshine uses one immutable Shapely `STRtree` per validated candidate collection to accelerate the
-public nearest-feature and point-in-polygon operators. The index changes how candidate geometries
+public nearest-feature, point-in-polygon, and pairwise-intersection operators. The index changes how candidate geometries
 are located; it does not change any public spatial meaning.
 
 ## Why a wrapper is required
@@ -76,6 +76,19 @@ Returned polygon indices are de-duplicated and sorted. The public policy then re
 - several indices with `multiple_match="first"`: select the earliest polygon input;
 - several indices with `multiple_match="error"`: raise the existing ambiguity error.
 
+
+## Pairwise intersection candidate query
+
+The tree stores right-side geometries and each left geometry is queried with the exact `intersects`
+predicate. Returned indices are de-duplicated and sorted to original right input order before the
+constructive intersection runs. The index only decides which right geometries are candidates; exact
+intersection geometry, canonical normalization, left-property copying, identifier provenance, and
+empty-result filtering remain operator responsibilities.
+
+A GEOS failure in candidate discovery falls back to exhaustive `intersects` predicate evaluation.
+A failure in the constructive intersection itself is not retried through another algorithm and
+reports the stable left/right feature indexes.
+
 ## Failure behavior
 
 Only expected `GEOSException` failures from an indexed query trigger the exhaustive reference path.
@@ -96,8 +109,9 @@ Tests compare indexed public results with independent exhaustive implementations
 - expected GEOS fallback and unexpected programming errors;
 - input non-mutation and one-tree-per-operation construction.
 
-The public benchmark corpus version 6 adds:
+The public benchmark corpus version 7 includes three focused indexed scale cases:
 
+- `intersection-index-parcels-1600-zones-400`;
 - `join-index-points-1024-zones-256`;
 - `nearest-index-grid-900-candidates-225`.
 

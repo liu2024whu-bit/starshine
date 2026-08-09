@@ -19,7 +19,7 @@
       "const": 1
     },
     "corpus_version": {
-      "const": 6
+      "const": 7
     },
     "corpus_digest": {
       "$ref": "#/$defs/digest"

@@ -59,6 +59,7 @@ def _assert_public_imports() -> None:
         "dissolve_features",
         "explain_workflow",
         "join_points_to_polygons",
+        "intersect_features",
         "nearest_features",
         "inspect_feature_collection",
         "operator_catalog",
@@ -153,7 +154,7 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
     direct_catalog = starshine_geo.operator_catalog()
     catalog_names = [item["name"] for item in direct_catalog["operators"]]
     missing_operators = sorted(
-        {"clip", "geometry_metrics", "join_points_to_polygons", "nearest", "reproject"}
+        {"clip", "geometry_metrics", "intersection", "join_points_to_polygons", "nearest", "reproject"}
         - set(catalog_names)
     )
     if missing_operators:

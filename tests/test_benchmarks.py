@@ -24,6 +24,7 @@ def test_public_benchmark_corpus_is_deterministic():
         "summarize-zones-16-sites-64",
         "multi-step-buffer-dissolve-36",
         "clip-grid-25",
+        "intersection-index-parcels-1600-zones-400",
         "join-points-64-zones-16",
         "nearest-grid-36-candidates-9",
         "join-index-points-1024-zones-256",
@@ -39,12 +40,13 @@ def test_public_benchmark_corpus_is_deterministic():
         80,
         36,
         26,
+        2000,
         80,
         45,
         1280,
         1125,
     ]
-    assert [case.operation_count for case in first] == [1, 1, 1, 1, 2, 1, 1, 1, 1, 1]
+    assert [case.operation_count for case in first] == [1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1]
 
 
 def test_benchmark_correctness_checks_are_separate_from_timing():
@@ -73,6 +75,7 @@ def test_benchmark_report_matches_public_schema_with_deterministic_clock():
         16,
         1,
         12,
+        1600,
         64,
         36,
         1024,

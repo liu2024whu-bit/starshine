@@ -48,14 +48,15 @@ contracts and future file adapters.
 
 ## Spatial-index dependency direction
 
-Nearest and point-in-polygon acceleration follows one direction:
+Nearest, point-in-polygon, and pairwise-intersection candidate discovery follows one direction:
 
 `operators.py → _spatial_index.py → Shapely STRtree`
 
 The index module receives only validated Shapely geometries and original feature indexes. It does not
 import Workflow, the operator registry, Preflight, CLI, GeoPackage, SARIF, manifests, planning, or
-public facades. Raw STRtree result order is normalized before operators apply the established
-input-order tie and ambiguity policies. Focused AST and differential tests enforce this boundary.
+public facades. Raw STRtree result order is normalized before operators apply established input-order tie,
+ambiguity, and pair-emission policies. Exact constructive intersection and property provenance stay
+in `operators.py`, so the index layer never owns public overlay semantics. Focused AST and differential tests enforce this boundary.
 
 ## Workflow Preflight dependency direction
 

@@ -53,6 +53,7 @@ def test_operator_catalog_is_stable_and_defensive():
         "join_points_to_polygons",
         "nearest",
         "reproject",
+        "intersection",
         "clip",
     ]
 

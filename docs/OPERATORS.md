@@ -110,6 +110,34 @@ The operator intentionally has no repair or implicit-reprojection parameter. Use
 repair outside the workflow and the explicit `reproject` step when coordinate systems differ. See
 [CRS-safe clipping](CLIP.md).
 
+## Pairwise intersection operator
+
+`intersection` performs exact left/right pairwise overlay with one explicit right-side identifier.
+Candidate discovery uses the deterministic STRtree boundary, while exact constructive intersection,
+property copying, geometry normalization, and output ordering remain in the public operator layer.
+
+```json
+{
+  "version": 1,
+  "steps": [
+    {
+      "operation": "intersection",
+      "inputs": {"left": "parcels", "right": "zones"},
+      "parameters": {
+        "right_id_field": "zone_id",
+        "output_field": "planning_zone"
+      },
+      "output": "parcel_zone_intersections"
+    }
+  ]
+}
+```
+
+Right identifiers must be unique non-null finite JSON scalars, the output field must not collide
+with a left property, and both collections must declare equivalent CRS values. Non-empty
+lower-dimensional contacts are retained rather than silently filtered. See
+[deterministic pairwise intersection](INTERSECTION.md).
+
 ## Geometry metrics operator
 
 `geometry_metrics` preserves every feature and writes projected area and length values. It requires

@@ -41,5 +41,5 @@ This declared layer is not referenced by the workflow.
 ## Evidence
 
 - Workflow digest: `sha256:ce8caa2b82cb5c54059f4b48db3763620c3ced37263081ad457252121dff66ef`
-- Plan digest: `sha256:515d855bf7acfdd88ad9ec71909a60d552c8dfd051f2a2ce038c5d6f68e66339`
-- Contract digest: `sha256:026e690156bea9f63c46dc6bea64cd412184d669e8acc28f12d7b818e0089fbe`
+- Plan digest: `sha256:3172a3e39612ecfaa75b3603177ecbfe229c834da35af179ab6d02e743a299ca`
+- Contract digest: `sha256:31f2803237bab6958882475d00ebf7a81048cb22593670c7c217a41a301d0737`
