@@ -6,6 +6,7 @@ from .contracts import (
     build_workflow_contract,
     render_workflow_contract_markdown,
 )
+from .doctor import DOCTOR_REPORT_VERSION, build_doctor_report, render_doctor_text
 from .errors import WorkflowDiagnostic, WorkflowValidationError
 from .explain import (
     WORKFLOW_EXPLANATION_VERSION,
@@ -52,6 +53,7 @@ from .preflight_sarif import (
 from .workflow import run_workflow, validate_workflow
 
 __all__ = [
+    "DOCTOR_REPORT_VERSION",
     "GEOMETRY_QUALITY_REPORT_VERSION",
     "OPERATOR_REGISTRY",
     "SARIF_SCHEMA_URI",
@@ -66,6 +68,7 @@ __all__ = [
     "__version__",
     "assess_geometry_quality",
     "buffer_features",
+    "build_doctor_report",
     "build_manifest",
     "build_workflow_contract",
     "build_workflow_graph",
@@ -84,6 +87,7 @@ __all__ = [
     "plan_workflow",
     "preflight_workflow_inputs",
     "read_geopackage",
+    "render_doctor_text",
     "render_geometry_quality_markdown",
     "render_workflow_contract_markdown",
     "render_workflow_explanation_markdown",
