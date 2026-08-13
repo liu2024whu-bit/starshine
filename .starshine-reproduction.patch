@@ -1,0 +1,274 @@
+diff --git src/starshine_geo/cli.py src/starshine_geo/cli.py
+index de2e710..42dd465 100644
+--- src/starshine_geo/cli.py
++++ src/starshine_geo/cli.py
+@@ -8,6 +8,7 @@ from pathlib import Path
+ from ._cli_layer_sources import prepare_preflight_layer_bindings
+ from ._version import __version__
+ from .contracts import build_workflow_contract, render_workflow_contract_markdown
++from .doctor import build_doctor_report, render_doctor_text
+ from .errors import StarshineError, WorkflowValidationError
+ from .explain import explain_workflow, render_workflow_explanation_markdown
+ from .geometry_quality import assess_geometry_quality, render_geometry_quality_markdown
+@@ -40,6 +41,27 @@ def build_parser() -> argparse.ArgumentParser:
+     )
+     subparsers = parser.add_subparsers(dest="command", required=True)
+ 
++    doctor_parser = subparsers.add_parser(
++        "doctor",
++        help="Check the installed spatial runtime and a deterministic workflow self-test",
++    )
++    doctor_parser.add_argument(
++        "--format",
++        choices=("text", "json"),
++        default="text",
++        help="Render a human-readable summary or machine-readable JSON report",
++    )
++    doctor_parser.add_argument(
++        "--require-geopackage",
++        action="store_true",
++        help="Fail when the optional GeoPackage backend is unavailable or its round trip fails",
++    )
++    doctor_parser.add_argument(
++        "--output",
++        type=Path,
++        help="Optionally write the doctor report instead of printing it",
++    )
++
+     run_parser = subparsers.add_parser("run", help="Run a bounded JSON spatial workflow")
+     run_parser.add_argument("workflow", type=Path)
+     run_parser.add_argument("--layer", action="append", default=[], metavar="NAME=PATH")
+@@ -305,6 +327,22 @@ def _print_error(exc: StarshineError, diagnostic_format: str) -> None:
+     print(f"starshine: {exc}", file=sys.stderr)
+ 
+ 
++def _doctor_command(args: argparse.Namespace) -> int:
++    report = build_doctor_report(require_geopackage=args.require_geopackage)
++    if args.format == "json":
++        content = json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
++    else:
++        content = render_doctor_text(report)
++
++    if args.output is None:
++        print(content, end="")
++    else:
++        args.output.parent.mkdir(parents=True, exist_ok=True)
++        args.output.write_text(content, encoding="utf-8")
++        print(args.output)
++    return 0 if report["valid"] else 1
++
++
+ def _validate_command(args: argparse.Namespace) -> int:
+     workflow = read_json(args.workflow)
+     validate_workflow(workflow, _parse_layer_names(args.layer_name))
+@@ -505,6 +543,8 @@ def _run_command(args: argparse.Namespace) -> int:
+ def main(argv: list[str] | None = None) -> int:
+     args = build_parser().parse_args(argv)
+     try:
++        if args.command == "doctor":
++            return _doctor_command(args)
+         if args.command == "validate":
+             return _validate_command(args)
+         if args.command == "inspect":
+diff --git scripts/check_release_artifacts.py scripts/check_release_artifacts.py
+index 64ad4e5..03e443a 100644
+--- scripts/check_release_artifacts.py
++++ scripts/check_release_artifacts.py
+@@ -81,6 +81,7 @@ def _check_wheel(path: Path, version: str) -> None:
+                 "starshine_geo/operator_registry.py",
+                 "starshine_geo/operators.py",
+                 "starshine_geo/_spatial_index.py",
++                "starshine_geo/doctor.py",
+                 "starshine_geo/planning.py",
+                 "starshine_geo/preflight.py",
+                 "starshine_geo/preflight_sarif.py",
+@@ -118,6 +119,7 @@ def _check_sdist(path: Path, version: str) -> None:
+                 "/docs/INTERSECTION.md",
+                 "/docs/GEOMETRY_QUALITY.md",
+                 "/docs/INSPECTION.md",
++                "/docs/REPRODUCING.md",
+                 "/docs/VECTOR_QUALITY_GATE.md",
+                 "/docs/GEOMETRY_METRICS.md",
+                 "/docs/WORKFLOW_CONTRACTS.md",
+@@ -140,6 +142,8 @@ def _check_sdist(path: Path, version: str) -> None:
+                 "/examples/teaching/empty-polygon.geojson",
+                 "/examples/teaching/malformed-properties.geojson",
+                 "/schemas/benchmark-report-v1.schema.json",
++                "/schemas/doctor-report-v1.schema.json",
++                "/schemas/reproduction-report-v1.schema.json",
+                 "/schemas/spatial-index-benchmark-v1.schema.json",
+                 "/schemas/geometry-quality-report-v1.schema.json",
+                 "/schemas/inspection-report-v1.schema.json",
+@@ -152,6 +156,7 @@ def _check_sdist(path: Path, version: str) -> None:
+                 "/schemas/workflow-v1.schema.json",
+                 "/src/starshine_geo/_cli_layer_sources.py",
+                 "/src/starshine_geo/_spatial_index.py",
++                "/src/starshine_geo/doctor.py",
+                 "/src/starshine_geo/_preflight_checks.py",
+                 "/src/starshine_geo/_preflight_findings.py",
+                 "/src/starshine_geo/_preflight_model.py",
+@@ -162,6 +167,7 @@ def _check_sdist(path: Path, version: str) -> None:
+                 "/src/starshine_geo/_geometry_quality_model.py",
+                 "/src/starshine_geo/_geometry_quality_render.py",
+                 "/src/starshine_geo/_geometry_quality_report.py",
++                "/tests/test_doctor.py",
+                 "/tests/test_geometry_quality.py",
+                 "/tests/test_geometry_quality_architecture.py",
+                 "/tests/test_geopackage_preflight_cli.py",
+@@ -171,13 +177,16 @@ def _check_sdist(path: Path, version: str) -> None:
+                 "/tests/test_intersection.py",
+                 "/tests/test_spatial_index_architecture.py",
+                 "/tests/test_spatial_index_benchmark.py",
++                "/tests/test_reproduction_harness.py",
+                 "/scripts/check_release_readiness.py",
++                "/scripts/check_reproduction_report.py",
+                 "/scripts/check_spatial_index_benchmark.py",
+                 "/scripts/smoke_installed_wheel.py",
+                 "/scripts/smoke_installed_preflight_sarif.py",
+                 "/scripts/smoke_installed_geometry_quality.py",
+                 "/scripts/smoke_installed_intersection.py",
+                 "/scripts/smoke_installed_geopackage_preflight.py",
++                "/scripts/reproduce_installed_core.py",
+                 "/scripts/verify_teaching_examples.py",
+                 "/examples/geometry-quality.geojson",
+                 "/examples/geometry-quality.report.json",
+diff --git README.md README.md
+index 9ab2c6c..796f10c 100644
+--- README.md
++++ README.md
+@@ -44,7 +44,8 @@ The public 0.4 line provides:
+ - a deterministic synthetic vector benchmark corpus plus indexed-versus-exhaustive semantic and
+   timing evidence with schema-checked JSON reports;
+ - self-created sample data and reproducible command-line examples;
+-- public-boundary, package-build, and Python 3.10–3.12 source and built-wheel CI checks.
++- public-boundary, package-build, Python 3.10–3.12 source and built-wheel CI checks, plus clean
++  installed-wheel reproduction on Linux, Windows, and macOS.
+ 
+ ## Install for development
+ 
+@@ -62,12 +63,30 @@ GeoPackage support is kept outside the base dependency set:
+ python -m pip install -e ".[geopackage]"
+ ```
+ 
+-Check the installed version:
++Check the installed version and spatial runtime:
+ 
+ ```bash
+ starshine --version
++starshine doctor
++starshine doctor --format json
+ ```
+ 
++`doctor` verifies package metadata, PROJ, GEOS, the declarative operator registry, and a self-created
++workflow without reading project data. See [clean-environment reproduction](docs/REPRODUCING.md).
++
++## Reproduce the public core from self-created data
++
++After installation, run the same end-to-end public path used by cross-platform CI:
++
++```bash
++python scripts/reproduce_installed_core.py --output reproduction-report.json
++```
++
++The harness creates its own data and checks `doctor`, validation, planning, contracts, Preflight,
++execution, inspection, geometry quality, the operator catalog, and the manifest. It requires the
++installed CLI and public API to produce the same semantic output digest. See
++[clean-environment reproduction](docs/REPRODUCING.md).
++
+ ## Verify a built wheel
+ 
+ Editable source tests and installed-wheel tests answer different questions. The source suite checks
+diff --git CHANGELOG.md CHANGELOG.md
+index 1d41141..c2dd1a1 100644
+--- CHANGELOG.md
++++ CHANGELOG.md
+@@ -22,6 +22,10 @@ All notable public changes are documented here.
+   discovery, strict pair ordering, right-identifier provenance, canonical result geometry, retained
+   boundary-only intersections, independent exhaustive references, benchmark corpus version 7, and
+   clean installed-wheel verification.
++- `starshine doctor` and a public `build_doctor_report()` API for path-free installed-runtime
++  diagnosis across package metadata, PROJ, GEOS, the operator registry, Workflow execution, and the
++  optional GeoPackage backend; plus a self-created end-to-end reproduction harness and clean wheel
++  reproduction on Linux, Windows, and macOS.
+ 
+ ### Changed
+ 
+diff --git ROADMAP.md ROADMAP.md
+index 259f2fe..16234f3 100644
+--- ROADMAP.md
++++ ROADMAP.md
+@@ -55,6 +55,8 @@ provenance does not make private source code or data part of the implementation
+   normalization, independent differential references, and benchmark corpus version 6
+ - [x] add exact pairwise intersection overlay with deterministic indexed candidate discovery,
+   right-side identifier provenance, canonical geometry, and retained boundary-only results
++- [x] add a path-free runtime doctor, self-created installed-core reproduction harness, and
++  Linux/Windows/macOS clean-wheel reproduction evidence
+ - [ ] publish third-party reproduction notes from an environment not used by the maintainer
+ - [ ] specify any read-only database adapter through public interfaces and synthetic fixtures
+ 
+diff --git docs/ARCHITECTURE.md docs/ARCHITECTURE.md
+index 15a6fd3..ac1d158 100644
+--- docs/ARCHITECTURE.md
++++ docs/ARCHITECTURE.md
+@@ -29,6 +29,8 @@ Starshine uses a deliberately small modular architecture.
+ - `_preflight_render.py` renders completed reports without importing validation or geometry code.
+ - `preflight_sarif.py` consumes the public facade and converts completed reports to deterministic SARIF.
+ - `_cli_layer_sources.py` prepares CLI input bindings and lazily adapts selected file-format sources.
++- `doctor.py` performs path-free installed-runtime checks and a self-created workflow probe without
++  becoming a validation, repair, or execution alternative.
+ - `cli.py` provides reproducible file-based execution and explicit file-format adaptation.
+ 
+ The workflow layer does not import functions from arbitrary module names and does not use `eval`, `exec`, shell commands, or user-provided Python. Each operator returns an in-memory FeatureCollection; the CLI is the only component that writes a selected result to disk.
+@@ -85,3 +87,5 @@ graph so file adaptation cannot create a second validation path or an import cyc
+ 7. **Output adapters stay separate.** Format-specific conversion such as Mermaid, Markdown, and SARIF must not become a second validation or execution path.
+ 8. **Teaching artifacts stay external to runtime.** Intentional failures live under `examples/teaching/` and exercise public contracts without becoming package dependencies.
+ 9. **Diagnosis is not repair.** Geometry-quality reports expose invalid, empty, duplicate, or dimensionally inconsistent geometry but never modify source data.
++10. **Installed artifacts are first-class evidence.** A source checkout is insufficient proof; clean
++    wheel reproduction must exercise the public CLI and API without relying on repository fixtures.
+diff --git docs/RELEASE_PROCESS.md docs/RELEASE_PROCESS.md
+index 4bbd23e..941f546 100644
+--- docs/RELEASE_PROCESS.md
++++ docs/RELEASE_PROCESS.md
+@@ -34,6 +34,9 @@ pytest
+ python -m build
+ python -m twine check dist/*
+ python scripts/check_release_artifacts.py dist
++starshine doctor --format json
++python scripts/reproduce_installed_core.py --output reproduction-report.json
++python scripts/check_reproduction_report.py reproduction-report.json
+ starshine operators --output operators.json
+ starshine plan examples/plan.workflow.json --layer-name source --layer-name mask
+ starshine graph examples/plan.workflow.json --layer-name source --layer-name mask
+@@ -104,11 +107,14 @@ the downloaded wheel and run the public installed-wheel smoke scripts, which ver
+ - a self-created point-within-polygon workflow runs through both the Python API and CLI;
+ - the generated result and reproducibility manifest contain the expected public values.
+ 
+-Installation and smoke output are retained as short CI artifacts when a matrix job fails. All five
+-smoke scripts are required to be present in the source distribution so third parties can repeat the
+-same checks after building locally. The benchmark artifact contains both the complete corpus report
+-and the indexed-versus-exhaustive report; semantic equality is mandatory while timing has no shared-
+-runner threshold.
++Installation and smoke output are retained as short CI artifacts when a matrix job fails. The
++installed-wheel scripts and the self-created reproduction harness are required in the source
++distribution so third parties can repeat the same checks after building locally. The standard wheel
++matrix runs the reproduction harness on Python 3.10, 3.11, and 3.12. A second matrix installs the
++exact same wheel on Linux, Windows, and macOS with Python 3.11 and runs the harness without checking
++out the repository. The benchmark artifact contains both the complete corpus report and the
++indexed-versus-exhaustive report; semantic equality is mandatory while timing has no shared-runner
++threshold.
+ 
+ ## GitHub release
+ 
+diff --git examples/plan.workflow.preflight.sarif examples/plan.workflow.preflight.sarif
+index 40ee80b..9c2449a 100644
+--- examples/plan.workflow.preflight.sarif
++++ examples/plan.workflow.preflight.sarif
+@@ -95,7 +95,7 @@
+               }
+             }
+           ],
+-          "semanticVersion": "0+unknown"
++          "semanticVersion": "0.4.0"
+         }
+       }
+     }
