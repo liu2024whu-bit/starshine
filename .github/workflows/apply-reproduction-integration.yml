@@ -1,0 +1,37 @@
+name: Apply reproduction integration
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Verify and apply fixed integration patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(sha256sum .starshine-reproduction.patch | cut -d' ' -f1)" = "9db18689dab516dfd62f1f997006c33b232e86a1fecf5a3e7684a7641ad0096b"
+          git apply --check --whitespace=error-all .starshine-reproduction.patch
+          git apply --whitespace=error-all .starshine-reproduction.patch
+          rm .starshine-reproduction.patch
+          git diff --check
+      - name: Commit formal non-workflow integration
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Integrate runtime doctor and reproduction evidence"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
