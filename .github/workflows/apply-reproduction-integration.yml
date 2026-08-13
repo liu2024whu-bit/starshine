@@ -21,7 +21,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(sha256sum .starshine-reproduction.patch | cut -d' ' -f1)" = "9db18689dab516dfd62f1f997006c33b232e86a1fecf5a3e7684a7641ad0096b"
+          test "$(sha256sum .starshine-reproduction.patch | cut -d' ' -f1)" = "f7c524f2f0c28e5408bcc05ae37891984608595dad32dbf5f47c2737c4208305"
           git apply --check --whitespace=error-all .starshine-reproduction.patch
           git apply --whitespace=error-all .starshine-reproduction.patch
           rm .starshine-reproduction.patch
