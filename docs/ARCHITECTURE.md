@@ -4,6 +4,8 @@ Starshine uses a deliberately small modular architecture.
 
 - `geojson.py` validates and normalizes the public data contract.
 - `inspection.py` produces deterministic collection-level reports after validation.
+- `inventory.py` provides privacy-aware GeoJSON and GeoPackage source metadata without becoming a
+  workflow, validation, or persistence subsystem.
 - `geometry_quality.py` is the compact public facade for read-only geometry-quality assessment.
 - `_geometry_quality_model.py` owns the report version/type; `_geometry_quality_findings.py` owns bounded aggregation.
 - `_geometry_quality_coordinates.py` inspects coordinate structure without retaining positions.
@@ -33,9 +35,26 @@ Starshine uses a deliberately small modular architecture.
   lazily persists the selected in-memory result as GeoJSON or GeoPackage.
 - `doctor.py` performs path-free installed-runtime checks and a self-created workflow probe without
   becoming a validation, repair, or execution alternative.
-- `cli.py` provides reproducible file-based execution and explicit file-format adaptation.
+- `cli.py` contains the established workflow/diagnostic commands; `entrypoint.py` is a thin console
+  dispatcher that adds source inventory without duplicating the workflow command tree.
 
 The workflow layer does not import functions from arbitrary module names and does not use `eval`, `exec`, shell commands, or user-provided Python. Each operator returns an in-memory FeatureCollection; the CLI is the only component that writes a selected result to disk.
+
+## Source metadata dependency direction
+
+Source discovery is intentionally separate from deep inspection and Workflow execution:
+
+`entrypoint.py → inventory.py → io.py / optional Pyogrio metadata APIs`
+
+GeoJSON inventory reuses the canonical parser and validation contract. GeoPackage inventory imports
+Pyogrio lazily and uses `list_layers()` / `read_info()` metadata operations; it does not call
+GeoPandas, read feature rows, run operators, or mutate a dataset. Attribute values never enter the
+report. Bounds and expensive feature counting are explicit opt-ins, so privacy and I/O cost are
+visible at the API and CLI boundary.
+
+`inventory.py` does not import Workflow, planning, contracts, Preflight, the operator registry, or
+output adapters. `inspection.py` remains the deeper GeoJSON-only report that intentionally includes
+bounds and a collection digest. This avoids creating two overlapping inspection stacks.
 
 ## Geometry Quality dependency direction
 
@@ -112,3 +131,5 @@ executor, hidden reprojection, or in-place mutation of input datasets.
     wheel reproduction must exercise the public CLI and API without relying on repository fixtures.
 11. **Input datasets are immutable evidence.** CLI overwrite options may replace an explicit output
     artifact, but they never authorize overwriting a workflow input file or its container package.
+12. **Discovery defaults to minimum disclosure.** Source inventory exposes structure needed for
+    planning while keeping values, extents, and expensive metadata out unless explicitly requested.
