@@ -57,7 +57,7 @@ def _proj_check() -> str:
     x, y = transformer.transform(0.0, 0.0)
     if not math.isfinite(x) or not math.isfinite(y) or abs(x) > 1e-9 or abs(y) > 1e-9:
         raise RuntimeError("PROJ transformation self-check returned an unexpected origin")
-    return "CRS database and EPSG:4326 → EPSG:3857 transformation are available"
+    return "CRS database and EPSG:4326 -> EPSG:3857 transformation are available"
 
 
 def _geos_check() -> str:
@@ -141,7 +141,7 @@ def _workflow_check() -> str:
         raise RuntimeError("workflow self-check produced unexpected properties")
     if not math.isclose(shape(feature["geometry"]).area, 50.0, rel_tol=0.0, abs_tol=1e-12):
         raise RuntimeError("workflow self-check produced unexpected geometry")
-    return f"registry → workflow → indexed overlay path passed ({digest_json(output)})"
+    return f"registry -> workflow -> indexed overlay path passed ({digest_json(output)})"
 
 
 def _geopackage_roundtrip_check() -> str:
