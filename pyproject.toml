@@ -43,7 +43,7 @@ release = [
 ]
 
 [project.scripts]
-starshine = "starshine_geo.cli:main"
+starshine = "starshine_geo.entrypoint:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/starshine_geo"]
