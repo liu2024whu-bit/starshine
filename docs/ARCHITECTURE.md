@@ -29,6 +29,8 @@ Starshine uses a deliberately small modular architecture.
 - `_preflight_render.py` renders completed reports without importing validation or geometry code.
 - `preflight_sarif.py` consumes the public facade and converts completed reports to deterministic SARIF.
 - `_cli_layer_sources.py` prepares CLI input bindings and lazily adapts selected file-format sources.
+- `doctor.py` performs path-free installed-runtime checks and a self-created workflow probe without
+  becoming a validation, repair, or execution alternative.
 - `cli.py` provides reproducible file-based execution and explicit file-format adaptation.
 
 The workflow layer does not import functions from arbitrary module names and does not use `eval`, `exec`, shell commands, or user-provided Python. Each operator returns an in-memory FeatureCollection; the CLI is the only component that writes a selected result to disk.
@@ -85,3 +87,5 @@ graph so file adaptation cannot create a second validation path or an import cyc
 7. **Output adapters stay separate.** Format-specific conversion such as Mermaid, Markdown, and SARIF must not become a second validation or execution path.
 8. **Teaching artifacts stay external to runtime.** Intentional failures live under `examples/teaching/` and exercise public contracts without becoming package dependencies.
 9. **Diagnosis is not repair.** Geometry-quality reports expose invalid, empty, duplicate, or dimensionally inconsistent geometry but never modify source data.
+10. **Installed artifacts are first-class evidence.** A source checkout is insufficient proof; clean
+    wheel reproduction must exercise the public CLI and API without relying on repository fixtures.

@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/liu2024whu-bit/starshine/schemas/doctor-report-v1.schema.json",
+  "title": "Starshine doctor report version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "valid",
+    "starshine_version",
+    "python",
+    "platform",
+    "libraries",
+    "optional",
+    "checks"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "valid": {"type": "boolean"},
+    "starshine_version": {"type": "string", "minLength": 1},
+    "python": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["implementation", "version"],
+      "properties": {
+        "implementation": {"type": "string", "minLength": 1},
+        "version": {"type": "string", "minLength": 1}
+      }
+    },
+    "platform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["system", "machine"],
+      "properties": {
+        "system": {"type": "string", "minLength": 1},
+        "machine": {"type": "string", "minLength": 1}
+      }
+    },
+    "libraries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pyproj", "shapely"],
+      "properties": {
+        "pyproj": {"$ref": "#/$defs/spatialLibrary"},
+        "shapely": {"$ref": "#/$defs/geometryLibrary"}
+      }
+    },
+    "optional": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["geopackage"],
+      "properties": {
+        "geopackage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "required",
+            "available",
+            "geopandas_version",
+            "pyogrio_version"
+          ],
+          "properties": {
+            "required": {"type": "boolean"},
+            "available": {"type": "boolean"},
+            "geopandas_version": {"type": ["string", "null"]},
+            "pyogrio_version": {"type": ["string", "null"]}
+          }
+        }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 6,
+      "items": {"$ref": "#/$defs/check"}
+    }
+  },
+  "$defs": {
+    "spatialLibrary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "proj_version"],
+      "properties": {
+        "version": {"type": "string", "minLength": 1},
+        "proj_version": {"type": "string", "minLength": 1}
+      }
+    },
+    "geometryLibrary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "geos_version"],
+      "properties": {
+        "version": {"type": "string", "minLength": 1},
+        "geos_version": {"type": "string", "minLength": 1}
+      }
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "status", "detail"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "status": {"enum": ["pass", "fail", "skip"]},
+        "detail": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

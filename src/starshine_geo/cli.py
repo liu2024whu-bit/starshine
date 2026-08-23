@@ -8,6 +8,7 @@ from pathlib import Path
 from ._cli_layer_sources import prepare_preflight_layer_bindings
 from ._version import __version__
 from .contracts import build_workflow_contract, render_workflow_contract_markdown
+from .doctor import build_doctor_report, render_doctor_text
 from .errors import StarshineError, WorkflowValidationError
 from .explain import explain_workflow, render_workflow_explanation_markdown
 from .geometry_quality import assess_geometry_quality, render_geometry_quality_markdown
@@ -39,6 +40,27 @@ def build_parser() -> argparse.ArgumentParser:
         version=f"%(prog)s {__version__}",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
+
+    doctor_parser = subparsers.add_parser(
+        "doctor",
+        help="Check the installed spatial runtime and a deterministic workflow self-test",
+    )
+    doctor_parser.add_argument(
+        "--format",
+        choices=("text", "json"),
+        default="text",
+        help="Render a human-readable summary or machine-readable JSON report",
+    )
+    doctor_parser.add_argument(
+        "--require-geopackage",
+        action="store_true",
+        help="Fail when the optional GeoPackage backend is unavailable or its round trip fails",
+    )
+    doctor_parser.add_argument(
+        "--output",
+        type=Path,
+        help="Optionally write the doctor report instead of printing it",
+    )
 
     run_parser = subparsers.add_parser("run", help="Run a bounded JSON spatial workflow")
     run_parser.add_argument("workflow", type=Path)
@@ -305,6 +327,22 @@ def _print_error(exc: StarshineError, diagnostic_format: str) -> None:
     print(f"starshine: {exc}", file=sys.stderr)
 
 
+def _doctor_command(args: argparse.Namespace) -> int:
+    report = build_doctor_report(require_geopackage=args.require_geopackage)
+    if args.format == "json":
+        content = json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    else:
+        content = render_doctor_text(report)
+
+    if args.output is None:
+        print(content, end="")
+    else:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(content, encoding="utf-8")
+        print(args.output)
+    return 0 if report["valid"] else 1
+
+
 def _validate_command(args: argparse.Namespace) -> int:
     workflow = read_json(args.workflow)
     validate_workflow(workflow, _parse_layer_names(args.layer_name))
@@ -505,6 +543,8 @@ def _run_command(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
+        if args.command == "doctor":
+            return _doctor_command(args)
         if args.command == "validate":
             return _validate_command(args)
         if args.command == "inspect":

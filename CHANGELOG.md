@@ -22,12 +22,19 @@ All notable public changes are documented here.
   discovery, strict pair ordering, right-identifier provenance, canonical result geometry, retained
   boundary-only intersections, independent exhaustive references, benchmark corpus version 7, and
   clean installed-wheel verification.
+- `starshine doctor` and a public `build_doctor_report()` API for path-free installed-runtime
+  diagnosis across package metadata, PROJ, GEOS, the operator registry, Workflow execution, and the
+  optional GeoPackage backend; plus a self-created end-to-end reproduction harness and clean wheel
+  reproduction on Linux, Windows, and macOS.
 
 ### Changed
 
 - Workflow Preflight internals are split into a compact public facade, immutable report model,
   finding aggregation, per-layer checks, report assembly, and Markdown rendering modules, with
   architecture tests preventing circular or reversed dependencies while preserving public output.
+- release artifact generation now fixes Hatchling at the reviewed `1.32.0` backend and validates
+  its Core Metadata 2.5 output with Twine `7.0.0`, preventing an unbounded isolated-build upgrade
+  from silently changing the artifact format for the same Starshine source revision.
 
 ## [0.4.0] - 2026-07-29
 
