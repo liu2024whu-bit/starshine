@@ -45,7 +45,7 @@ jobs:
           path: |
             pytest-${{ matrix.python-version }}.xml
             pytest-${{ matrix.python-version }}.log
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 7
 
   geopackage:
@@ -72,7 +72,7 @@ jobs:
           path: |
             pytest-geopackage.xml
             pytest-geopackage.log
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 7
 
   benchmark:
