@@ -25,6 +25,13 @@ from .graph import (
     render_workflow_mermaid,
 )
 from .inspection import inspect_feature_collection
+from .inventory import (
+    SOURCE_INVENTORY_VERSION,
+    inventory_geopackage,
+    inventory_geojson,
+    inventory_source,
+    render_source_inventory_markdown,
+)
 from .manifest import build_manifest, digest_json
 from .metrics import calculate_geometry_metrics
 from .operator_registry import OPERATOR_REGISTRY, operator_catalog
@@ -58,6 +65,7 @@ __all__ = [
     "OPERATOR_REGISTRY",
     "SARIF_SCHEMA_URI",
     "SARIF_VERSION",
+    "SOURCE_INVENTORY_VERSION",
     "WORKFLOW_CONTRACT_VERSION",
     "WORKFLOW_EXPLANATION_VERSION",
     "WORKFLOW_GRAPH_VERSION",
@@ -80,6 +88,9 @@ __all__ = [
     "explain_workflow",
     "inspect_feature_collection",
     "intersect_features",
+    "inventory_geopackage",
+    "inventory_geojson",
+    "inventory_source",
     "join_points_to_polygons",
     "list_geopackage_layers",
     "nearest_features",
@@ -89,6 +100,7 @@ __all__ = [
     "read_geopackage",
     "render_doctor_text",
     "render_geometry_quality_markdown",
+    "render_source_inventory_markdown",
     "render_workflow_contract_markdown",
     "render_workflow_explanation_markdown",
     "render_workflow_mermaid",

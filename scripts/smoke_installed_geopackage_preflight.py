@@ -101,16 +101,42 @@ def main() -> int:
         workflow_path = root / "workflow.json"
         json_report_path = root / "reports" / "preflight.json"
         sarif_path = root / "reports" / "preflight.sarif"
+        inventory_path = root / "reports" / "inventory.json"
         workflow = _workflow()
         _write_json(workflow_path, workflow)
         _write_package(package)
 
+        direct_inventory = starshine_geo.inventory_geopackage(package)
+        if direct_inventory.get("layer_count") != 2:
+            raise RuntimeError(f"unexpected GeoPackage inventory layers: {direct_inventory}")
+        if direct_inventory.get("bounds_requested") is not False:
+            raise RuntimeError("GeoPackage inventory exposed bounds without opt-in")
+        inventory_serialized = json.dumps(direct_inventory, sort_keys=True)
+        if '"a"' in inventory_serialized or '"window"' in inventory_serialized:
+            raise RuntimeError("GeoPackage inventory exposed attribute values")
+
+        inventory_result = _run(
+            [
+                starshine_command,
+                "inventory",
+                str(package),
+                "--format",
+                "json",
+                "--output",
+                str(inventory_path),
+            ],
+            expected_returncode=0,
+        )
+        if inventory_result.stdout.strip() != str(inventory_path) or inventory_result.stderr:
+            raise RuntimeError(f"unexpected GeoPackage inventory CLI streams: {inventory_result}")
+        cli_inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+        if cli_inventory != direct_inventory:
+            raise RuntimeError("installed GeoPackage inventory CLI differs from the public API")
+
         direct_report = starshine_geo.preflight_workflow_inputs(
             workflow,
             {
-                "source": starshine_geo.read_geopackage(
-                    package, layer="analysis_source"
-                ),
+                "source": starshine_geo.read_geopackage(package, layer="analysis_source"),
                 "mask": starshine_geo.read_geopackage(package, layer="analysis_mask"),
             },
         )
@@ -223,7 +249,7 @@ def main() -> int:
         json.dumps(
             {
                 "artifact_uri": "data/inputs.gpkg",
-                "formats": ["json", "sarif"],
+                "formats": ["inventory", "json", "sarif"],
                 "starshine_version": installed_version,
                 "status": "ok",
             },

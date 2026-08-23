@@ -1,9 +1,13 @@
-# Deterministic GeoJSON inspection
+# Deterministic source inspection
 
-Starshine can validate one GeoJSON `FeatureCollection` and produce a small, deterministic report
-without running a workflow or copying feature content into the report.
+Starshine provides two related read-only views of vector data. `inspect` validates one GeoJSON
+`FeatureCollection` deeply and produces a deterministic structural report. `inventory` answers the
+earlier question "what is in this source?" across GeoJSON and GeoPackage while deliberately
+minimizing disclosure and I/O.
 
-## Python API
+## Deep GeoJSON inspection
+
+### Python API
 
 ```python
 from starshine_geo import inspect_feature_collection
@@ -25,38 +29,49 @@ An empty but valid collection has empty geometry and property summaries and retu
 The inspector validates every geometry first, so malformed or topologically invalid features fail
 instead of producing a misleading partial report.
 
-## Command line
-
-Print a report to standard output:
+Print or persist an inspection report:
 
 ```bash
 starshine inspect examples/data/zones.geojson
+starshine inspect examples/data/zones.geojson --output zones.inspection.json
 ```
 
-Write the report to a file:
+The output path cannot resolve to the input file. For automation, use
+`--diagnostic-format json`. Successful reports conform to
+`schemas/inspection-report-v1.schema.json`.
+
+## Privacy-aware source inventory
+
+Use `inventory` before binding an unfamiliar vector source to a workflow:
 
 ```bash
-starshine inspect examples/data/zones.geojson \
-  --output zones.inspection.json
+starshine inventory source.geojson
+starshine inventory project.gpkg --format json --output inventory.json
 ```
 
-The output path cannot resolve to the input file, so inspection cannot replace the source GeoJSON.
+The default inventory reports layer names, spatial/nonspatial status, geometry type, CRS state,
+field names and field types, plus feature-count status. It never reports attribute values and does
+not report bounds unless explicitly requested.
 
-For automation, request a JSON error envelope when validation fails:
+GeoJSON must already be parsed to validate its FeatureCollection, so its feature count is known.
+GeoPackage uses Pyogrio metadata calls and does not load feature rows by default. Drivers that cannot
+provide a cheap count return `feature_count_status: unknown`; use `--force-feature-count` only when
+that extra work is acceptable. Bounds are separately opt-in:
 
 ```bash
-starshine inspect invalid.geojson --diagnostic-format json
+starshine inventory project.gpkg --force-feature-count --include-bounds
 ```
 
-Successful reports conform to:
-
-```text
-schemas/inspection-report-v1.schema.json
-```
+The same functionality is available through `inventory_source()`, `inventory_geojson()`, and
+`inventory_geopackage()`. Machine-readable reports conform to
+`schemas/source-inventory-v1.schema.json`.
 
 ## Privacy and scope
 
-Inspection reports contain structural metadata and a digest, not feature coordinates or property
-values. The digest can still be used to test whether two exact collection representations match, so
-reports should be shared according to the same data-governance rules as other derived identifiers.
+Neither inspection nor inventory copies property values into reports. `inspect` intentionally
+includes exact collection bounds and a digest because it is a deep GeoJSON validation artifact;
+`inventory` is the lower-disclosure discovery path and omits bounds by default. A digest can still
+act as a derived identifier, while bounds can reveal geographic extent, so choose the lighter report
+when sharing metadata outside the analysis environment.
+
 All examples and tests in Starshine use synthetic public data created for this repository.
