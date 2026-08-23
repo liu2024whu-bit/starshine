@@ -31,6 +31,14 @@ Rules:
 
 Use `list_geopackage_layers("study.gpkg")` to inspect layer names without loading feature rows.
 
+## Inventory a package before analysis
+
+`starshine inventory project.gpkg` uses Pyogrio metadata APIs to list layers, spatial status,
+geometry type, CRS state, and field schema without loading feature rows by default. Attribute values
+are never included. Bounds and potentially expensive feature counts remain explicit opt-ins through
+`--include-bounds` and `--force-feature-count`. The shared report contract and GeoJSON behavior are
+documented in [Deterministic source inspection](INSPECTION.md).
+
 ## Use selected layers in Workflow Preflight
 
 The CLI can adapt explicitly selected GeoPackage layers into the unchanged in-memory Preflight API:
@@ -119,8 +127,9 @@ It verifies lazy dependency loading, explicit layer selection, CRS validation, i
 handling, overwrite guards, and the CLI adapter import boundary.
 
 A dedicated Python 3.11 GeoPackage job installs `.[dev,geopackage]` and uses self-created features to
-perform real write, layer-list, read, CRS, geometry, property, explicit-overwrite, multi-layer
-Preflight, mixed-source, SARIF, and direct workflow-run checks. Separate clean Python 3.10, 3.11,
-and 3.12 jobs install the exact CI-built wheel with its `geopackage` extra and run both Preflight and
-workflow execution against self-created multi-layer packages. No private dataset, external service,
-database credential, or checked-in binary fixture is required.
+perform real write, layer-list, metadata inventory, read, CRS, geometry, property,
+explicit-overwrite, multi-layer Preflight, mixed-source, SARIF, and direct workflow-run checks.
+Separate clean Python 3.10, 3.11, and 3.12 jobs install the exact CI-built wheel with its
+`geopackage` extra and exercise the installed inventory and workflow paths against self-created
+multi-layer packages. No private dataset, external service, database credential, or checked-in binary
+fixture is required.
