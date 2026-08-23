@@ -42,6 +42,12 @@ def test_doctor_text_has_compact_runtime_and_check_summary():
     assert "geopackage_roundtrip" in text
 
 
+def test_doctor_success_output_is_safe_for_ascii_redirected_consoles():
+    report = build_doctor_report()
+    render_doctor_text(report).encode("ascii")
+    json.dumps(report, ensure_ascii=False, sort_keys=True).encode("ascii")
+
+
 def test_missing_optional_geopackage_is_skip_unless_required(monkeypatch):
     monkeypatch.setattr(doctor_module, "_distribution_version", lambda name: None)
 
