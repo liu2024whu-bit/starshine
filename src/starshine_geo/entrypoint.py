@@ -9,6 +9,8 @@ from . import cli
 from .errors import StarshineError
 from .inventory import inventory_source, render_source_inventory_markdown
 
+_INVENTORY_HELP = "inventory    Inventory GeoJSON or GeoPackage metadata without attribute values"
+
 
 def _inventory_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="starshine inventory")
@@ -71,8 +73,18 @@ def _inventory_main(argv: list[str]) -> int:
         return 2
 
 
+def _print_top_level_help() -> None:
+    print(cli.build_parser().format_help(), end="")
+    print("Additional source command:")
+    print(f"  {_INVENTORY_HELP}")
+    print("\nRun 'starshine inventory --help' for inventory options.")
+
+
 def main(argv: list[str] | None = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
+    if args in (["-h"], ["--help"]):
+        _print_top_level_help()
+        return 0
     if args and args[0] == "inventory":
         return _inventory_main(args[1:])
     return cli.main(args)
