@@ -145,6 +145,8 @@ jobs:
             scripts/smoke_installed_geometry_quality.py
             scripts/smoke_installed_intersection.py
             scripts/smoke_installed_geopackage_preflight.py
+            scripts/reproduce_installed_core.py
+            scripts/check_reproduction_report.py
           if-no-files-found: error
           retention-days: 14
 
@@ -175,7 +177,7 @@ jobs:
             2>&1 | tee wheel-install-${{ matrix.python-version }}.log
           python -m pip install dist/*.whl \
             2>&1 | tee -a wheel-install-${{ matrix.python-version }}.log
-      - name: Run installed-wheel smoke checks
+      - name: Run installed-wheel smoke checks and reproduction
         shell: bash
         run: |
           set -o pipefail
@@ -183,10 +185,14 @@ jobs:
           sarif_script="$(find smoke -name smoke_installed_preflight_sarif.py -print -quit)"
           quality_script="$(find smoke -name smoke_installed_geometry_quality.py -print -quit)"
           intersection_script="$(find smoke -name smoke_installed_intersection.py -print -quit)"
+          reproduce_script="$(find smoke -name reproduce_installed_core.py -print -quit)"
+          check_reproduction_script="$(find smoke -name check_reproduction_report.py -print -quit)"
           test -n "$core_script"
           test -n "$sarif_script"
           test -n "$quality_script"
           test -n "$intersection_script"
+          test -n "$reproduce_script"
+          test -n "$check_reproduction_script"
           python "$core_script" \
             2>&1 | tee wheel-smoke-${{ matrix.python-version }}.log
           python "$sarif_script" \
@@ -195,6 +201,11 @@ jobs:
             2>&1 | tee wheel-quality-smoke-${{ matrix.python-version }}.log
           python "$intersection_script" \
             2>&1 | tee wheel-intersection-smoke-${{ matrix.python-version }}.log
+          python "$reproduce_script" \
+            --output reproduction-report-${{ matrix.python-version }}.json \
+            2>&1 | tee wheel-reproduction-${{ matrix.python-version }}.log
+          python "$check_reproduction_script" \
+            reproduction-report-${{ matrix.python-version }}.json
       - name: Upload wheel-smoke diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
@@ -206,6 +217,8 @@ jobs:
             wheel-sarif-smoke-${{ matrix.python-version }}.log
             wheel-quality-smoke-${{ matrix.python-version }}.log
             wheel-intersection-smoke-${{ matrix.python-version }}.log
+            wheel-reproduction-${{ matrix.python-version }}.log
+            reproduction-report-${{ matrix.python-version }}.json
           if-no-files-found: warn
           retention-days: 7
 
@@ -238,14 +251,24 @@ jobs:
             2>&1 | tee gpkg-wheel-install-${{ matrix.python-version }}.log
           python -m pip install "${wheel}[geopackage]" \
             2>&1 | tee -a gpkg-wheel-install-${{ matrix.python-version }}.log
-      - name: Run installed-wheel GeoPackage Preflight smoke check
+      - name: Run installed-wheel GeoPackage and reproduction checks
         shell: bash
         run: |
           set -o pipefail
           script="$(find smoke -name smoke_installed_geopackage_preflight.py -print -quit)"
+          reproduce_script="$(find smoke -name reproduce_installed_core.py -print -quit)"
+          check_reproduction_script="$(find smoke -name check_reproduction_report.py -print -quit)"
           test -n "$script"
+          test -n "$reproduce_script"
+          test -n "$check_reproduction_script"
           python "$script" \
             2>&1 | tee gpkg-preflight-wheel-smoke-${{ matrix.python-version }}.log
+          python "$reproduce_script" \
+            --require-geopackage \
+            --output gpkg-reproduction-report-${{ matrix.python-version }}.json \
+            2>&1 | tee gpkg-reproduction-${{ matrix.python-version }}.log
+          python "$check_reproduction_script" \
+            gpkg-reproduction-report-${{ matrix.python-version }}.json
       - name: Upload GeoPackage Preflight wheel diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
@@ -254,5 +277,43 @@ jobs:
           path: |
             gpkg-wheel-install-${{ matrix.python-version }}.log
             gpkg-preflight-wheel-smoke-${{ matrix.python-version }}.log
+            gpkg-reproduction-${{ matrix.python-version }}.log
+            gpkg-reproduction-report-${{ matrix.python-version }}.json
           if-no-files-found: warn
           retention-days: 7
+
+  cross-platform-reproduction:
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/download-artifact@v4
+        with:
+          name: starshine-geo-dist
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: starshine-wheel-smoke-scripts
+          path: smoke
+      - name: Install the exact CI-built wheel
+        run: |
+          python -m pip install --upgrade pip
+          python -c "import pathlib, subprocess, sys; wheel = next(pathlib.Path('dist').rglob('*.whl')); subprocess.check_call([sys.executable, '-m', 'pip', 'install', str(wheel)])"
+      - name: Reproduce the installed core without a source checkout
+        run: |
+          python -c "import pathlib, subprocess, sys; script = next(pathlib.Path('smoke').rglob('reproduce_installed_core.py')); subprocess.check_call([sys.executable, str(script), '--output', 'reproduction-report.json'])"
+          python -c "import pathlib, subprocess, sys; script = next(pathlib.Path('smoke').rglob('check_reproduction_report.py')); subprocess.check_call([sys.executable, str(script), 'reproduction-report.json'])"
+      - name: Upload cross-platform reproduction evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reproduction-${{ matrix.os }}
+          path: reproduction-report.json
+          if-no-files-found: warn
+          retention-days: 14
