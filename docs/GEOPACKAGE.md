@@ -60,6 +60,36 @@ package without modifying it.
 The Python `preflight_workflow_inputs()` function remains FeatureCollection-only. GeoPandas,
 Pyogrio, GDAL, and package paths therefore remain outside the Preflight dependency graph.
 
+## Run a workflow directly with GeoPackage data
+
+`starshine run` uses the same explicit input-binding adapter and can persist the selected workflow
+result directly as a new GeoPackage layer:
+
+```bash
+starshine run workflow.json \
+  --gpkg-layer parcels project.gpkg cadastral_parcels \
+  --gpkg-layer zones project.gpkg planning_zones \
+  --output-layer parcel_zone_intersections \
+  --output-format geopackage \
+  --geopackage-output-layer parcel_zone_intersections \
+  --output result.gpkg \
+  --manifest result.manifest.json
+```
+
+GeoJSON and GeoPackage bindings may be mixed in one run. GeoJSON remains the default output format,
+so existing commands are unchanged. GeoPackage output requires an explicit layer name and a `.gpkg`
+destination. An existing destination is replaced only when `--overwrite-output` is supplied.
+
+Before any feature rows are loaded, the CLI rejects path relationships that could destroy evidence:
+workflow output cannot overwrite the workflow file or any input file; a manifest cannot overwrite the
+workflow, an input, or the selected output. `--overwrite-output` never relaxes the input-file guard.
+This means a package used as a source can never be edited in place by `starshine run`.
+
+File adaptation remains outside the workflow engine. `run_workflow()` still accepts only in-memory
+FeatureCollections; the CLI prepares sources, invokes the same public workflow engine, then sends the
+selected result through the isolated output adapter. No second execution path, automatic layer
+selection, hidden reprojection, or geometry repair is introduced.
+
 ## Write a layer
 
 ```python
@@ -86,11 +116,11 @@ Rules:
 
 The base CI matrix runs on Python 3.10, 3.11, and 3.12 without installing the optional GIS stack.
 It verifies lazy dependency loading, explicit layer selection, CRS validation, invalid layer
-handling, and overwrite guards.
+handling, overwrite guards, and the CLI adapter import boundary.
 
 A dedicated Python 3.11 GeoPackage job installs `.[dev,geopackage]` and uses self-created features to
 perform real write, layer-list, read, CRS, geometry, property, explicit-overwrite, multi-layer
-Preflight, mixed-source, and SARIF checks. Separate clean Python 3.10, 3.11, and 3.12 jobs install the
-exact CI-built wheel with its `geopackage` extra and run the installed console command against a
-self-created multi-layer package. No private dataset, external service, database credential, or
-checked-in binary fixture is required.
+Preflight, mixed-source, SARIF, and direct workflow-run checks. Separate clean Python 3.10, 3.11,
+and 3.12 jobs install the exact CI-built wheel with its `geopackage` extra and run both Preflight and
+workflow execution against self-created multi-layer packages. No private dataset, external service,
+database credential, or checked-in binary fixture is required.

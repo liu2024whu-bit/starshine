@@ -29,6 +29,8 @@ Starshine uses a deliberately small modular architecture.
 - `_preflight_render.py` renders completed reports without importing validation or geometry code.
 - `preflight_sarif.py` consumes the public facade and converts completed reports to deterministic SARIF.
 - `_cli_layer_sources.py` prepares CLI input bindings and lazily adapts selected file-format sources.
+- `_cli_run_output.py` validates workflow output/manifest path relationships before input I/O and
+  lazily persists the selected in-memory result as GeoJSON or GeoPackage.
 - `doctor.py` performs path-free installed-runtime checks and a self-created workflow probe without
   becoming a validation, repair, or execution alternative.
 - `cli.py` provides reproducible file-based execution and explicit file-format adaptation.
@@ -76,6 +78,25 @@ GeoJSON, geometry, or report assembly. SARIF does not reach into checker interna
 core Preflight module imports it or any file-format backend. Focused AST-based tests enforce this
 graph so file adaptation cannot create a second validation path or an import cycle.
 
+## Workflow file-adapter dependency direction
+
+File adaptation is a CLI boundary, not part of Workflow v1 semantics:
+
+`cli.py → _cli_layer_sources.py → io.py / geopackage.py`
+
+`cli.py → _cli_run_output.py → io.py / geopackage.py`
+
+Both `preflight` and `run` use the same prepared input-binding model, so logical layer naming and
+explicit GeoPackage selection have one pre-I/O implementation. `run` validates its output and
+manifest path relationships before calling `PreparedLayerBindings.load()`. After the public
+`run_workflow()` engine returns in-memory FeatureCollections, `_cli_run_output.py` persists only the
+selected result. GeoPackage imports remain local and lazy.
+
+Core modules such as `workflow.py`, `operators.py`, `contracts.py`, `planning.py`, and `preflight.py`
+never import either CLI adapter. AST tests enforce this direction. Adding another file source or sink
+must extend the adapter boundary rather than creating format-aware operators, a second workflow
+executor, hidden reprojection, or in-place mutation of input datasets.
+
 ## Design principles
 
 1. **GIS semantics before convenience.** Distance work must declare a projected CRS.
@@ -84,8 +105,10 @@ graph so file adaptation cannot create a second validation path or an import cyc
 4. **Explicit failure.** Invalid geometry, missing fields, and unsupported operations fail with actionable errors.
 5. **Reproducibility.** A workflow, named inputs, package version, and output layer are sufficient to repeat the included demo.
 6. **Public/private separation.** Experimental modules and unreleased data do not silently leak into the public core.
-7. **Output adapters stay separate.** Format-specific conversion such as Mermaid, Markdown, and SARIF must not become a second validation or execution path.
+7. **Output adapters stay separate.** Format-specific conversion such as Mermaid, Markdown, SARIF, GeoJSON, and GeoPackage persistence must not become a second validation or execution path.
 8. **Teaching artifacts stay external to runtime.** Intentional failures live under `examples/teaching/` and exercise public contracts without becoming package dependencies.
 9. **Diagnosis is not repair.** Geometry-quality reports expose invalid, empty, duplicate, or dimensionally inconsistent geometry but never modify source data.
 10. **Installed artifacts are first-class evidence.** A source checkout is insufficient proof; clean
     wheel reproduction must exercise the public CLI and API without relying on repository fixtures.
+11. **Input datasets are immutable evidence.** CLI overwrite options may replace an explicit output
+    artifact, but they never authorize overwriting a workflow input file or its container package.
