@@ -171,6 +171,7 @@ jobs:
             scripts/smoke_installed_geometry_quality.py
             scripts/smoke_installed_intersection.py
             scripts/smoke_installed_geopackage_preflight.py
+            scripts/smoke_installed_geopackage_run.py
             scripts/reproduce_installed_core.py
           if-no-files-found: error
           retention-days: 14
@@ -272,16 +273,20 @@ jobs:
             2>&1 | tee gpkg-wheel-install-${{ matrix.python-version }}.log
           python -m pip install "${wheel}[geopackage]" \
             2>&1 | tee -a gpkg-wheel-install-${{ matrix.python-version }}.log
-      - name: Run installed-wheel GeoPackage and self-created reproduction checks
+      - name: Run installed-wheel GeoPackage workflow and reproduction checks
         shell: bash
         run: |
           set -o pipefail
           script="$(find smoke -name smoke_installed_geopackage_preflight.py -print -quit)"
+          run_script="$(find smoke -name smoke_installed_geopackage_run.py -print -quit)"
           reproduce_script="$(find smoke -name reproduce_installed_core.py -print -quit)"
           test -n "$script"
+          test -n "$run_script"
           test -n "$reproduce_script"
           python "$script" \
             2>&1 | tee gpkg-preflight-wheel-smoke-${{ matrix.python-version }}.log
+          python "$run_script" \
+            2>&1 | tee gpkg-run-wheel-smoke-${{ matrix.python-version }}.log
           python "$reproduce_script" \
             --require-geopackage \
             --output gpkg-reproduction-report-${{ matrix.python-version }}.json \
@@ -294,6 +299,7 @@ jobs:
           path: |
             gpkg-wheel-install-${{ matrix.python-version }}.log
             gpkg-preflight-wheel-smoke-${{ matrix.python-version }}.log
+            gpkg-run-wheel-smoke-${{ matrix.python-version }}.log
             gpkg-reproduction-${{ matrix.python-version }}.log
             gpkg-reproduction-report-${{ matrix.python-version }}.json
           if-no-files-found: warn

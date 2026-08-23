@@ -5,7 +5,8 @@ import json
 import sys
 from pathlib import Path
 
-from ._cli_layer_sources import prepare_preflight_layer_bindings
+from ._cli_layer_sources import prepare_layer_bindings, prepare_preflight_layer_bindings
+from ._cli_run_output import prepare_run_output
 from ._version import __version__
 from .contracts import build_workflow_contract, render_workflow_contract_markdown
 from .doctor import build_doctor_report, render_doctor_text
@@ -64,9 +65,43 @@ def build_parser() -> argparse.ArgumentParser:
 
     run_parser = subparsers.add_parser("run", help="Run a bounded JSON spatial workflow")
     run_parser.add_argument("workflow", type=Path)
-    run_parser.add_argument("--layer", action="append", default=[], metavar="NAME=PATH")
+    run_parser.add_argument(
+        "--layer",
+        action="append",
+        default=[],
+        metavar="NAME=PATH",
+        help="Bind one workflow layer to a GeoJSON file; repeat for multiple inputs",
+    )
+    run_parser.add_argument(
+        "--geopackage-layer",
+        "--gpkg-layer",
+        action="append",
+        nargs=3,
+        default=[],
+        metavar=("NAME", "PATH", "LAYER"),
+        help=(
+            "Bind one workflow layer to an explicitly selected GeoPackage vector layer; "
+            "repeat for multiple inputs"
+        ),
+    )
     run_parser.add_argument("--output-layer", required=True)
     run_parser.add_argument("--output", type=Path, required=True)
+    run_parser.add_argument(
+        "--output-format",
+        choices=("geojson", "geopackage"),
+        default="geojson",
+        help="Write the selected workflow result as GeoJSON or GeoPackage",
+    )
+    run_parser.add_argument(
+        "--geopackage-output-layer",
+        metavar="LAYER",
+        help="Explicit GeoPackage destination layer name; requires --output-format geopackage",
+    )
+    run_parser.add_argument(
+        "--overwrite-output",
+        action="store_true",
+        help="Replace an existing GeoPackage destination; never overwrites workflow inputs",
+    )
     run_parser.add_argument(
         "--manifest",
         type=Path,
@@ -328,12 +363,14 @@ def _print_error(exc: StarshineError, diagnostic_format: str) -> None:
 
 
 def _doctor_command(args: argparse.Namespace) -> int:
+    if args.output is not None and args.output.exists() and args.output.is_dir():
+        raise StarshineError("doctor output must not identify a directory")
     report = build_doctor_report(require_geopackage=args.require_geopackage)
-    if args.format == "json":
-        content = json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
-    else:
-        content = render_doctor_text(report)
-
+    content = (
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+        if args.format == "json"
+        else render_doctor_text(report)
+    )
     if args.output is None:
         print(content, end="")
     else:
@@ -521,13 +558,25 @@ def _preflight_command(args: argparse.Namespace) -> int:
 
 
 def _run_command(args: argparse.Namespace) -> int:
+    bindings = prepare_layer_bindings(args.layer, args.geopackage_layer)
+    input_paths = tuple(bindings.paths.values())
+    output = prepare_run_output(
+        args.output,
+        output_format=args.output_format,
+        geopackage_layer=args.geopackage_output_layer,
+        overwrite=args.overwrite_output,
+        workflow_path=args.workflow,
+        input_paths=input_paths,
+        manifest_path=args.manifest,
+    )
+
     workflow = read_json(args.workflow)
-    layers = _parse_layers(args.layer)
+    layers = bindings.load()
     results = run_workflow(workflow, layers)
     if args.output_layer not in results:
         raise StarshineError(f"workflow did not produce layer: {args.output_layer}")
     output_layer = results[args.output_layer]
-    write_json(output_layer, args.output)
+    output.write(output_layer, input_paths=input_paths)
     if args.manifest is not None:
         manifest = build_manifest(
             workflow,

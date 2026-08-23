@@ -57,6 +57,8 @@ provenance does not make private source code or data part of the implementation 
   right-side identifier provenance, canonical geometry, and retained boundary-only results
 - [x] add a path-free runtime doctor, self-created installed-core reproduction harness, and
   Linux/Windows/macOS clean-wheel reproduction evidence
+- [x] let `starshine run` consume explicit GeoPackage layers and write GeoPackage results through
+  isolated CLI adapters with pre-I/O collision guards and installed-wheel evidence
 - [ ] publish third-party reproduction notes from an environment not used by the maintainer
 - [ ] specify any read-only database adapter through public interfaces and synthetic fixtures
 

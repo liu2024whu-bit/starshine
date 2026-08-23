@@ -26,6 +26,10 @@ All notable public changes are documented here.
   diagnosis across package metadata, PROJ, GEOS, the operator registry, Workflow execution, and the
   optional GeoPackage backend; plus a self-created end-to-end reproduction harness and clean wheel
   reproduction on Linux, Windows, and macOS.
+- direct GeoPackage workflow execution through `starshine run`, including explicit selected-layer
+  inputs, mixed GeoJSON/GeoPackage sources, explicit GeoPackage result layers, pre-I/O output and
+  manifest collision guards, and clean installed-wheel end-to-end verification with the optional
+  GeoPackage extra.
 
 ### Changed
 
@@ -35,6 +39,9 @@ All notable public changes are documented here.
 - release artifact generation now fixes Hatchling at the reviewed `1.32.0` backend and validates
   its Core Metadata 2.5 output with Twine `7.0.0`, preventing an unbounded isolated-build upgrade
   from silently changing the artifact format for the same Starshine source revision.
+- `preflight` and `run` share one pre-I/O CLI input-binding planner while Workflow execution remains
+  FeatureCollection-only; output persistence is isolated in a separate CLI adapter rather than
+  becoming a second workflow or operator path.
 
 ## [0.4.0] - 2026-07-29
 
