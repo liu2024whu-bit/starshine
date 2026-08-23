@@ -44,11 +44,18 @@ def _write_json(path: Path, value: dict[str, Any]) -> None:
     path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
 
 
-def _run(command: list[str], *, expected_codes: tuple[int, ...] = (0,)) -> subprocess.CompletedProcess[str]:
+def _run(
+    command: list[str],
+    *,
+    expected_codes: tuple[int, ...] = (0,),
+) -> subprocess.CompletedProcess[str]:
     result = subprocess.run(command, capture_output=True, text=True, check=False)
     if result.returncode not in expected_codes:
+        stdout = result.stdout.strip() or "<empty>"
+        stderr = result.stderr.strip() or "<empty>"
         raise RuntimeError(
-            f"command failed with exit code {result.returncode}: {command[0]} {command[1]}"
+            f"command failed with exit code {result.returncode}: {command[0]} {command[1]}\n"
+            f"stdout:\n{stdout}\nstderr:\n{stderr}"
         )
     return result
 
