@@ -44,7 +44,8 @@ The public 0.4 line provides:
 - a deterministic synthetic vector benchmark corpus plus indexed-versus-exhaustive semantic and
   timing evidence with schema-checked JSON reports;
 - self-created sample data and reproducible command-line examples;
-- public-boundary, package-build, and Python 3.10–3.12 source and built-wheel CI checks.
+- public-boundary, package-build, Python 3.10–3.12 source and built-wheel CI checks, plus clean
+  installed-wheel reproduction on Linux, Windows, and macOS.
 
 ## Install for development
 
@@ -62,11 +63,29 @@ GeoPackage support is kept outside the base dependency set:
 python -m pip install -e ".[geopackage]"
 ```
 
-Check the installed version:
+Check the installed version and spatial runtime:
 
 ```bash
 starshine --version
+starshine doctor
+starshine doctor --format json
 ```
+
+`doctor` verifies package metadata, PROJ, GEOS, the declarative operator registry, and a self-created
+workflow without reading project data. See [clean-environment reproduction](docs/REPRODUCING.md).
+
+## Reproduce the public core from self-created data
+
+After installation, run the same end-to-end public path used by cross-platform CI:
+
+```bash
+python scripts/reproduce_installed_core.py --output reproduction-report.json
+```
+
+The harness creates its own data and checks `doctor`, validation, planning, contracts, Preflight,
+execution, inspection, geometry quality, the operator catalog, and the manifest. It requires the
+installed CLI and public API to produce the same semantic output digest. See
+[clean-environment reproduction](docs/REPRODUCING.md).
 
 ## Verify a built wheel
 

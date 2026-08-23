@@ -55,6 +55,8 @@ provenance does not make private source code or data part of the implementation 
   normalization, independent differential references, and benchmark corpus version 6
 - [x] add exact pairwise intersection overlay with deterministic indexed candidate discovery,
   right-side identifier provenance, canonical geometry, and retained boundary-only results
+- [x] add a path-free runtime doctor, self-created installed-core reproduction harness, and
+  Linux/Windows/macOS clean-wheel reproduction evidence
 - [ ] publish third-party reproduction notes from an environment not used by the maintainer
 - [ ] specify any read-only database adapter through public interfaces and synthetic fixtures
 

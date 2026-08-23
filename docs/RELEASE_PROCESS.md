@@ -34,6 +34,9 @@ pytest
 python -m build
 python -m twine check dist/*
 python scripts/check_release_artifacts.py dist
+starshine doctor --format json
+python scripts/reproduce_installed_core.py --output reproduction-report.json
+python scripts/check_reproduction_report.py reproduction-report.json
 starshine operators --output operators.json
 starshine plan examples/plan.workflow.json --layer-name source --layer-name mask
 starshine graph examples/plan.workflow.json --layer-name source --layer-name mask
@@ -104,11 +107,14 @@ the downloaded wheel and run the public installed-wheel smoke scripts, which ver
 - a self-created point-within-polygon workflow runs through both the Python API and CLI;
 - the generated result and reproducibility manifest contain the expected public values.
 
-Installation and smoke output are retained as short CI artifacts when a matrix job fails. All five
-smoke scripts are required to be present in the source distribution so third parties can repeat the
-same checks after building locally. The benchmark artifact contains both the complete corpus report
-and the indexed-versus-exhaustive report; semantic equality is mandatory while timing has no shared-
-runner threshold.
+Installation and smoke output are retained as short CI artifacts when a matrix job fails. The
+installed-wheel scripts and the self-created reproduction harness are required in the source
+distribution so third parties can repeat the same checks after building locally. The standard wheel
+matrix runs the reproduction harness on Python 3.10, 3.11, and 3.12. A second matrix installs the
+exact same wheel on Linux, Windows, and macOS with Python 3.11 and runs the harness without checking
+out the repository. The benchmark artifact contains both the complete corpus report and the
+indexed-versus-exhaustive report; semantic equality is mandatory while timing has no shared-runner
+threshold.
 
 ## GitHub release
 

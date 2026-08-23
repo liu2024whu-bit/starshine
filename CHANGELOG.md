@@ -22,6 +22,10 @@ All notable public changes are documented here.
   discovery, strict pair ordering, right-identifier provenance, canonical result geometry, retained
   boundary-only intersections, independent exhaustive references, benchmark corpus version 7, and
   clean installed-wheel verification.
+- `starshine doctor` and a public `build_doctor_report()` API for path-free installed-runtime
+  diagnosis across package metadata, PROJ, GEOS, the operator registry, Workflow execution, and the
+  optional GeoPackage backend; plus a self-created end-to-end reproduction harness and clean wheel
+  reproduction on Linux, Windows, and macOS.
 
 ### Changed
 
