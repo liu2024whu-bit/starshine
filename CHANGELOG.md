@@ -30,6 +30,9 @@ All notable public changes are documented here.
   inputs, mixed GeoJSON/GeoPackage sources, explicit GeoPackage result layers, pre-I/O output and
   manifest collision guards, and clean installed-wheel end-to-end verification with the optional
   GeoPackage extra.
+- privacy-aware source inventory for GeoJSON and GeoPackage, exposing layer structure, spatial state,
+  CRS state, field schema, and feature-count availability without attribute values; bounds and
+  potentially expensive GeoPackage counts remain explicit opt-ins.
 
 ### Changed
 
