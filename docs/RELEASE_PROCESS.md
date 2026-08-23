@@ -56,6 +56,24 @@ unexpectedly large members were packaged. The source distribution must include t
 versioned release notes, the reviewed CI constraints, the synthetic teaching inputs, their expected
 inspection report, focused documentation, and the public verification scripts.
 
+## Build and metadata format policy
+
+Release artifacts are part of the reproducibility contract, not an incidental by-product of whatever
+build backend happens to be newest on the day a commit is tested. `build-system.requires` therefore
+pins the exact reviewed Hatchling release used inside PEP 517's isolated build environment. Updating
+that pin is an explicit artifact-format change and requires rebuilding the wheel and sdist, running
+Twine validation, archive inspection, and all clean installed-wheel matrices.
+
+The current reviewed pair is Hatchling 1.32.0 with Twine 7.0.0. Hatchling 1.32.0 emits Core Metadata
+2.5 by default; Twine 7 validates that metadata through a current `packaging` implementation. Normal
+CI fixes Twine to the reviewed version in `requirements/ci-validation.txt`, while the `release` extra
+permits compatible Twine 7.x maintenance releases for manual/latest-compatible validation. Runtime
+requirements are unaffected by this release-toolchain policy.
+
+Do not resolve a metadata-version mismatch by editing a built wheel, suppressing `twine check`, or
+silently downgrading metadata after the build. Change the builder/validator contract explicitly and
+re-run the same artifact through the complete release evidence chain.
+
 ## CI validation dependency policy
 
 Pull-request and `main` CI resolve the direct validation tools through
@@ -63,7 +81,8 @@ Pull-request and `main` CI resolve the direct validation tools through
 reviewed baseline so an unrelated upstream release cannot silently change the evidence produced for
 the same Starshine commit. It is a constraints file rather than a complete lockfile: runtime
 requirements and transitive packages continue to resolve within the bounds declared by
-`pyproject.toml`.
+`pyproject.toml`. The isolated build backend is the exception: because it directly determines the
+contents and metadata of the release artifacts, its exact version is fixed in `[build-system]`.
 
 The separate `Latest Compatible Dependencies` workflow runs weekly and on manual dispatch without
 the constraints file. It installs the newest `dev` and `release` tool versions permitted by
@@ -71,10 +90,10 @@ the constraints file. It installs the newest `dev` and `release` tool versions p
 A failure there is a compatibility signal; it must not be fixed by weakening normal CI or silently
 widening package bounds.
 
-Constraint updates require a focused public issue and pull request. Review the candidate versions,
-run both the constrained CI path and the latest-compatible path, record any upper-bound decision,
-and change only the direct pins that have been verified. Do not use this file to pin Starshine's
-runtime dependencies or to mask an incompatibility that belongs in `pyproject.toml`.
+Constraint updates require a focused public change. Review the candidate versions, run both the
+constrained CI path and the latest-compatible path, record any artifact-format or upper-bound
+decision, and change only the direct pins that have been verified. Do not use this file to pin
+Starshine's runtime dependencies or to mask an incompatibility that belongs in `pyproject.toml`.
 
 ## Installed-wheel verification
 
@@ -112,9 +131,10 @@ installed-wheel scripts and the self-created reproduction harness are required i
 distribution so third parties can repeat the same checks after building locally. The standard wheel
 matrix runs the reproduction harness on Python 3.10, 3.11, and 3.12. A second matrix installs the
 exact same wheel on Linux, Windows, and macOS with Python 3.11 and runs the harness without checking
-out the repository. The benchmark artifact contains both the complete corpus report and the
-indexed-versus-exhaustive report; semantic equality is mandatory while timing has no shared-runner
-threshold.
+out the repository. Schema validation of the reproduction report is deliberately performed in the
+source/dev job; the end-user wheel jobs require only the normal runtime dependencies. The benchmark
+artifact contains both the complete corpus report and the indexed-versus-exhaustive report;
+semantic equality is mandatory while timing has no shared-runner threshold.
 
 ## GitHub release
 
