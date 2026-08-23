@@ -32,6 +32,9 @@ All notable public changes are documented here.
 - Workflow Preflight internals are split into a compact public facade, immutable report model,
   finding aggregation, per-layer checks, report assembly, and Markdown rendering modules, with
   architecture tests preventing circular or reversed dependencies while preserving public output.
+- release artifact generation now fixes Hatchling at the reviewed `1.32.0` backend and validates
+  its Core Metadata 2.5 output with Twine `7.0.0`, preventing an unbounded isolated-build upgrade
+  from silently changing the artifact format for the same Starshine source revision.
 
 ## [0.4.0] - 2026-07-29
 
