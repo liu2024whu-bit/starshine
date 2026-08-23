@@ -81,6 +81,13 @@ def test_inventory_command_writes_json_and_protects_source(tmp_path: Path) -> No
     assert entrypoint_main(["inventory", str(source), "--output", str(source)]) == 2
 
 
+def test_top_level_help_exposes_inventory(capsys: pytest.CaptureFixture[str]) -> None:
+    assert entrypoint_main(["--help"]) == 0
+    output = capsys.readouterr().out
+    assert "inventory" in output
+    assert "GeoJSON or GeoPackage metadata" in output
+
+
 def test_geopackage_inventory_uses_metadata_without_forcing_expensive_work(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
