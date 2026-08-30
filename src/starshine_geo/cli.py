@@ -15,6 +15,7 @@ from .explain import explain_workflow, render_workflow_explanation_markdown
 from .geometry_quality import assess_geometry_quality, render_geometry_quality_markdown
 from .graph import build_workflow_graph, render_workflow_mermaid
 from .inspection import inspect_feature_collection
+from .inventory import inventory_source, render_source_inventory_markdown
 from .io import read_json, write_json
 from .manifest import build_manifest
 from .operator_registry import operator_catalog
@@ -134,6 +135,34 @@ def build_parser() -> argparse.ArgumentParser:
         help="Optionally write the inspection report instead of printing it",
     )
     _add_diagnostic_format(inspect_parser)
+
+    inventory_parser = subparsers.add_parser(
+        "inventory",
+        help="Inventory GeoJSON or GeoPackage metadata without attribute values",
+    )
+    inventory_parser.add_argument("source", type=Path)
+    inventory_parser.add_argument(
+        "--format",
+        choices=("json", "markdown"),
+        default="markdown",
+        help="Render machine-readable JSON or review-friendly Markdown",
+    )
+    inventory_parser.add_argument(
+        "--force-feature-count",
+        action="store_true",
+        help="Allow GeoPackage drivers to perform an expensive feature count",
+    )
+    inventory_parser.add_argument(
+        "--include-bounds",
+        action="store_true",
+        help="Include source extents; omitted by default for privacy and cost",
+    )
+    inventory_parser.add_argument(
+        "--output",
+        type=Path,
+        help="Optionally write the inventory report instead of printing it",
+    )
+    _add_diagnostic_format(inventory_parser)
 
     quality_parser = subparsers.add_parser(
         "quality",
@@ -407,6 +436,28 @@ def _inspect_command(args: argparse.Namespace) -> int:
     return 0
 
 
+def _inventory_command(args: argparse.Namespace) -> int:
+    if args.output is not None and args.output.resolve() == args.source.resolve():
+        raise StarshineError("inventory output must not overwrite the source")
+    report = inventory_source(
+        args.source,
+        force_feature_count=args.force_feature_count,
+        include_bounds=args.include_bounds,
+    )
+    content = (
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+        if args.format == "json"
+        else render_source_inventory_markdown(report)
+    )
+    if args.output is None:
+        print(content, end="")
+    else:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(content, encoding="utf-8")
+        print(args.output)
+    return 0
+
+
 def _quality_command(args: argparse.Namespace) -> int:
     if args.output is not None and args.output.resolve() == args.source.resolve():
         raise StarshineError("geometry-quality output must not overwrite the source GeoJSON")
@@ -598,6 +649,8 @@ def main(argv: list[str] | None = None) -> int:
             return _validate_command(args)
         if args.command == "inspect":
             return _inspect_command(args)
+        if args.command == "inventory":
+            return _inventory_command(args)
         if args.command == "quality":
             return _quality_command(args)
         if args.command == "operators":
