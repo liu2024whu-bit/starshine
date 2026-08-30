@@ -1,7 +1,8 @@
 # Roadmap
 
-Starshine roadmap items are specified and implemented from the public repository. Historical
-provenance does not make private source code or data part of the implementation backlog.
+Starshine is developed from the public repository and its synthetic, redistributable evidence. The
+roadmap is a guardrail against adding disconnected features faster than the architecture and review
+surface can absorb them.
 
 ## 0.1 — Public core
 
@@ -24,44 +25,53 @@ provenance does not make private source code or data part of the implementation 
 ## 0.3 — Declarative registry and external reproduction
 
 - [x] deterministic small-vector benchmark fixtures and machine-readable reports
-- [x] installation smoke tests from built wheels on all supported Python versions
-- [x] deterministic GeoJSON inspection reports and installed-wheel CLI coverage
+- [x] built-wheel smoke tests across the supported Python matrix
+- [x] deterministic GeoJSON inspection reports
 - [x] synthetic teaching examples for CRS and geometry failure modes
-- [x] declarative operator registry with a machine-readable, schema-checked catalog
+- [x] declarative operator registry and schema-checked catalog
 - [x] explicit reprojection API and bounded workflow operation
 
 ## 0.4 — Bounded analysis and workflow assurance
 
-- [x] CRS-safe clip API and bounded workflow operation with synthetic benchmark coverage
-- [x] deterministic data-free workflow planning with dependencies and resolved defaults
-- [x] deterministic JSON and Mermaid workflow graph export derived from planning
-- [x] data-free Workflow Explain reports and Markdown review narratives
-- [x] planner-derived external-layer geometry, CRS, and field contracts
-- [x] actual external-layer preflight checks without spatial execution
-- [x] deterministic SARIF 2.1.0 export with repository-relative input locations
-- [x] CRS-safe nearest-feature matching with deterministic ties and synthetic benchmark coverage
-- [x] deterministic point-in-polygon spatial join with explicit ambiguity handling
-- [x] projected area and length metrics with explicit CRS and field-collision rules
-- [x] reviewed CI validation-tool constraints and scheduled latest-compatible checks
+- [x] CRS-safe clip API and workflow operation
+- [x] deterministic data-free workflow planning
+- [x] workflow graph and Explain reports derived from the canonical plan
+- [x] planner-derived external-layer contracts
+- [x] actual external-layer Preflight checks
+- [x] deterministic SARIF 2.1.0 export
+- [x] CRS-safe nearest matching and deterministic point-in-polygon join
+- [x] projected area and length metrics with explicit collision rules
+- [x] reviewed CI validation constraints and compatibility checks
 
 ## 0.5 — Maintainable input and performance boundaries
 
-- [x] allow `starshine preflight` to read explicitly selected GeoPackage layers through the existing
-  adapter while keeping the core API FeatureCollection-only
-- [x] split Preflight finding aggregation, checks, report assembly, and rendering into one-way
-  internal modules before adding a new independent check family
-- [x] add a read-only Geometry Quality Report without automatic repair
-- [x] accelerate nearest matching and point-in-polygon joins with deterministic STRtree result
-  normalization, independent differential references, and benchmark corpus version 6
-- [x] add exact pairwise intersection overlay with deterministic indexed candidate discovery,
-  right-side identifier provenance, canonical geometry, and retained boundary-only results
-- [x] add a path-free runtime doctor, self-created installed-core reproduction harness, and
-  Linux/Windows/macOS clean-wheel reproduction evidence
-- [x] let `starshine run` consume explicit GeoPackage layers and write GeoPackage results through
-  isolated CLI adapters with pre-I/O collision guards and installed-wheel evidence
-- [ ] publish third-party reproduction notes from an environment not used by the maintainer
-- [ ] specify any read-only database adapter through public interfaces and synthetic fixtures
+- [x] explicit GeoPackage layer selection in Preflight
+- [x] one-way Preflight internal modules
+- [x] read-only Geometry Quality reports and quality gate
+- [x] deterministic STRtree acceleration with independent differential evidence
+- [x] deterministic pairwise intersection overlay
+- [x] path-free runtime doctor and self-created installed-core reproduction
+- [x] clean-wheel reproduction on Linux, Windows, and macOS
+- [x] direct GeoPackage workflow input/output with collision guards
+- [x] privacy-aware GeoJSON/GeoPackage source inventory
+- [x] documentation ownership/index to prevent parallel or duplicated documentation
 
-The public repository will remain intentionally focused. Features enter Starshine only after an
-independent public specification, licensing and data review, synthetic or redistributable fixtures,
-security checks, architecture review, and normal pull-request validation.
+## Next — 0.6 engineering consolidation
+
+The next phase is intentionally **not another broad operator expansion**. The priority is to make the
+existing public surface easier to understand, verify, and extend.
+
+- [ ] publish a reproducibility note from an independent environment
+- [ ] audit the documentation set for duplicated or conflicting normative statements
+- [ ] audit the public Python/CLI surface for accidental overlap between inspection, inventory,
+  Preflight, and I/O adapters
+- [ ] strengthen architecture checks around dependency direction and public entry points
+- [ ] improve failure diagnostics where two layers currently report the same root cause differently
+- [ ] add a new operator only when it closes a demonstrated analysis gap and can reuse the existing
+  contracts, registry, testing, and evidence model
+
+A feature is not considered complete merely because its implementation works. New public behavior must
+have a clear owner in the architecture, a stable contract, synthetic or redistributable evidence,
+appropriate tests, documentation without duplication, and clean distribution/reproduction coverage.
+
+See [the documentation index](docs/README.md) for the current ownership map.
