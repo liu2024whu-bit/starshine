@@ -8,7 +8,7 @@ import jsonschema
 import pytest
 
 from starshine_geo import inventory_geojson, render_source_inventory_markdown
-from starshine_geo.entrypoint import main as entrypoint_main
+from starshine_geo.cli import main as cli_main
 from starshine_geo.inventory import inventory_geopackage
 
 
@@ -75,14 +75,16 @@ def test_inventory_command_writes_json_and_protects_source(tmp_path: Path) -> No
     output = tmp_path / "inventory.json"
     source.write_text(json.dumps(_collection()), encoding="utf-8")
 
-    assert entrypoint_main(["inventory", str(source), "--format", "json", "--output", str(output)]) == 0
+    assert cli_main(["inventory", str(source), "--format", "json", "--output", str(output)]) == 0
     report = json.loads(output.read_text(encoding="utf-8"))
     assert report["layer_count"] == 1
-    assert entrypoint_main(["inventory", str(source), "--output", str(source)]) == 2
+    assert cli_main(["inventory", str(source), "--output", str(source)]) == 2
 
 
 def test_top_level_help_exposes_inventory(capsys: pytest.CaptureFixture[str]) -> None:
-    assert entrypoint_main(["--help"]) == 0
+    with pytest.raises(SystemExit) as exc_info:
+        cli_main(["--help"])
+    assert exc_info.value.code == 0
     output = capsys.readouterr().out
     assert "inventory" in output
     assert "GeoJSON or GeoPackage metadata" in output
