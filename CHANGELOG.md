@@ -45,6 +45,8 @@ All notable public changes are documented here.
 - `preflight` and `run` share one pre-I/O CLI input-binding planner while Workflow execution remains
   FeatureCollection-only; output persistence is isolated in a separate CLI adapter rather than
   becoming a second workflow or operator path.
+- all installed console commands now share the primary `cli.py` parser and error boundary; the
+  temporary forwarding `entrypoint.py` used while source inventory was introduced has been removed.
 
 ## [0.4.0] - 2026-07-29
 

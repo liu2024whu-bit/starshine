@@ -63,9 +63,11 @@ existing public surface easier to understand, verify, and extend.
 
 - [ ] publish a reproducibility note from an independent environment
 - [ ] audit the documentation set for duplicated or conflicting normative statements
-- [ ] audit the public Python/CLI surface for accidental overlap between inspection, inventory,
-  Preflight, and I/O adapters
-- [ ] strengthen architecture checks around dependency direction and public entry points
+- [x] remove the temporary second console entrypoint and enforce one installed command tree
+- [ ] continue the public Python/CLI overlap audit across inspection, inventory, Preflight, and I/O
+  adapters after the command boundary has been consolidated
+- [ ] strengthen dependency-direction checks where remaining public modules still rely only on
+  documentation rather than executable architecture tests
 - [ ] improve failure diagnostics where two layers currently report the same root cause differently
 - [ ] add a new operator only when it closes a demonstrated analysis gap and can reuse the existing
   contracts, registry, testing, and evidence model
