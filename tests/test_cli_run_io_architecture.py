@@ -35,3 +35,9 @@ def test_core_workflow_modules_do_not_import_cli_adapters():
         imports = _relative_imports(module)
         assert "_cli_layer_sources" not in imports
         assert "_cli_run_output" not in imports
+
+
+def test_console_command_tree_has_one_package_entry_module():
+    assert not (PACKAGE_ROOT / "entrypoint.py").exists()
+    assert "inventory" in _relative_imports("cli")
+    assert "cli" not in _relative_imports("inventory")
