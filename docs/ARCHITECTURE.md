@@ -35,8 +35,7 @@ Starshine uses a deliberately small modular architecture.
   lazily persists the selected in-memory result as GeoJSON or GeoPackage.
 - `doctor.py` performs path-free installed-runtime checks and a self-created workflow probe without
   becoming a validation, repair, or execution alternative.
-- `cli.py` contains the established workflow/diagnostic commands; `entrypoint.py` is a thin console
-  dispatcher that adds source inventory without duplicating the workflow command tree.
+- `cli.py` owns the single installed console command tree and adapts public APIs to file-based usage.
 
 The workflow layer does not import functions from arbitrary module names and does not use `eval`, `exec`, shell commands, or user-provided Python. Each operator returns an in-memory FeatureCollection; the CLI is the only component that writes a selected result to disk.
 
@@ -44,7 +43,7 @@ The workflow layer does not import functions from arbitrary module names and doe
 
 Source discovery is intentionally separate from deep inspection and Workflow execution:
 
-`entrypoint.py → inventory.py → io.py / optional Pyogrio metadata APIs`
+`cli.py → inventory.py → io.py / optional Pyogrio metadata APIs`
 
 GeoJSON inventory reuses the canonical parser and validation contract. GeoPackage inventory imports
 Pyogrio lazily and uses `list_layers()` / `read_info()` metadata operations; it does not call
@@ -52,9 +51,10 @@ GeoPandas, read feature rows, run operators, or mutate a dataset. Attribute valu
 report. Bounds and expensive feature counting are explicit opt-ins, so privacy and I/O cost are
 visible at the API and CLI boundary.
 
-`inventory.py` does not import Workflow, planning, contracts, Preflight, the operator registry, or
-output adapters. `inspection.py` remains the deeper GeoJSON-only report that intentionally includes
-bounds and a collection digest. This avoids creating two overlapping inspection stacks.
+`inventory.py` does not import the CLI, Workflow, planning, contracts, Preflight, the operator
+registry, or output adapters. `inspection.py` remains the deeper GeoJSON-only report that
+intentionally includes bounds and a collection digest. This avoids creating two overlapping
+inspection stacks while keeping all installed commands on one parser and one error-handling path.
 
 ## Geometry Quality dependency direction
 
@@ -111,10 +111,11 @@ manifest path relationships before calling `PreparedLayerBindings.load()`. After
 `run_workflow()` engine returns in-memory FeatureCollections, `_cli_run_output.py` persists only the
 selected result. GeoPackage imports remain local and lazy.
 
-Core modules such as `workflow.py`, `operators.py`, `contracts.py`, `planning.py`, and `preflight.py`
-never import either CLI adapter. AST tests enforce this direction. Adding another file source or sink
-must extend the adapter boundary rather than creating format-aware operators, a second workflow
-executor, hidden reprojection, or in-place mutation of input datasets.
+Core modules such as `workflow.py`, `operators.py`, `contracts.py`, `planning.py`, `preflight.py`, and
+`inventory.py` never import the CLI or either CLI adapter. AST tests enforce this direction. Adding
+another file source or sink must extend the existing CLI adapter boundary rather than creating a
+second command parser, format-aware operators, a second workflow executor, hidden reprojection, or
+in-place mutation of input datasets.
 
 ## Design principles
 
@@ -133,3 +134,5 @@ executor, hidden reprojection, or in-place mutation of input datasets.
     artifact, but they never authorize overwriting a workflow input file or its container package.
 12. **Discovery defaults to minimum disclosure.** Source inventory exposes structure needed for
     planning while keeping values, extents, and expensive metadata out unless explicitly requested.
+13. **One installed command tree.** Public console commands share one parser and one error boundary;
+    new commands extend `cli.py` instead of adding forwarding entry modules.
