@@ -107,3 +107,20 @@ def test_source_metadata_dependency_boundary_is_one_way():
         "workflow",
     ):
         assert "inventory" not in _relative_imports(module)
+
+
+def test_inspection_dependency_boundary_is_read_only():
+    inspection_imports = _relative_imports("inspection")
+    assert inspection_imports == {"geojson", "manifest"}
+    assert {"geopandas", "pyogrio"}.isdisjoint(_absolute_import_roots("inspection"))
+
+    for module in (
+        "contracts",
+        "operator_registry",
+        "operators",
+        "planning",
+        "preflight",
+        "preflight_sarif",
+        "workflow",
+    ):
+        assert "inspection" not in _relative_imports(module)
