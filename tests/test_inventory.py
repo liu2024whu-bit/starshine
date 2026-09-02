@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 import jsonschema
 import pytest
+from shapely.geometry import shape as shapely_shape
 
 from starshine_geo import inventory_geojson, render_source_inventory_markdown
 from starshine_geo.cli import main as cli_main
@@ -54,6 +55,25 @@ def test_geojson_inventory_omits_values_and_bounds_by_default() -> None:
 
 def test_geojson_inventory_bounds_are_explicit_opt_in() -> None:
     report = inventory_geojson(_collection(), include_bounds=True)
+    assert report["layers"][0]["bounds"] == [114.3, 30.5, 118.8, 32.0]
+
+
+def test_geojson_inventory_only_materializes_geometry_for_opt_in_bounds(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[str] = []
+
+    def counting_shape(value: dict) -> object:
+        calls.append(str(value["type"]))
+        return shapely_shape(value)
+
+    monkeypatch.setattr("starshine_geo.inventory.shape", counting_shape)
+
+    inventory_geojson(_collection())
+    assert calls == []
+
+    report = inventory_geojson(_collection(), include_bounds=True)
+    assert calls == ["Point", "Point"]
     assert report["layers"][0]["bounds"] == [114.3, 30.5, 118.8, 32.0]
 
 
