@@ -4,7 +4,7 @@ from collections import Counter, defaultdict
 from typing import Any
 
 from shapely import get_num_coordinates, to_wkb
-from shapely.errors import GEOSException, GeometryTypeError
+from shapely.errors import GeometryTypeError, GEOSException
 from shapely.geometry import shape
 
 from ._geometry_quality_coordinates import geometry_coordinate_stats, safe_validity_reason
