@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from starshine_geo import preflight_workflow_inputs
-from starshine_geo._cli_layer_sources import prepare_preflight_layer_bindings
+from starshine_geo._cli_layer_sources import prepare_layer_bindings
 from starshine_geo.cli import main
 from starshine_geo.errors import StarshineError, ValidationError
 
@@ -42,7 +42,7 @@ def test_mixed_sources_load_after_all_names_are_validated(monkeypatch, tmp_path)
         "starshine_geo._cli_layer_sources._read_geopackage_source", fake_geopackage
     )
 
-    bindings = prepare_preflight_layer_bindings(
+    bindings = prepare_layer_bindings(
         [f"source={geojson_path}"],
         [["mask", str(package_path), "analysis_mask"]],
     )
@@ -68,7 +68,7 @@ def test_duplicate_names_across_formats_are_rejected_before_any_read(monkeypatch
     )
 
     with pytest.raises(StarshineError, match="duplicate layer name"):
-        prepare_preflight_layer_bindings(
+        prepare_layer_bindings(
             ["source=source.geojson"],
             [["source", "source.gpkg", "sites"]],
         )
@@ -81,7 +81,7 @@ def test_geopackage_binding_requires_explicit_nonempty_selection(monkeypatch):
     )
 
     with pytest.raises(StarshineError, match="selection must be non-empty"):
-        prepare_preflight_layer_bindings([], [["source", "source.gpkg", "  "]])
+        prepare_layer_bindings([], [["source", "source.gpkg", "  "]])
 
 
 def test_optional_backend_error_is_preserved_by_cli_adapter(monkeypatch):
@@ -93,7 +93,7 @@ def test_optional_backend_error_is_preserved_by_cli_adapter(monkeypatch):
     monkeypatch.setattr(
         "starshine_geo._cli_layer_sources._read_geopackage_source", missing_backend
     )
-    bindings = prepare_preflight_layer_bindings([], [["source", "source.gpkg", "sites"]])
+    bindings = prepare_layer_bindings([], [["source", "source.gpkg", "sites"]])
     with pytest.raises(ValidationError, match=r"starshine-geo\[geopackage\]"):
         bindings.load()
 
