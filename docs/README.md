@@ -57,8 +57,8 @@ The workflow documents form one progression:
 - [ARCHITECTURE.md](ARCHITECTURE.md) is the authority for dependency boundaries.
 - [BENCHMARKS.md](BENCHMARKS.md) is the authority for performance-evidence interpretation.
 - [RELEASE_PROCESS.md](RELEASE_PROCESS.md) is the authority for distribution verification.
-- [PROJECT_HISTORY.md](PROJECT_HISTORY.md) records historical context; it is not a feature specification.
-- [VALIDATION.md](VALIDATION.md) contains the compact validation reference used by maintainers.
+- [PROJECT_HISTORY.md](PROJECT_HISTORY.md) records historical context, provenance, and historical
+  validation snapshots; it is not a current feature specification.
 
 Release-specific notes live under [`releases/`](releases/) and are snapshots, not additional copies of
 current feature documentation.
