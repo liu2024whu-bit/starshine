@@ -13,12 +13,12 @@ from .explain import (
     explain_workflow,
     render_workflow_explanation_markdown,
 )
-from .geopackage import list_geopackage_layers, read_geopackage, write_geopackage
 from .geometry_quality import (
     GEOMETRY_QUALITY_REPORT_VERSION,
     assess_geometry_quality,
     render_geometry_quality_markdown,
 )
+from .geopackage import list_geopackage_layers, read_geopackage, write_geopackage
 from .graph import (
     WORKFLOW_GRAPH_VERSION,
     build_workflow_graph,
@@ -27,8 +27,8 @@ from .graph import (
 from .inspection import inspect_feature_collection
 from .inventory import (
     SOURCE_INVENTORY_VERSION,
-    inventory_geopackage,
     inventory_geojson,
+    inventory_geopackage,
     inventory_source,
     render_source_inventory_markdown,
 )
@@ -88,8 +88,8 @@ __all__ = [
     "explain_workflow",
     "inspect_feature_collection",
     "intersect_features",
-    "inventory_geopackage",
     "inventory_geojson",
+    "inventory_geopackage",
     "inventory_source",
     "join_points_to_polygons",
     "list_geopackage_layers",

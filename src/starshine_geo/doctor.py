@@ -3,9 +3,10 @@ from __future__ import annotations
 import math
 import platform
 import tempfile
+from collections.abc import Callable
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import pyproj
 import shapely
@@ -33,7 +34,7 @@ def _distribution_version(name: str) -> str | None:
 def _run_check(name: str, function: CheckFunction) -> dict[str, str]:
     try:
         detail = function()
-    except Exception as exc:  # Doctor intentionally keeps checking independent subsystems.
+    except Exception as exc:  # noqa: BLE001 - isolate independent doctor subsystems.
         return {
             "name": name,
             "status": "fail",

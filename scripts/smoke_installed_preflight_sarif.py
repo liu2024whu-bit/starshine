@@ -80,7 +80,7 @@ def main() -> int:
     if starshine_geo.__version__ != installed_version:
         raise RuntimeError("installed package metadata does not match the public version")
     if not callable(getattr(starshine_geo, "build_workflow_preflight_sarif", None)):
-        raise RuntimeError("installed wheel is missing build_workflow_preflight_sarif")
+        raise TypeError("installed wheel is missing build_workflow_preflight_sarif")
     if starshine_geo.SARIF_VERSION != "2.1.0":
         raise RuntimeError(f"unexpected installed SARIF version: {starshine_geo.SARIF_VERSION}")
 

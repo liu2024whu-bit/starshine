@@ -4,10 +4,10 @@ from collections.abc import Mapping
 from typing import Any
 
 from ._preflight_model import WORKFLOW_PREFLIGHT_VERSION, WorkflowPreflight
-from ._preflight_report import build_workflow_preflight_report
 from ._preflight_render import (
     render_workflow_preflight_markdown as _render_workflow_preflight_markdown,
 )
+from ._preflight_report import build_workflow_preflight_report
 from .geojson import FeatureCollection
 
 

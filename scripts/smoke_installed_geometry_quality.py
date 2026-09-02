@@ -64,9 +64,9 @@ def main() -> int:
     if starshine_geo.GEOMETRY_QUALITY_REPORT_VERSION != 1:
         raise RuntimeError("unexpected installed geometry-quality report version")
     if not callable(starshine_geo.assess_geometry_quality):
-        raise RuntimeError("installed wheel is missing assess_geometry_quality")
+        raise TypeError("installed wheel is missing assess_geometry_quality")
     if not callable(starshine_geo.render_geometry_quality_markdown):
-        raise RuntimeError("installed wheel is missing render_geometry_quality_markdown")
+        raise TypeError("installed wheel is missing render_geometry_quality_markdown")
 
     collection = _collection()
     direct_report = starshine_geo.assess_geometry_quality(collection)
