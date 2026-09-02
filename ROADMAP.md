@@ -62,18 +62,27 @@ The next phase is intentionally **not another broad operator expansion**. The pr
 existing public surface easier to understand, verify, and extend.
 
 - [ ] publish a reproducibility note from an independent environment
-- [ ] audit the documentation set for duplicated or conflicting normative statements
+- [x] enforce documentation-index ownership, local-link validity, and documentation-tree containment
+  in the existing public-repository audit
+- [ ] audit the documentation set for duplicated or conflicting normative statements now that every
+  top-level page is forced through the ownership index
 - [x] remove the temporary second console entrypoint and enforce one installed command tree
-- [ ] continue the public Python/CLI overlap audit across inspection, inventory, Preflight, and I/O
-  adapters after the command boundary has been consolidated
+- [x] retire private CLI input-binding migration shims so Preflight and Run use one planner directly
+- [ ] continue the public Python/CLI overlap audit across inspection, inventory, report output, and I/O
+  adapters; consolidate only when it removes real branches or repeated policy
 - [ ] strengthen dependency-direction checks where remaining public modules still rely only on
   documentation rather than executable architecture tests
 - [ ] improve failure diagnostics where two layers currently report the same root cause differently
-- [ ] add a new operator only when it closes a demonstrated analysis gap and can reuse the existing
-  contracts, registry, testing, and evidence model
+- [ ] review the current operator set against concrete spatial-analysis gaps before proposing 0.7;
+  add an operator only when it reuses the existing registry, contracts, Preflight, tests, and evidence
+  model instead of creating a parallel execution path
 
 A feature is not considered complete merely because its implementation works. New public behavior must
 have a clear owner in the architecture, a stable contract, synthetic or redistributable evidence,
 appropriate tests, documentation without duplication, and clean distribution/reproduction coverage.
+
+For 0.6, deletion, consolidation, executable architecture rules, and clearer diagnostics are preferred
+over increasing module count. A 0.7 feature phase should begin only after the remaining overlap and
+normative-document audits are small enough that new behavior has an obvious place to live.
 
 See [the documentation index](docs/README.md) for the current ownership map.
