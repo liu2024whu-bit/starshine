@@ -19,6 +19,16 @@ def _relative_imports(module: str) -> set[str]:
     }
 
 
+def _absolute_import_roots(module: str) -> set[str]:
+    imports: set[str] = set()
+    for node in ast.walk(_module_tree(module)):
+        if isinstance(node, ast.Import):
+            imports.update(alias.name.split(".", 1)[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            imports.add(node.module.split(".", 1)[0])
+    return imports
+
+
 def _function_names(module: str) -> set[str]:
     return {
         node.name
@@ -58,3 +68,42 @@ def test_cli_binding_boundary_has_no_pre_unification_shims():
     assert {"_parse_layer_bindings", "_parse_layers"}.isdisjoint(_function_names("cli"))
     assert "prepare_preflight_layer_bindings" not in _function_names("_cli_layer_sources")
     assert "prepare_layer_bindings" in _function_names("_cli_layer_sources")
+
+
+def test_source_metadata_dependency_boundary_is_one_way():
+    inventory_imports = _relative_imports("inventory")
+    assert {"errors", "geojson", "io"}.issubset(inventory_imports)
+
+    forbidden = {
+        "_cli_layer_sources",
+        "_cli_run_output",
+        "cli",
+        "contracts",
+        "doctor",
+        "explain",
+        "geopackage",
+        "graph",
+        "inspection",
+        "manifest",
+        "metrics",
+        "operator_registry",
+        "operators",
+        "planning",
+        "preflight",
+        "preflight_sarif",
+        "workflow",
+    }
+    assert inventory_imports.isdisjoint(forbidden)
+    assert {"pyogrio", "geopandas"}.isdisjoint(_absolute_import_roots("inventory"))
+    assert "inventory" not in _relative_imports("inspection")
+
+    for module in (
+        "contracts",
+        "operator_registry",
+        "operators",
+        "planning",
+        "preflight",
+        "preflight_sarif",
+        "workflow",
+    ):
+        assert "inventory" not in _relative_imports(module)
