@@ -11,6 +11,28 @@ unreleased research work, large datasets, internal delivery material, and compon
 completed public licensing and reproducibility review. Starshine is maintained as a separate
 open-source product rather than a temporary mirror.
 
+## Initial public validation record — 2026-07-13
+
+The initial public core was assembled from reviewed concepts and independently tested before
+publication using only files and synthetic data contained in this repository.
+
+The recorded validation commands were:
+
+```bash
+PYTHONPATH=src python -m compileall -q src tests examples
+PYTHONPATH=src pytest -q
+PYTHONPATH=src python examples/run_demo.py
+```
+
+At that point Python compilation completed without errors, seven tests passed, and the demo produced
+`examples/output/zone_summary.geojson` with expected `site_count` values `[2, 1]` for the west and
+east study zones. No private dataset, credential, OCR output, textbook PDF, database dump, or
+machine-specific path was required.
+
+This is a historical snapshot rather than a current validation contract. GitHub Actions and the
+current reproduction/release checks are the authoritative repeatable evidence for supported Python
+versions and distribution behavior.
+
 ## Verifiable maintenance background
 
 The primary maintainer is `liu2024whu-bit`, who also has administrator access to the private team
