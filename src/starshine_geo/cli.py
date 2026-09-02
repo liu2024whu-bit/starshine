@@ -343,6 +343,19 @@ def _parse_layer_names(values: list[str]) -> set[str]:
     return names
 
 
+def _reject_output_collision(
+    output: Path | None,
+    protected_paths: tuple[Path, ...],
+    *,
+    message: str,
+) -> None:
+    if output is None:
+        return
+    resolved_output = output.resolve()
+    if any(resolved_output == protected.resolve() for protected in protected_paths):
+        raise StarshineError(message)
+
+
 def _repository_relative_uri(path: Path, root: Path) -> str:
     try:
         relative = path.resolve().relative_to(root.resolve())
@@ -405,8 +418,11 @@ def _validate_command(args: argparse.Namespace) -> int:
 
 
 def _inspect_command(args: argparse.Namespace) -> int:
-    if args.output is not None and args.output.resolve() == args.source.resolve():
-        raise StarshineError("inspection output must not overwrite the source GeoJSON")
+    _reject_output_collision(
+        args.output,
+        (args.source,),
+        message="inspection output must not overwrite the source GeoJSON",
+    )
     report = inspect_feature_collection(read_json(args.source))
     if args.output is None:
         print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
@@ -417,8 +433,11 @@ def _inspect_command(args: argparse.Namespace) -> int:
 
 
 def _inventory_command(args: argparse.Namespace) -> int:
-    if args.output is not None and args.output.resolve() == args.source.resolve():
-        raise StarshineError("inventory output must not overwrite the source")
+    _reject_output_collision(
+        args.output,
+        (args.source,),
+        message="inventory output must not overwrite the source",
+    )
     report = inventory_source(
         args.source,
         force_feature_count=args.force_feature_count,
@@ -439,8 +458,11 @@ def _inventory_command(args: argparse.Namespace) -> int:
 
 
 def _quality_command(args: argparse.Namespace) -> int:
-    if args.output is not None and args.output.resolve() == args.source.resolve():
-        raise StarshineError("geometry-quality output must not overwrite the source GeoJSON")
+    _reject_output_collision(
+        args.output,
+        (args.source,),
+        message="geometry-quality output must not overwrite the source GeoJSON",
+    )
     report = assess_geometry_quality(read_json(args.source))
     if args.format == "json":
         content = json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
@@ -467,8 +489,11 @@ def _operators_command(args: argparse.Namespace) -> int:
 
 
 def _plan_command(args: argparse.Namespace) -> int:
-    if args.output is not None and args.output.resolve() == args.workflow.resolve():
-        raise StarshineError("workflow plan output must not overwrite the workflow file")
+    _reject_output_collision(
+        args.output,
+        (args.workflow,),
+        message="workflow plan output must not overwrite the workflow file",
+    )
     workflow = read_json(args.workflow)
     plan = plan_workflow(workflow, _parse_layer_names(args.layer_name))
     if args.output is None:
@@ -480,8 +505,11 @@ def _plan_command(args: argparse.Namespace) -> int:
 
 
 def _graph_command(args: argparse.Namespace) -> int:
-    if args.output is not None and args.output.resolve() == args.workflow.resolve():
-        raise StarshineError("workflow graph output must not overwrite the workflow file")
+    _reject_output_collision(
+        args.output,
+        (args.workflow,),
+        message="workflow graph output must not overwrite the workflow file",
+    )
     workflow = read_json(args.workflow)
     graph = build_workflow_graph(workflow, _parse_layer_names(args.layer_name))
     if args.format == "json":
@@ -499,8 +527,11 @@ def _graph_command(args: argparse.Namespace) -> int:
 
 
 def _explain_command(args: argparse.Namespace) -> int:
-    if args.output is not None and args.output.resolve() == args.workflow.resolve():
-        raise StarshineError("workflow explanation output must not overwrite the workflow file")
+    _reject_output_collision(
+        args.output,
+        (args.workflow,),
+        message="workflow explanation output must not overwrite the workflow file",
+    )
     workflow = read_json(args.workflow)
     explanation = explain_workflow(workflow, _parse_layer_names(args.layer_name))
     if args.format == "json":
@@ -518,8 +549,11 @@ def _explain_command(args: argparse.Namespace) -> int:
 
 
 def _contract_command(args: argparse.Namespace) -> int:
-    if args.output is not None and args.output.resolve() == args.workflow.resolve():
-        raise StarshineError("workflow contract output must not overwrite the workflow file")
+    _reject_output_collision(
+        args.output,
+        (args.workflow,),
+        message="workflow contract output must not overwrite the workflow file",
+    )
     workflow = read_json(args.workflow)
     contract = build_workflow_contract(workflow, _parse_layer_names(args.layer_name))
     if args.format == "json":
@@ -547,12 +581,16 @@ def _preflight_command(args: argparse.Namespace) -> int:
 
     bindings = prepare_layer_bindings(args.layer, args.geopackage_layer)
     paths = bindings.paths
-    if args.output is not None:
-        output = args.output.resolve()
-        if output == args.workflow.resolve():
-            raise StarshineError("workflow preflight output must not overwrite the workflow file")
-        if any(output == path.resolve() for path in paths.values()):
-            raise StarshineError("workflow preflight output must not overwrite an input layer")
+    _reject_output_collision(
+        args.output,
+        (args.workflow,),
+        message="workflow preflight output must not overwrite the workflow file",
+    )
+    _reject_output_collision(
+        args.output,
+        tuple(paths.values()),
+        message="workflow preflight output must not overwrite an input layer",
+    )
 
     workflow_uri: str | None = None
     artifact_uris: dict[str, str] | None = None
