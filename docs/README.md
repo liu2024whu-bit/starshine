@@ -76,5 +76,10 @@ current feature documentation.
 6. **New code does not automatically require new documentation.** First check whether an existing page
    can absorb the feature without becoming ambiguous.
 
+The public-repository audit enforces the structural part of these rules: every top-level Markdown page
+under `docs/` must be referenced by this index, local index links must resolve inside `docs/`, and links
+that escape the documentation tree are rejected. This does not try to judge prose similarity; it makes
+new documentation visible to reviewers so semantic duplication can be caught before merge.
+
 The root `README.md` remains the public landing page and quick-start surface. This index is the map for
 contributors and reviewers who need the complete documentation set.
