@@ -5,7 +5,7 @@ import json
 import sys
 from pathlib import Path
 
-from ._cli_layer_sources import prepare_layer_bindings, prepare_preflight_layer_bindings
+from ._cli_layer_sources import prepare_layer_bindings
 from ._cli_run_output import prepare_run_output
 from ._version import __version__
 from .contracts import build_workflow_contract, render_workflow_contract_markdown
@@ -333,26 +333,6 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _parse_layer_bindings(values: list[str]) -> tuple[dict[str, dict], dict[str, Path]]:
-    layers: dict[str, dict] = {}
-    paths: dict[str, Path] = {}
-    for value in values:
-        if "=" not in value:
-            raise StarshineError("--layer must use NAME=PATH")
-        name, path_value = value.split("=", 1)
-        name = name.strip()
-        path = Path(path_value)
-        if not name or name in layers:
-            raise StarshineError(f"invalid or duplicate layer name: {name!r}")
-        layers[name] = read_json(path)
-        paths[name] = path
-    return layers, paths
-
-
-def _parse_layers(values: list[str]) -> dict[str, dict]:
-    return _parse_layer_bindings(values)[0]
-
-
 def _parse_layer_names(values: list[str]) -> set[str]:
     names: set[str] = set()
     for value in values:
@@ -565,7 +545,7 @@ def _preflight_command(args: argparse.Namespace) -> int:
         if not args.sarif_root.is_dir():
             raise StarshineError("--sarif-root must identify an existing directory")
 
-    bindings = prepare_preflight_layer_bindings(args.layer, args.geopackage_layer)
+    bindings = prepare_layer_bindings(args.layer, args.geopackage_layer)
     paths = bindings.paths
     if args.output is not None:
         output = args.output.resolve()
