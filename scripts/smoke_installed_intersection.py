@@ -48,7 +48,7 @@ def _polygon(min_x: float, min_y: float, max_x: float, max_y: float, **propertie
 def main() -> int:
     _assert_installed_location()
     if not callable(getattr(starshine_geo, "intersect_features", None)):
-        raise RuntimeError("installed wheel is missing intersect_features")
+        raise TypeError("installed wheel is missing intersect_features")
 
     left = _collection([
         _polygon(0, 0, 10, 10, parcel_id="a"),
