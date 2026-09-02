@@ -356,6 +356,15 @@ def _reject_output_collision(
         raise StarshineError(message)
 
 
+def _emit_text(content: str, output: Path | None) -> None:
+    if output is None:
+        print(content, end="")
+        return
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(content, encoding="utf-8")
+    print(output)
+
+
 def _repository_relative_uri(path: Path, root: Path) -> str:
     try:
         relative = path.resolve().relative_to(root.resolve())
@@ -393,12 +402,7 @@ def _doctor_command(args: argparse.Namespace) -> int:
         if args.format == "json"
         else render_doctor_text(report)
     )
-    if args.output is None:
-        print(content, end="")
-    else:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(content, encoding="utf-8")
-        print(args.output)
+    _emit_text(content, args.output)
     return 0 if report["valid"] else 1
 
 
@@ -448,12 +452,7 @@ def _inventory_command(args: argparse.Namespace) -> int:
         if args.format == "json"
         else render_source_inventory_markdown(report)
     )
-    if args.output is None:
-        print(content, end="")
-    else:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(content, encoding="utf-8")
-        print(args.output)
+    _emit_text(content, args.output)
     return 0
 
 
@@ -469,12 +468,7 @@ def _quality_command(args: argparse.Namespace) -> int:
     else:
         content = render_geometry_quality_markdown(report)
 
-    if args.output is None:
-        print(content, end="")
-    else:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(content, encoding="utf-8")
-        print(args.output)
+    _emit_text(content, args.output)
     return 0 if report["valid"] else 1
 
 
@@ -517,12 +511,7 @@ def _graph_command(args: argparse.Namespace) -> int:
     else:
         content = render_workflow_mermaid(graph)
 
-    if args.output is None:
-        print(content, end="")
-    else:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(content, encoding="utf-8")
-        print(args.output)
+    _emit_text(content, args.output)
     return 0
 
 
@@ -539,12 +528,7 @@ def _explain_command(args: argparse.Namespace) -> int:
     else:
         content = render_workflow_explanation_markdown(explanation)
 
-    if args.output is None:
-        print(content, end="")
-    else:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(content, encoding="utf-8")
-        print(args.output)
+    _emit_text(content, args.output)
     return 0
 
 
@@ -561,12 +545,7 @@ def _contract_command(args: argparse.Namespace) -> int:
     else:
         content = render_workflow_contract_markdown(contract)
 
-    if args.output is None:
-        print(content, end="")
-    else:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(content, encoding="utf-8")
-        print(args.output)
+    _emit_text(content, args.output)
     return 0
 
 
@@ -617,12 +596,7 @@ def _preflight_command(args: argparse.Namespace) -> int:
     else:
         content = render_workflow_preflight_markdown(report)
 
-    if args.output is None:
-        print(content, end="")
-    else:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(content, encoding="utf-8")
-        print(args.output)
+    _emit_text(content, args.output)
     return 0 if report["valid"] else 1
 
 
