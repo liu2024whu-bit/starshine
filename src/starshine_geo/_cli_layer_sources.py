@@ -97,14 +97,6 @@ def prepare_layer_bindings(
     return PreparedLayerBindings(tuple(sources))
 
 
-def prepare_preflight_layer_bindings(
-    geojson_values: Sequence[str],
-    geopackage_values: Sequence[Sequence[str]],
-) -> PreparedLayerBindings:
-    """Backward-compatible Preflight name for the shared CLI input binding planner."""
-    return prepare_layer_bindings(geojson_values, geopackage_values)
-
-
 def _read_geojson_source(path: Path) -> FeatureCollection:
     return read_json(path)
 
@@ -116,8 +108,4 @@ def _read_geopackage_source(path: Path, layer: str) -> FeatureCollection:
     return read_geopackage(path, layer=layer)
 
 
-__all__ = [
-    "PreparedLayerBindings",
-    "prepare_layer_bindings",
-    "prepare_preflight_layer_bindings",
-]
+__all__ = ["PreparedLayerBindings", "prepare_layer_bindings"]
