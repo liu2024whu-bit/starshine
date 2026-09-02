@@ -58,6 +58,16 @@ def test_geojson_inventory_bounds_are_explicit_opt_in() -> None:
     assert report["layers"][0]["bounds"] == [114.3, 30.5, 118.8, 32.0]
 
 
+def test_geojson_inventory_preserves_canonical_geometry_type_names() -> None:
+    collection = _collection()
+    collection["features"][0]["geometry"]["type"] = "point"
+    collection["features"][1]["geometry"]["type"] = "POINT"
+
+    report = inventory_geojson(collection)
+
+    assert report["layers"][0]["geometry_type"] == "Point"
+
+
 def test_geojson_inventory_only_materializes_geometry_for_opt_in_bounds(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
