@@ -14,6 +14,17 @@ from .io import read_json
 SOURCE_INVENTORY_VERSION = 1
 SourceInventoryReport = dict[str, Any]
 
+_CANONICAL_GEOMETRY_TYPES = {
+    "point": "Point",
+    "linestring": "LineString",
+    "linearring": "LinearRing",
+    "polygon": "Polygon",
+    "multipoint": "MultiPoint",
+    "multilinestring": "MultiLineString",
+    "multipolygon": "MultiPolygon",
+    "geometrycollection": "GeometryCollection",
+}
+
 
 def _json_value_type(value: Any) -> str:
     if value is None:
@@ -33,6 +44,11 @@ def _json_value_type(value: Any) -> str:
     return type(value).__name__
 
 
+def _canonical_geometry_type(geometry_value: dict[str, Any]) -> str:
+    raw_type = str(geometry_value["type"])
+    return _CANONICAL_GEOMETRY_TYPES.get(raw_type.casefold(), raw_type)
+
+
 def _geojson_layer_report(
     collection: FeatureCollection,
     *,
@@ -45,7 +61,7 @@ def _geojson_layer_report(
 
     for feature in collection["features"]:
         geometry_value = feature["geometry"]
-        geometry_types.add(str(geometry_value["type"]))
+        geometry_types.add(_canonical_geometry_type(geometry_value))
 
         properties = feature.get("properties") or {}
         for name, value in properties.items():
