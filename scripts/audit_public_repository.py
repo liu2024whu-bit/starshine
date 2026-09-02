@@ -38,6 +38,7 @@ _ABSOLUTE_PATH_PATTERNS = {
     "Unix home path": re.compile(r"/(?:home|Users)/[A-Za-z0-9._-]+/"),
     "Windows user path": re.compile(r"[A-Za-z]:[\\/](?:Users|home)[\\/]"),
 }
+_MARKDOWN_LINK_PATTERN = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 
 
 def _tracked_files() -> list[Path]:
@@ -51,6 +52,57 @@ def _tracked_files() -> list[Path]:
 
 def _is_test_path(path: Path) -> bool:
     return PurePosixPath(path.as_posix()).parts[:1] == ("tests",)
+
+
+def _local_markdown_target(raw_target: str) -> str | None:
+    target = raw_target.strip()
+    if not target or target.startswith(("#", "http://", "https://", "mailto:")):
+        return None
+    if target.startswith("<") and target.endswith(">"):
+        target = target[1:-1].strip()
+    target = target.split("#", 1)[0].split("?", 1)[0]
+    return target or None
+
+
+def _documentation_index_violations(docs_root: Path = Path("docs")) -> list[str]:
+    """Check that the documentation index owns every top-level Markdown document."""
+    index = docs_root / "README.md"
+    if not index.is_file():
+        return ["documentation index is missing: docs/README.md"]
+
+    root = docs_root.resolve()
+    index_text = index.read_text(encoding="utf-8")
+    referenced_top_level: set[str] = set()
+    violations: list[str] = []
+
+    for match in _MARKDOWN_LINK_PATTERN.finditer(index_text):
+        target = _local_markdown_target(match.group(1))
+        if target is None:
+            continue
+
+        resolved = (docs_root / target).resolve(strict=False)
+        try:
+            relative = resolved.relative_to(root)
+        except ValueError:
+            violations.append(f"documentation index link escapes docs/: {target}")
+            continue
+
+        if not resolved.exists():
+            violations.append(f"documentation index link is missing: docs/{relative.as_posix()}")
+            continue
+
+        if resolved.is_file() and resolved.suffix.casefold() == ".md" and resolved.parent == root:
+            referenced_top_level.add(resolved.name)
+
+    top_level_docs = {
+        path.name
+        for path in docs_root.glob("*.md")
+        if path.is_file() and path.name != "README.md"
+    }
+    for name in sorted(top_level_docs - referenced_top_level):
+        violations.append(f"top-level documentation is not indexed: docs/{name}")
+
+    return violations
 
 
 def audit() -> list[str]:
@@ -88,6 +140,7 @@ def audit() -> list[str]:
                 if pattern.search(text):
                     violations.append(f"possible {name} outside tests: {normalized}")
 
+    violations.extend(_documentation_index_violations())
     return violations
 
 
