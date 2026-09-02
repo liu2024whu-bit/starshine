@@ -33,36 +33,57 @@ def _json_value_type(value: Any) -> str:
     return type(value).__name__
 
 
-def _geojson_fields(collection: FeatureCollection) -> list[dict[str, Any]]:
+def _geojson_layer_report(
+    collection: FeatureCollection,
+    *,
+    declared_crs: str | None,
+    include_bounds: bool,
+) -> dict[str, Any]:
     field_types: dict[str, set[str]] = defaultdict(set)
+    geometry_types: set[str] = set()
+    aggregate_bounds: list[float] | None = None
+
     for feature in collection["features"]:
+        geometry_value = feature["geometry"]
+        geometry_types.add(str(geometry_value["type"]))
+
         properties = feature.get("properties") or {}
         for name, value in properties.items():
             field_types[str(name)].add(_json_value_type(value))
-    return [
-        {"name": name, "types": sorted(types)}
-        for name, types in sorted(field_types.items())
-    ]
 
+        if include_bounds:
+            min_x, min_y, max_x, max_y = shape(geometry_value).bounds
+            if aggregate_bounds is None:
+                aggregate_bounds = [float(min_x), float(min_y), float(max_x), float(max_y)]
+            else:
+                aggregate_bounds[0] = min(aggregate_bounds[0], min_x)
+                aggregate_bounds[1] = min(aggregate_bounds[1], min_y)
+                aggregate_bounds[2] = max(aggregate_bounds[2], max_x)
+                aggregate_bounds[3] = max(aggregate_bounds[3], max_y)
 
-def _geojson_geometry_type(collection: FeatureCollection) -> str | None:
-    types = sorted({shape(feature["geometry"]).geom_type for feature in collection["features"]})
-    if not types:
-        return None
-    if len(types) == 1:
-        return types[0]
-    return "Mixed"
+    if not geometry_types:
+        geometry_type = None
+    elif len(geometry_types) == 1:
+        geometry_type = next(iter(geometry_types))
+    else:
+        geometry_type = "Mixed"
 
-
-def _geojson_bounds(collection: FeatureCollection) -> list[float] | None:
-    if not collection["features"]:
-        return None
-    geometries = [shape(feature["geometry"]) for feature in collection["features"]]
-    min_x = min(geometry.bounds[0] for geometry in geometries)
-    min_y = min(geometry.bounds[1] for geometry in geometries)
-    max_x = max(geometry.bounds[2] for geometry in geometries)
-    max_y = max(geometry.bounds[3] for geometry in geometries)
-    return [float(min_x), float(min_y), float(max_x), float(max_y)]
+    layer: dict[str, Any] = {
+        "name": "feature_collection",
+        "spatial": True,
+        "geometry_type": geometry_type,
+        "crs_status": "declared" if declared_crs is not None else "missing",
+        "crs": declared_crs,
+        "fields": [
+            {"name": name, "types": sorted(types)}
+            for name, types in sorted(field_types.items())
+        ],
+        "feature_count_status": "known",
+        "feature_count": len(collection["features"]),
+    }
+    if include_bounds:
+        layer["bounds"] = aggregate_bounds
+    return layer
 
 
 def inventory_geojson(
@@ -80,26 +101,19 @@ def inventory_geojson(
     if not isinstance(declared_crs, str) or not declared_crs.strip():
         declared_crs = None
 
-    layer: dict[str, Any] = {
-        "name": "feature_collection",
-        "spatial": True,
-        "geometry_type": _geojson_geometry_type(validated),
-        "crs_status": "declared" if declared_crs is not None else "missing",
-        "crs": declared_crs,
-        "fields": _geojson_fields(validated),
-        "feature_count_status": "known",
-        "feature_count": len(validated["features"]),
-    }
-    if include_bounds:
-        layer["bounds"] = _geojson_bounds(validated)
-
     return {
         "schema_version": SOURCE_INVENTORY_VERSION,
         "source_format": "geojson",
         "layer_count": 1,
         "bounds_requested": include_bounds,
         "feature_count_forced": False,
-        "layers": [layer],
+        "layers": [
+            _geojson_layer_report(
+                validated,
+                declared_crs=declared_crs,
+                include_bounds=include_bounds,
+            )
+        ],
     }
 
 
