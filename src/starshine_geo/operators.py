@@ -85,6 +85,28 @@ def _validate_json_scalar_or_null(value: Any, *, label: str) -> None:
         raise ValidationError(f"{label} must be a finite JSON scalar or null")
 
 
+def _prepare_polygon_mask(
+    mask: FeatureCollection,
+    *,
+    operation: str,
+) -> tuple[Any, Any | None]:
+    validated_mask = validate_feature_collection(mask)
+    _, mask_crs = _required_declared_crs(validated_mask, label="mask")
+    mask_geometries = []
+    for _, geometry in iter_geometries(validated_mask):
+        if geometry.geom_type not in {"Polygon", "MultiPolygon"}:
+            raise ValidationError(
+                f"{operation} mask must contain Polygon or MultiPolygon geometry only"
+            )
+        mask_geometries.append(geometry)
+    if not mask_geometries:
+        return mask_crs, None
+    try:
+        return mask_crs, unary_union(mask_geometries)
+    except GEOSException as exc:
+        raise ValidationError(f"{operation} mask union failed") from exc
+
+
 def buffer_features(
     collection: FeatureCollection,
     *,
@@ -116,36 +138,14 @@ def clip_features(
     collection: FeatureCollection,
     mask: FeatureCollection,
 ) -> FeatureCollection:
-    """Clip input geometries by a polygon mask in the same declared CRS.
-
-    The union of all mask polygons is intersected with each input feature. Empty intersections are
-    omitted, while retained features keep their input order and property objects. Boundary-only
-    intersections are retained because they are valid non-empty geometric results.
-    """
+    """Clip input geometries by a polygon mask in the same declared CRS."""
     validated_input = validate_feature_collection(collection)
-    validated_mask = validate_feature_collection(mask)
-
-    input_crs_label, input_crs = _required_declared_crs(
-        validated_input,
-        label="input",
-    )
-    _, mask_crs = _required_declared_crs(validated_mask, label="mask")
+    input_crs_label, input_crs = _required_declared_crs(validated_input, label="input")
+    mask_crs, mask_union = _prepare_polygon_mask(mask, operation="clip")
     if not input_crs.equals(mask_crs):
         raise ValidationError("clip input and mask must declare equivalent CRS values")
-
-    mask_geometries = []
-    for _, geometry in iter_geometries(validated_mask):
-        if geometry.geom_type not in {"Polygon", "MultiPolygon"}:
-            raise ValidationError("clip mask must contain Polygon or MultiPolygon geometry only")
-        mask_geometries.append(geometry)
-
-    if not mask_geometries:
+    if mask_union is None:
         return make_collection([], crs=input_crs_label)
-
-    try:
-        mask_union = unary_union(mask_geometries)
-    except GEOSException as exc:
-        raise ValidationError("clip mask union failed") from exc
 
     output = []
     for index, (feature, geometry) in enumerate(iter_geometries(validated_input)):
@@ -156,6 +156,33 @@ def clip_features(
         if clipped.is_empty:
             continue
         output.append(make_feature(clipped, feature.get("properties")))
+
+    return validate_feature_collection(make_collection(output, crs=input_crs_label))
+
+
+def difference_features(
+    collection: FeatureCollection,
+    mask: FeatureCollection,
+) -> FeatureCollection:
+    """Keep the portion of each input geometry outside an equivalent-CRS polygon mask."""
+    validated_input = validate_feature_collection(collection)
+    input_crs_label, input_crs = _required_declared_crs(validated_input, label="input")
+    mask_crs, mask_union = _prepare_polygon_mask(mask, operation="difference")
+    if not input_crs.equals(mask_crs):
+        raise ValidationError("difference input and mask must declare equivalent CRS values")
+
+    output = []
+    for index, (feature, geometry) in enumerate(iter_geometries(validated_input)):
+        if mask_union is None:
+            difference = geometry
+        else:
+            try:
+                difference = geometry.difference(mask_union)
+            except GEOSException as exc:
+                raise ValidationError(f"difference failed for input feature {index}") from exc
+        if difference.is_empty:
+            continue
+        output.append(make_feature(difference, feature.get("properties")))
 
     return validate_feature_collection(make_collection(output, crs=input_crs_label))
 
@@ -546,6 +573,7 @@ def summarize_points_within(
 __all__ = [
     "buffer_features",
     "clip_features",
+    "difference_features",
     "dissolve_features",
     "intersect_features",
     "join_points_to_polygons",
