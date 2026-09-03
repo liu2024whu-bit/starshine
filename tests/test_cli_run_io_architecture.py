@@ -5,6 +5,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_ROOT = ROOT / "src" / "starshine_geo"
+_DATA_OR_EXECUTION_BOUNDARY = {
+    "_cli_layer_sources",
+    "_cli_run_output",
+    "geojson",
+    "geopackage",
+    "io",
+    "operators",
+    "preflight",
+    "preflight_sarif",
+}
 
 
 def _module_tree(module: str) -> ast.Module:
@@ -35,6 +45,17 @@ def _function_names(module: str) -> set[str]:
         for node in ast.walk(_module_tree(module))
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
     }
+
+
+def _assert_data_free_report_boundary(
+    module: str,
+    *,
+    required: set[str],
+    additionally_forbidden: set[str],
+) -> None:
+    imports = _relative_imports(module)
+    assert required.issubset(imports)
+    assert imports.isdisjoint(_DATA_OR_EXECUTION_BOUNDARY | additionally_forbidden)
 
 
 def test_cli_input_and_output_adapters_do_not_import_workflow_core():
@@ -124,3 +145,36 @@ def test_inspection_dependency_boundary_is_read_only():
         "workflow",
     ):
         assert "inspection" not in _relative_imports(module)
+
+
+def test_data_free_workflow_reports_depend_outward_from_the_canonical_plan():
+    _assert_data_free_report_boundary(
+        "planning",
+        required={"manifest", "operator_registry", "workflow"},
+        additionally_forbidden={"contracts", "contract_specs", "explain", "graph"},
+    )
+    _assert_data_free_report_boundary(
+        "graph",
+        required={"planning"},
+        additionally_forbidden={
+            "contracts",
+            "contract_specs",
+            "explain",
+            "operator_registry",
+            "workflow",
+        },
+    )
+    _assert_data_free_report_boundary(
+        "explain",
+        required={"graph", "planning"},
+        additionally_forbidden={"contracts", "contract_specs", "operator_registry", "workflow"},
+    )
+    _assert_data_free_report_boundary(
+        "contracts",
+        required={"contract_specs", "operator_registry", "planning"},
+        additionally_forbidden={"explain", "graph", "workflow"},
+    )
+
+    derived_reports = {"contracts", "explain", "graph", "planning"}
+    for module in ("operator_registry", "operators", "workflow"):
+        assert _relative_imports(module).isdisjoint(derived_reports)
