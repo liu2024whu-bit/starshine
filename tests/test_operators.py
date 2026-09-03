@@ -57,7 +57,9 @@ def test_duplicate_identifier_diagnostic_does_not_echo_property_value(zones, poi
     with pytest.raises(ValidationError) as exc_info:
         summarize_points_within(duplicate_zones, points)
 
-    assert str(exc_info.value) == "duplicate polygon identifier: polygon 1 property 'id' must be unique"
+    assert str(exc_info.value) == (
+        "duplicate polygon identifier: polygon 1 property 'id' must be unique"
+    )
     assert sensitive_value not in str(exc_info.value)
 
 
