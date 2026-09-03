@@ -17,7 +17,7 @@ It covers exact input names, required and optional parameters, numeric bounds, f
 output names. Public valid and invalid examples are stored in `tests/fixtures/workflows/` and are
 checked with an external JSON Schema validator in CI.
 
-Runtime preflight additionally checks:
+Canonical workflow validation additionally checks:
 
 - referenced layer names are available in execution order;
 - output names do not overwrite inputs or earlier results;
@@ -34,9 +34,10 @@ Runtime preflight additionally checks:
 - the runtime registry and external Workflow Schema describe the same operator names, inputs, and
   parameters.
 
-Data-dependent checks, such as clip mask geometry types, nearest candidate identifiers,
-point/polygon join geometry types and ambiguity, CRS equivalence, and output-field conflicts, run
-after every input collection has been validated but before an operator result is returned.
+Checks that require actual feature collections are intentionally outside `validate_workflow()`.
+Use Workflow Preflight for planner-derived geometry, CRS, field, uniqueness, and collision checks on
+loaded external inputs; operator execution remains the final boundary for facts that depend on
+produced layers or actual spatial relationships. See [WORKFLOW_PREFLIGHT.md](WORKFLOW_PREFLIGHT.md).
 
 ## Python diagnostics
 
@@ -97,11 +98,10 @@ starshine operators
 The output conforms to `schemas/operator-catalog-v1.schema.json`. Catalog tests compare each input
 and parameter schema with `schemas/workflow-v1.schema.json`, preventing silent contract drift.
 
-
 ## Plan after validation
 
 `plan_workflow()` and `starshine plan` reuse the canonical validator, then describe external and
 produced layers, direct step dependencies, registry-resolved defaults, parameter sources, terminal
-outputs, deterministic flags, and output-CRS behavior. Planning does not read feature data or execute
-operators, so data-dependent geometry and CRS checks still occur when inputs are loaded and the
-workflow runs. See `docs/WORKFLOW_PLANNING.md` and `schemas/workflow-plan-v1.schema.json`.
+outputs, deterministic flags, and output-CRS behavior. Planning does not read feature data. Use
+Preflight for actual external-layer conformance and execution for produced-layer or spatial facts.
+See `docs/WORKFLOW_PLANNING.md` and `schemas/workflow-plan-v1.schema.json`.
