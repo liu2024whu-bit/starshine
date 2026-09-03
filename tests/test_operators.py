@@ -44,6 +44,25 @@ def test_summarize_points_within_rejects_non_points(zones):
         summarize_points_within(zones, zones)
 
 
+def test_duplicate_identifier_diagnostic_does_not_echo_property_value(zones, points):
+    sensitive_value = "private-duplicate-id"
+    duplicate_zones = {
+        "type": "FeatureCollection",
+        "features": [
+            {**zones["features"][0], "properties": {"id": sensitive_value}},
+            {**zones["features"][0], "properties": {"id": sensitive_value}},
+        ],
+    }
+
+    with pytest.raises(ValidationError) as exc_info:
+        summarize_points_within(duplicate_zones, points)
+
+    assert str(exc_info.value) == (
+        "duplicate polygon identifier: polygon 1 property 'id' must be unique"
+    )
+    assert sensitive_value not in str(exc_info.value)
+
+
 def test_buffer_requires_projected_work_crs(points):
     with pytest.raises(ValidationError, match="projected CRS"):
         buffer_features(

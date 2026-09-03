@@ -54,6 +54,19 @@ def _json_scalar_key(
     return type(value).__name__, value
 
 
+def _raise_duplicate_identifier(
+    *,
+    identifier_label: str,
+    entity: str,
+    index: int,
+    field: str,
+) -> None:
+    raise ValidationError(
+        f"duplicate {identifier_label} identifier: "
+        f"{entity} {index} property {field!r} must be unique"
+    )
+
+
 def _candidate_identifier_key(value: Any, *, index: int, field: str) -> tuple[str, Any]:
     return _json_scalar_key(
         value,
@@ -191,7 +204,12 @@ def intersect_features(
             entity="right feature",
         )
         if key in seen_identifiers:
-            raise ValidationError(f"duplicate right identifier: {identifier!r}")
+            _raise_duplicate_identifier(
+                identifier_label="right",
+                entity="right feature",
+                index=right_index,
+                field=right_id_field,
+            )
         seen_identifiers.add(key)
         right_records.append((identifier, geometry))
 
@@ -288,7 +306,12 @@ def nearest_features(
             identifier, index=index, field=candidate_id_field
         )
         if key in seen_identifiers:
-            raise ValidationError(f"duplicate candidate identifier: {identifier!r}")
+            _raise_duplicate_identifier(
+                identifier_label="candidate",
+                entity="candidate",
+                index=index,
+                field=candidate_id_field,
+            )
         seen_identifiers.add(key)
         candidate_records.append((identifier, geometry))
 
@@ -377,7 +400,12 @@ def join_points_to_polygons(
             entity="polygon",
         )
         if key in seen_identifiers:
-            raise ValidationError(f"duplicate polygon identifier: {identifier!r}")
+            _raise_duplicate_identifier(
+                identifier_label="polygon",
+                entity="polygon",
+                index=index,
+                field=polygon_id_field,
+            )
         seen_identifiers.add(key)
         polygon_records.append((identifier, geometry))
 
@@ -497,13 +525,18 @@ def summarize_points_within(
 
     output = []
     seen_ids: set[Any] = set()
-    for feature, polygon in iter_geometries(polygons):
+    for index, (feature, polygon) in enumerate(iter_geometries(polygons)):
         properties = dict(feature.get("properties") or {})
         polygon_id = properties.get(polygon_id_field)
         if polygon_id is None:
             raise ValidationError(f"polygon is missing required property: {polygon_id_field}")
         if polygon_id in seen_ids:
-            raise ValidationError(f"duplicate polygon identifier: {polygon_id!r}")
+            _raise_duplicate_identifier(
+                identifier_label="polygon",
+                entity="polygon",
+                index=index,
+                field=polygon_id_field,
+            )
         seen_ids.add(polygon_id)
         properties[count_field] = sum(1 for point in point_geometries if polygon.covers(point))
         output.append(make_feature(polygon, properties))
