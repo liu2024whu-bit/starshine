@@ -64,12 +64,12 @@ existing public surface easier to understand, verify, and extend.
 - [ ] publish a reproducibility note from an independent environment
 - [x] enforce documentation-index ownership, local-link validity, and documentation-tree containment
   in the existing public-repository audit
-- [ ] audit the documentation set for duplicated or conflicting normative statements now that every
+- [x] audit the documentation set for duplicated or conflicting normative statements now that every
   top-level page is forced through the ownership index
 - [x] remove the temporary second console entrypoint and enforce one installed command tree
 - [x] retire private CLI input-binding migration shims so Preflight and Run use one planner directly
-- [ ] continue the public Python/CLI overlap audit across inspection, inventory, report output, and I/O
-  adapters; consolidate only when it removes real branches or repeated policy
+- [x] complete the public Python/CLI overlap audit across inspection, inventory, report output, and I/O
+  adapters; consolidate repeated policy while retaining intentional boundary validation
 - [ ] strengthen dependency-direction checks where remaining public modules still rely only on
   documentation rather than executable architecture tests
 - [ ] improve failure diagnostics where two layers currently report the same root cause differently
