@@ -124,3 +124,82 @@ def test_inspection_dependency_boundary_is_read_only():
         "workflow",
     ):
         assert "inspection" not in _relative_imports(module)
+
+
+def test_data_free_workflow_reports_depend_outward_from_the_canonical_plan():
+    planning_imports = _relative_imports("planning")
+    assert {"manifest", "operator_registry", "workflow"}.issubset(planning_imports)
+    assert planning_imports.isdisjoint(
+        {
+            "_cli_layer_sources",
+            "_cli_run_output",
+            "contracts",
+            "explain",
+            "geojson",
+            "geopackage",
+            "graph",
+            "io",
+            "operators",
+            "preflight",
+            "preflight_sarif",
+        }
+    )
+
+    graph_imports = _relative_imports("graph")
+    assert "planning" in graph_imports
+    assert graph_imports.isdisjoint(
+        {
+            "_cli_layer_sources",
+            "_cli_run_output",
+            "contracts",
+            "explain",
+            "geojson",
+            "geopackage",
+            "io",
+            "operator_registry",
+            "operators",
+            "preflight",
+            "preflight_sarif",
+            "workflow",
+        }
+    )
+
+    explanation_imports = _relative_imports("explain")
+    assert {"graph", "planning"}.issubset(explanation_imports)
+    assert explanation_imports.isdisjoint(
+        {
+            "_cli_layer_sources",
+            "_cli_run_output",
+            "contracts",
+            "geojson",
+            "geopackage",
+            "io",
+            "operator_registry",
+            "operators",
+            "preflight",
+            "preflight_sarif",
+            "workflow",
+        }
+    )
+
+    contract_imports = _relative_imports("contracts")
+    assert {"contract_specs", "operator_registry", "planning"}.issubset(contract_imports)
+    assert contract_imports.isdisjoint(
+        {
+            "_cli_layer_sources",
+            "_cli_run_output",
+            "explain",
+            "geojson",
+            "geopackage",
+            "graph",
+            "io",
+            "operators",
+            "preflight",
+            "preflight_sarif",
+            "workflow",
+        }
+    )
+
+    derived_reports = {"contracts", "explain", "graph", "planning"}
+    for module in ("operator_registry", "operators", "workflow"):
+        assert _relative_imports(module).isdisjoint(derived_reports)
