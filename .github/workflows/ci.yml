@@ -12,8 +12,8 @@ jobs:
   repository-audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
       - run: python scripts/audit_public_repository.py
@@ -24,8 +24,8 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
@@ -39,7 +39,7 @@ jobs:
           2>&1 | tee pytest-${{ matrix.python-version }}.log
       - name: Upload test diagnostics
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pytest-failure-${{ matrix.python-version }}
           path: |
@@ -51,8 +51,8 @@ jobs:
   geopackage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
@@ -66,7 +66,7 @@ jobs:
           2>&1 | tee pytest-geopackage.log
       - name: Upload GeoPackage test diagnostics
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pytest-failure-geopackage
           path: |
@@ -79,8 +79,8 @@ jobs:
     needs: [repository-audit]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
@@ -93,7 +93,7 @@ jobs:
           python -m benchmarks.spatial_index --repeat 1
           --output spatial-index-report.json
       - run: python scripts/check_spatial_index_benchmark.py spatial-index-report.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: starshine-vector-benchmark
           path: |
@@ -106,8 +106,8 @@ jobs:
     needs: [repository-audit]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
@@ -119,7 +119,7 @@ jobs:
         run: python scripts/reproduce_installed_core.py --output reproduction-report.json
       - name: Validate reproduction report schema and semantics
         run: python scripts/check_reproduction_report.py reproduction-report.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: starshine-source-reproduction
           path: |
@@ -132,8 +132,8 @@ jobs:
     needs: [repository-audit, test, geopackage, benchmark, source-reproduction]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
@@ -148,7 +148,7 @@ jobs:
           2>&1 | tee release-artifact-check.log
       - name: Upload release inspection diagnostics
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-artifact-inspection-failure
           path: |
@@ -156,13 +156,13 @@ jobs:
             dist/
           if-no-files-found: error
           retention-days: 7
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: starshine-geo-dist
           path: dist/
           if-no-files-found: error
           retention-days: 14
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: starshine-wheel-smoke-scripts
           path: |
@@ -184,14 +184,14 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: starshine-geo-dist
           path: dist
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: starshine-wheel-smoke-scripts
           path: smoke
@@ -230,7 +230,7 @@ jobs:
             2>&1 | tee wheel-reproduction-${{ matrix.python-version }}.log
       - name: Upload wheel-smoke diagnostics
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wheel-smoke-failure-${{ matrix.python-version }}
           path: |
@@ -252,14 +252,14 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: starshine-geo-dist
           path: dist
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: starshine-wheel-smoke-scripts
           path: smoke
@@ -293,7 +293,7 @@ jobs:
             2>&1 | tee gpkg-reproduction-${{ matrix.python-version }}.log
       - name: Upload GeoPackage Preflight wheel diagnostics
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gpkg-preflight-wheel-failure-${{ matrix.python-version }}
           path: |
@@ -313,14 +313,14 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: starshine-geo-dist
           path: dist
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: starshine-wheel-smoke-scripts
           path: smoke
@@ -335,7 +335,7 @@ jobs:
           subprocess.check_call([sys.executable, str(script), '--output', 'reproduction-report.json'])"
       - name: Upload cross-platform reproduction evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: reproduction-${{ matrix.os }}
           path: reproduction-report.json
