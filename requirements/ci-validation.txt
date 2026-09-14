@@ -1,7 +1,7 @@
 # Direct validation-tool baseline for pull-request and main CI.
 # Reviewed: 2026-09-03. This is a constraints file, not a transitive lockfile.
-ruff==0.16.5
+ruff==0.16.7
 pytest==9.1.1
 jsonschema==4.26.0
-build==1.6.0
+build==1.6.1
 twine==7.0.0
