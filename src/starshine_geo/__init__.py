@@ -38,6 +38,7 @@ from .operator_registry import OPERATOR_REGISTRY, operator_catalog
 from .operators import (
     buffer_features,
     clip_features,
+    difference_features,
     dissolve_features,
     intersect_features,
     join_points_to_polygons,
@@ -84,6 +85,7 @@ __all__ = [
     "calculate_geometry_metrics",
     "clip_features",
     "digest_json",
+    "difference_features",
     "dissolve_features",
     "explain_workflow",
     "inspect_feature_collection",
