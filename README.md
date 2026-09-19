@@ -45,8 +45,8 @@ The current main-branch development snapshot provides:
 - a deterministic synthetic vector benchmark corpus plus indexed-versus-exhaustive semantic and
   timing evidence with schema-checked JSON reports;
 - self-created sample data and reproducible command-line examples;
-- public-boundary, package-build, Python 3.10–3.12 source and built-wheel CI checks, plus clean
-  installed-wheel reproduction on Linux, Windows, and macOS.
+- public-boundary, package-build, Python 3.10–3.14 source and built-wheel CI checks, plus clean
+  installed-wheel reproduction on Linux, Windows, and macOS with Python 3.14.
 
 ## Install for development
 
