@@ -4,6 +4,10 @@ Starshine is developed from the public repository and its synthetic, redistribut
 roadmap is a guardrail against adding disconnected features faster than the architecture and review
 surface can absorb them.
 
+Roadmap headings describe development phases, not proof that every matching package version was
+published. The current `main` branch builds `0.7.0.dev0`; the latest stable release metadata remains
+`0.4.0` until a separately verified stable release is prepared.
+
 ## 0.1 — Public core
 
 - [x] GeoJSON validation
