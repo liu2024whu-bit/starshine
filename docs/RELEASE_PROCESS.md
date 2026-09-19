@@ -38,6 +38,7 @@ python -m benchmarks.spatial_index --repeat 3 --output spatial-index-report.json
 python scripts/check_spatial_index_benchmark.py spatial-index-report.json
 ruff check .
 python -m pytest
+python scripts/refresh_public_evidence.py
 python -m build
 python -m twine check dist/*
 python scripts/check_release_artifacts.py dist
