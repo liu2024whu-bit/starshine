@@ -33,6 +33,10 @@ All notable public changes are documented here.
 - privacy-aware source inventory for GeoJSON and GeoPackage, exposing layer structure, spatial state,
   CRS state, field schema, and feature-count availability without attribute values; bounds and
   potentially expensive GeoPackage counts remain explicit opt-ins.
+- a CRS-safe `difference_features()` API and Workflow `difference` operator that subtract the union
+  of polygon masks while preserving source properties and order, omitting erased features, reusing
+  registry-derived contracts and Preflight, and sharing installed-wheel overlay evidence with
+  `intersection` rather than adding another smoke-test path.
 
 ### Changed
 
