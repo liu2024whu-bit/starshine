@@ -70,12 +70,13 @@ existing public surface easier to understand, verify, and extend.
 - [x] retire private CLI input-binding migration shims so Preflight and Run use one planner directly
 - [x] complete the public Python/CLI overlap audit across inspection, inventory, report output, and I/O
   adapters; consolidate repeated policy while retaining intentional boundary validation
-- [ ] strengthen dependency-direction checks where remaining public modules still rely only on
-  documentation rather than executable architecture tests
-- [ ] improve failure diagnostics where two layers currently report the same root cause differently
-- [ ] review the current operator set against concrete spatial-analysis gaps before proposing 0.7;
-  add an operator only when it reuses the existing registry, contracts, Preflight, tests, and evidence
-  model instead of creating a parallel execution path
+- [x] strengthen dependency-direction checks for data-free planning/report layers with executable
+  architecture tests in addition to the existing Preflight, quality, indexing, and CLI/I/O checks
+- [x] align duplicate-identifier failures across Preflight and direct operators without echoing
+  property values into runtime diagnostics
+- [x] review the current operator set against concrete spatial-analysis gaps and select polygon-mask
+  Difference as the first bounded 0.7 addition because it reuses registry, contracts, Preflight,
+  Workflow execution, I/O adapters, tests, and release evidence without a parallel execution path
 
 A feature is not considered complete merely because its implementation works. New public behavior must
 have a clear owner in the architecture, a stable contract, synthetic or redistributable evidence,
@@ -84,5 +85,14 @@ appropriate tests, documentation without duplication, and clean distribution/rep
 For 0.6, deletion, consolidation, executable architecture rules, and clearer diagnostics are preferred
 over increasing module count. A 0.7 feature phase should begin only after the remaining overlap and
 normative-document audits are small enough that new behavior has an obvious place to live.
+
+## 0.7 — Bounded overlay expansion
+
+- [x] CRS-safe polygon-mask Difference/Erase through the existing public API and Workflow registry
+- [ ] evaluate the next spatial-analysis gap only after Difference has independent downstream use or
+  evidence; avoid broad union/identity/join-policy expansion without a concrete contract need
+
+The independent-environment reproducibility note remains an open evidence task from 0.6; it does not
+change the dependency or execution architecture used by bounded 0.7 operators.
 
 See [the documentation index](docs/README.md) for the current ownership map.

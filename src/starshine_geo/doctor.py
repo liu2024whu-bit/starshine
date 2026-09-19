@@ -76,6 +76,7 @@ def _registry_check() -> str:
     required = {
         "buffer",
         "clip",
+        "difference",
         "dissolve",
         "geometry_metrics",
         "intersection",

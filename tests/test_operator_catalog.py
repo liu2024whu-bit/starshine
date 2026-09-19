@@ -55,6 +55,7 @@ def test_operator_catalog_is_stable_and_defensive():
         "reproject",
         "intersection",
         "clip",
+        "difference",
     ]
 
     assert all(

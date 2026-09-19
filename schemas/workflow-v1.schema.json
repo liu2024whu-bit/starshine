@@ -39,6 +39,9 @@
             "$ref": "#/$defs/clipStep"
           },
           {
+            "$ref": "#/$defs/differenceStep"
+          },
+          {
             "$ref": "#/$defs/joinPointsToPolygonsStep"
           },
           {
@@ -271,6 +274,45 @@
       "properties": {
         "operation": {
           "const": "clip"
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "input",
+            "mask"
+          ],
+          "properties": {
+            "input": {
+              "$ref": "#/$defs/layerReference"
+            },
+            "mask": {
+              "$ref": "#/$defs/layerReference"
+            }
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {},
+          "default": {}
+        },
+        "output": {
+          "$ref": "#/$defs/outputName"
+        }
+      }
+    },
+    "differenceStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation",
+        "inputs",
+        "output"
+      ],
+      "properties": {
+        "operation": {
+          "const": "difference"
         },
         "inputs": {
           "type": "object",

@@ -28,7 +28,7 @@ instead of creating another page.
 
 The operator-specific pages are deliberately short and normative:
 
-- [CLIP.md](CLIP.md) — CRS-safe clipping semantics.
+- [CLIP.md](CLIP.md) — shared CRS-safe polygon-mask clip and difference semantics.
 - [INTERSECTION.md](INTERSECTION.md) — deterministic pairwise intersection semantics.
 - [NEAREST.md](NEAREST.md) — deterministic nearest-feature matching.
 - [SPATIAL_JOIN.md](SPATIAL_JOIN.md) — point-in-polygon join and ambiguity rules.

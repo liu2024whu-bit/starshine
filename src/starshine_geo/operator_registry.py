@@ -19,6 +19,7 @@ from .metrics import calculate_geometry_metrics
 from .operators import (
     buffer_features,
     clip_features,
+    difference_features,
     dissolve_features,
     intersect_features,
     join_points_to_polygons,
@@ -257,6 +258,13 @@ def _execute_clip(
     return clip_features(inputs["input"], inputs["mask"])
 
 
+def _execute_difference(
+    inputs: dict[str, FeatureCollection], parameters: dict[str, Any]
+) -> FeatureCollection:
+    del parameters
+    return difference_features(inputs["input"], inputs["mask"])
+
+
 def _execute_point_polygon_join(
     inputs: dict[str, FeatureCollection], parameters: dict[str, Any]
 ) -> FeatureCollection:
@@ -279,6 +287,27 @@ def _execute_reproject(
     inputs: dict[str, FeatureCollection], parameters: dict[str, Any]
 ) -> FeatureCollection:
     return reproject_features(inputs["input"], **parameters)
+
+
+_POLYGON_MASK_INPUTS = (
+    InputSpec(
+        "input",
+        "FeatureCollection whose properties and order are preserved.",
+        InputContractSpec(
+            crs_mode="declared",
+            equivalent_crs_to="mask",
+        ),
+    ),
+    InputSpec(
+        "mask",
+        "Polygon or MultiPolygon FeatureCollection in an equivalent CRS.",
+        InputContractSpec(
+            geometry_types=("Polygon", "MultiPolygon"),
+            crs_mode="declared",
+            equivalent_crs_to="input",
+        ),
+    ),
+)
 
 
 _OPERATOR_SPECS = (
@@ -697,28 +726,18 @@ _OPERATOR_SPECS = (
     OperatorSpec(
         name="clip",
         summary="Intersect each input feature with the union of a polygon mask collection.",
-        inputs=(
-            InputSpec(
-                "input",
-                "FeatureCollection whose properties and order are preserved.",
-                InputContractSpec(
-                    crs_mode="declared",
-                    equivalent_crs_to="mask",
-                ),
-            ),
-            InputSpec(
-                "mask",
-                "Polygon or MultiPolygon FeatureCollection in an equivalent CRS.",
-                InputContractSpec(
-                    geometry_types=("Polygon", "MultiPolygon"),
-                    crs_mode="declared",
-                    equivalent_crs_to="input",
-                ),
-            ),
-        ),
+        inputs=_POLYGON_MASK_INPUTS,
         parameters=(),
         output_crs="input layer; mask must declare an equivalent CRS",
         executor=_execute_clip,
+    ),
+    OperatorSpec(
+        name="difference",
+        summary="Keep each input feature portion outside the union of a polygon mask collection.",
+        inputs=_POLYGON_MASK_INPUTS,
+        parameters=(),
+        output_crs="input layer; mask must declare an equivalent CRS",
+        executor=_execute_difference,
     ),
 )
 
