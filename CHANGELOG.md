@@ -54,9 +54,10 @@ All notable public changes are documented here.
 - `main` now builds a PEP 440 development snapshot instead of reusing the `0.4.0` stable version
   for unreleased behavior; release checks distinguish development artifacts from tagged release
   metadata while retaining `0.4.0` citation and release notes as the latest stable snapshot.
-- source-test CI now preserves pytest's exit status when teeing logs, and deterministic public
-  workflow evidence has a single refresh/check entrypoint so stale contract, explanation, graph,
-  Preflight, and SARIF examples cannot be hidden behind a false-green job.
+- CI now preserves producer exit status whenever diagnostic output is tee'd and the public
+  repository audit rejects unguarded tee pipelines; deterministic workflow evidence also has a
+  single refresh/check entrypoint so stale contract, explanation, graph, Preflight, and SARIF
+  examples cannot be hidden behind a false-green job.
 - source and clean installed-wheel compatibility evidence now spans Python 3.10 through 3.14;
   cross-platform reproduction and latest-compatible release tooling use Python 3.14 as the newest
   tested endpoint while Python 3.10 remains an explicit lower-bound test.
