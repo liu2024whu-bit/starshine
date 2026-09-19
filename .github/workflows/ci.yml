@@ -34,7 +34,7 @@ jobs:
       - run: ruff check .
       - name: Run tests
         run: >-
-          pytest -q --tb=short
+          python -m pytest -q --tb=short
           --junitxml=pytest-${{ matrix.python-version }}.xml
           2>&1 | tee pytest-${{ matrix.python-version }}.log
       - name: Upload test diagnostics
@@ -61,7 +61,7 @@ jobs:
       - run: ruff check .
       - name: Run GeoPackage tests
         run: >-
-          pytest -q --tb=short
+          python -m pytest -q --tb=short
           --junitxml=pytest-geopackage.xml
           2>&1 | tee pytest-geopackage.log
       - name: Upload GeoPackage test diagnostics
