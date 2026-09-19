@@ -108,9 +108,13 @@ On Windows:
 ```text
 python -m venv .wheel-venv
 .wheel-venv\Scripts\python.exe -m pip install --upgrade pip
-.wheel-venv\Scripts\python.exe -m pip install dist\starshine_geo-0.4.0-py3-none-any.whl
+.wheel-venv\Scripts\python.exe -c "import pathlib, subprocess, sys; wheel = next(pathlib.Path('dist').glob('*.whl')); subprocess.check_call([sys.executable, '-m', 'pip', 'install', str(wheel)])"
 .wheel-venv\Scripts\python.exe scripts\reproduce_installed_core.py
 ```
+
+The wheel lookup is intentionally version-independent. Development builds use a `.devN` package
+version, while a tagged release uses its stable version; reproduction instructions should work for
+both without editing a hard-coded filename.
 
 The repository's CI performs the same idea without checking out source code in the installed-wheel
 jobs. The exact CI-built wheel is also installed and reproduced on Linux, Windows, and macOS.
