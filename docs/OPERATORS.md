@@ -52,7 +52,8 @@ full contract of an operator that already has a focused reference page.
 | Operator | Role | Human contract owner |
 | --- | --- | --- |
 | `buffer` | projected-distance buffering with explicit CRS choices | catalog and Workflow schema |
-| `clip` | CRS-safe clipping against polygon masks | [CLIP.md](CLIP.md) |
+| `clip` | keep input geometry inside polygon masks | [CLIP.md](CLIP.md) |
+| `difference` | keep input geometry outside polygon masks | [CLIP.md](CLIP.md) |
 | `dissolve` | deterministic grouping and geometry union | catalog and Workflow schema |
 | `geometry_metrics` | projected area and length fields | [GEOMETRY_METRICS.md](GEOMETRY_METRICS.md) |
 | `intersection` | deterministic pairwise overlay | [INTERSECTION.md](INTERSECTION.md) |
