@@ -57,6 +57,9 @@ All notable public changes are documented here.
 - source-test CI now preserves pytest's exit status when teeing logs, and deterministic public
   workflow evidence has a single refresh/check entrypoint so stale contract, explanation, graph,
   Preflight, and SARIF examples cannot be hidden behind a false-green job.
+- source and clean installed-wheel compatibility evidence now spans Python 3.10 through 3.14;
+  cross-platform reproduction and latest-compatible release tooling use Python 3.14 as the newest
+  tested endpoint while Python 3.10 remains an explicit lower-bound test.
 
 ## [0.4.0] - 2026-07-29
 
