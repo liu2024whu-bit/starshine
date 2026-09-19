@@ -3,7 +3,13 @@ from __future__ import annotations
 import pytest
 from shapely.geometry import shape
 
-from starshine_geo import clip_features, run_workflow
+from starshine_geo import (
+    build_workflow_contract,
+    clip_features,
+    difference_features,
+    preflight_workflow_inputs,
+    run_workflow,
+)
 from starshine_geo.errors import ValidationError, WorkflowValidationError
 from starshine_geo.workflow import validate_workflow
 
@@ -161,3 +167,100 @@ def test_clip_workflow_rejects_parameters_before_execution():
         "step_index": 0,
         "operation": "clip",
     }
+
+def test_difference_handles_partial_disjoint_and_complete_erase_deterministically():
+    source = _collection(
+        [
+            _feature(_square(0, 0, 10, 10), id="partial", rank=1),
+            _feature(_square(20, 0, 30, 10), id="disjoint", rank=2),
+            _feature(_square(40, 0, 50, 10), id="erased", rank=3),
+        ]
+    )
+    mask = _collection(
+        [
+            _feature(_square(5, -5, 10, 15), mask_id="partial-cut"),
+            _feature(_square(35, -5, 55, 15), mask_id="full-cut"),
+        ]
+    )
+
+    first = difference_features(source, mask)
+    second = difference_features(source, mask)
+
+    assert first == second
+    assert first["starshine:crs"] == CRS
+    assert [feature["properties"]["id"] for feature in first["features"]] == [
+        "partial",
+        "disjoint",
+    ]
+    assert [feature["properties"]["rank"] for feature in first["features"]] == [1, 2]
+    assert [shape(feature["geometry"]).bounds for feature in first["features"]] == [
+        (0.0, 0.0, 5.0, 10.0),
+        (20.0, 0.0, 30.0, 10.0),
+    ]
+    assert [shape(feature["geometry"]).area for feature in first["features"]] == [50.0, 100.0]
+
+
+def test_difference_empty_mask_preserves_geometry_without_aliasing_inputs():
+    source = _collection([_feature(_square(0, 0, 10, 10), id="source")])
+    result = difference_features(source, _collection([]))
+
+    assert result["starshine:crs"] == CRS
+    assert shape(result["features"][0]["geometry"]).equals(shape(source["features"][0]["geometry"]))
+    assert result["features"][0]["properties"] == {"id": "source"}
+
+    result["features"][0]["properties"]["id"] = "changed"
+    assert source["features"][0]["properties"]["id"] == "source"
+
+
+@pytest.mark.parametrize(
+    ("source_crs", "mask_crs", "mask_geometry", "message"),
+    [
+        (None, CRS, _square(0, 0, 10, 10), "input collection must declare"),
+        (CRS, None, _square(0, 0, 10, 10), "mask collection must declare"),
+        (CRS, "EPSG:4326", _square(0, 0, 10, 10), "equivalent CRS"),
+        (CRS, CRS, {"type": "Point", "coordinates": [5, 5]}, "Polygon or MultiPolygon"),
+    ],
+)
+def test_difference_requires_explicit_equivalent_crs_and_polygon_mask(
+    source_crs,
+    mask_crs,
+    mask_geometry,
+    message,
+):
+    source = _collection([_feature(_square(0, 0, 10, 10))], crs=source_crs)
+    mask = _collection([_feature(mask_geometry)], crs=mask_crs)
+
+    with pytest.raises(ValidationError, match=message):
+        difference_features(source, mask)
+
+
+def test_difference_workflow_contract_and_preflight_share_registry_contract():
+    source = _collection([_feature(_square(0, 0, 10, 10), id="source")])
+    mask = _collection([_feature(_square(5, -5, 15, 15), id="mask")])
+    workflow = {
+        "version": 1,
+        "steps": [
+            {
+                "operation": "difference",
+                "inputs": {"input": "source", "mask": "mask"},
+                "parameters": {},
+                "output": "remaining",
+            }
+        ],
+    }
+
+    direct = difference_features(source, mask)
+    via_workflow = run_workflow(workflow, {"source": source, "mask": mask})["remaining"]
+    assert via_workflow == direct
+
+    contract = build_workflow_contract(workflow, {"source", "mask"})
+    source_use = next(layer for layer in contract["layers"] if layer["name"] == "source")["uses"][0]
+    mask_use = next(layer for layer in contract["layers"] if layer["name"] == "mask")["uses"][0]
+    assert source_use["crs"] == {"mode": "declared", "equivalent_to_layer": "mask"}
+    assert mask_use["geometry_types"] == ["Polygon", "MultiPolygon"]
+    assert mask_use["crs"] == {"mode": "declared", "equivalent_to_layer": "source"}
+
+    preflight = preflight_workflow_inputs(workflow, {"source": source, "mask": mask})
+    assert preflight["valid"] is True
+    assert preflight["error_count"] == 0
+
