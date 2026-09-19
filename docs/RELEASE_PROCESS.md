@@ -129,8 +129,8 @@ the downloaded wheel and run the public installed-wheel smoke scripts, which ver
   Preflight bindings, repository-relative SARIF locations, pre-I/O duplicate checks, and source
   overwrite protection on every supported Python version;
 - reprojection, projected geometry metrics, deterministic STRtree-backed nearest matching,
-  point-in-polygon joining, and pairwise intersection overlay work through installed APIs and
-  workflow execution;
+  point-in-polygon joining, pairwise intersection, and polygon-mask Difference work through
+  installed APIs and workflow execution;
 - the installed inspection API and `starshine inspect` command produce matching reports;
 - valid and invalid workflow diagnostics work through the installed console command;
 - a self-created point-within-polygon workflow runs through both the Python API and CLI;
