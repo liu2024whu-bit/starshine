@@ -1,7 +1,38 @@
 {
   "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
   "runs": [
     {
+      "tool": {
+        "driver": {
+          "name": "Starshine Geo Workflow Preflight",
+          "informationUri": "https://github.com/liu2024whu-bit/starshine",
+          "semanticVersion": "0.7.0.dev0",
+          "rules": [
+            {
+              "id": "starshine.preflight.deferred_crs_equivalence",
+              "name": "Deferred Crs Equivalence",
+              "shortDescription": {
+                "text": "Deferred Crs Equivalence"
+              },
+              "fullDescription": {
+                "text": "CRS equivalence depends on a layer produced by an earlier workflow step."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "properties": {
+                "tags": [
+                  "correctness",
+                  "geospatial",
+                  "workflow-preflight"
+                ],
+                "precision": "high"
+              }
+            }
+          ]
+        }
+      },
       "automationDetails": {
         "id": "starshine/preflight/examples/plan.workflow.json/"
       },
@@ -10,36 +41,16 @@
           "executionSuccessful": true
         }
       ],
-      "properties": {
-        "contractDigest": "sha256:babf381514dc0334fc57958cf4cde927fe0e3447adc82b68595f398adc396e20",
-        "errorCount": 0,
-        "preflightDigest": "sha256:4e512b027dbe608ba6d8e9ad237603af7a12798fa5aeb624e864f190bb127e09",
-        "valid": true,
-        "warningCount": 1,
-        "workflowDigest": "sha256:ce8caa2b82cb5c54059f4b48db3763620c3ced37263081ad457252121dff66ef"
-      },
       "results": [
         {
+          "ruleId": "starshine.preflight.deferred_crs_equivalence",
+          "ruleIndex": 0,
           "level": "warning",
+          "message": {
+            "text": "CRS equivalence depends on a layer produced by an earlier workflow step. (Layer mask; step 1; operation clip; input mask; occurrences 1)."
+          },
           "locations": [
             {
-              "logicalLocations": [
-                {
-                  "fullyQualifiedName": "layer:mask",
-                  "kind": "module",
-                  "name": "mask"
-                },
-                {
-                  "fullyQualifiedName": "workflow.step[1]:clip",
-                  "kind": "function",
-                  "name": "step 1: clip"
-                },
-                {
-                  "fullyQualifiedName": "workflow.input:mask",
-                  "kind": "parameter",
-                  "name": "mask"
-                }
-              ],
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "examples/data/clip-mask.geojson",
@@ -48,57 +59,46 @@
                 "region": {
                   "startLine": 1
                 }
-              }
+              },
+              "logicalLocations": [
+                {
+                  "name": "mask",
+                  "fullyQualifiedName": "layer:mask",
+                  "kind": "module"
+                },
+                {
+                  "name": "step 1: clip",
+                  "fullyQualifiedName": "workflow.step[1]:clip",
+                  "kind": "function"
+                },
+                {
+                  "name": "mask",
+                  "fullyQualifiedName": "workflow.input:mask",
+                  "kind": "parameter"
+                }
+              ]
             }
           ],
-          "message": {
-            "text": "CRS equivalence depends on a layer produced by an earlier workflow step. (Layer mask; step 1; operation clip; input mask; occurrences 1)."
-          },
           "partialFingerprints": {
             "starshinePreflight/v1": "724a949a519219cd8356a0f9c1541a561b2667e0b66515dc6e86332757d185d1"
           },
           "properties": {
-            "inputName": "mask",
             "layer": "mask",
             "occurrenceCount": 1,
+            "stepIndex": 1,
             "operation": "clip",
-            "stepIndex": 1
-          },
-          "ruleId": "starshine.preflight.deferred_crs_equivalence",
-          "ruleIndex": 0
+            "inputName": "mask"
+          }
         }
       ],
-      "tool": {
-        "driver": {
-          "informationUri": "https://github.com/liu2024whu-bit/starshine",
-          "name": "Starshine Geo Workflow Preflight",
-          "rules": [
-            {
-              "defaultConfiguration": {
-                "level": "warning"
-              },
-              "fullDescription": {
-                "text": "CRS equivalence depends on a layer produced by an earlier workflow step."
-              },
-              "id": "starshine.preflight.deferred_crs_equivalence",
-              "name": "Deferred Crs Equivalence",
-              "properties": {
-                "precision": "high",
-                "tags": [
-                  "correctness",
-                  "geospatial",
-                  "workflow-preflight"
-                ]
-              },
-              "shortDescription": {
-                "text": "Deferred Crs Equivalence"
-              }
-            }
-          ],
-          "semanticVersion": "0.4.0"
-        }
+      "properties": {
+        "workflowDigest": "sha256:ce8caa2b82cb5c54059f4b48db3763620c3ced37263081ad457252121dff66ef",
+        "contractDigest": "sha256:9ef8e5b655d8fa58a0047b48f98445ba4e4bd0e01d2dacbbc495c9c1720ceb0c",
+        "preflightDigest": "sha256:2520bd183a7b8a0f030758470fe94c6e96bf2ec6397ddc1c628245f509c216dc",
+        "valid": true,
+        "errorCount": 0,
+        "warningCount": 1
       }
     }
-  ],
-  "version": "2.1.0"
+  ]
 }
