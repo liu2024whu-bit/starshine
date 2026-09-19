@@ -3,10 +3,10 @@
 This guide is the shortest supported route from a fresh clone or built wheel to a verified working
 Starshine installation. It uses only public repository content and self-created temporary data.
 
-Starshine currently runs its full source and installed-wheel CI on Python 3.10, 3.11, and 3.12.
+Starshine currently runs its full source and installed-wheel CI on Python 3.10 through 3.14.
 A separate installed-wheel reproduction matrix also runs on Linux, Windows, and macOS with Python
-3.11. The package metadata allows Python 3.10 and newer, but those are the versions and platforms
-with explicit public CI evidence.
+3.14. The package metadata allows Python 3.10 and newer; Python 3.10–3.14 are the versions with
+explicit public CI evidence.
 
 ## 1. Clone and create an isolated environment
 

@@ -112,8 +112,8 @@ Source-checkout tests use an editable installation so contributors can iterate q
 by themselves, prove that a built wheel contains every required module, declares every runtime
 dependency, or exposes the console entry point correctly.
 
-CI therefore builds the wheel once and passes that exact artifact to clean Python 3.10, 3.11, and
-3.12 jobs. Those jobs do not check out the repository and do not use `pip install -e`. They install
+CI therefore builds the wheel once and passes that exact artifact to clean Python 3.10 through
+3.14 jobs. Those jobs do not check out the repository and do not use `pip install -e`. They install
 the downloaded wheel and run the public installed-wheel smoke scripts, which verify:
 
 - the package imports from the installed environment rather than the working tree;
@@ -140,8 +140,8 @@ the downloaded wheel and run the public installed-wheel smoke scripts, which ver
 Installation and smoke output are retained as short CI artifacts when a matrix job fails. The
 installed-wheel scripts and the self-created reproduction harness are required in the source
 distribution so third parties can repeat the same checks after building locally. The standard wheel
-matrix runs the reproduction harness on Python 3.10, 3.11, and 3.12. A second matrix installs the
-exact same wheel on Linux, Windows, and macOS with Python 3.11 and runs the harness without checking
+matrix runs the reproduction harness on Python 3.10 through 3.14. A second matrix installs the
+exact same wheel on Linux, Windows, and macOS with Python 3.14 and runs the harness without checking
 out the repository. Schema validation of the reproduction report is deliberately performed in the
 source/dev job; the end-user wheel jobs require only the normal runtime dependencies. The benchmark
 artifact contains both the complete corpus report and the indexed-versus-exhaustive report;
