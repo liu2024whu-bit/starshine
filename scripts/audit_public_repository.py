@@ -39,6 +39,8 @@ _ABSOLUTE_PATH_PATTERNS = {
     "Windows user path": re.compile(r"[A-Za-z]:[\\/](?:Users|home)[\\/]"),
 }
 _MARKDOWN_LINK_PATTERN = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
+_RUN_BLOCK_PATTERN = re.compile(r"^(?P<indent>\s*)run:\s*(?P<value>.*)$")
+_TEE_PIPELINE_PATTERN = re.compile(r"\|\s*tee\b")
 
 
 def _tracked_files() -> list[Path]:
@@ -105,6 +107,52 @@ def _documentation_index_violations(docs_root: Path = Path("docs")) -> list[str]
     return violations
 
 
+def _workflow_pipeline_violations(
+    workflows_root: Path = Path(".github/workflows"),
+) -> list[str]:
+    """Require tee-based workflow diagnostics to preserve the producer exit status."""
+    if not workflows_root.is_dir():
+        return []
+
+    violations: list[str] = []
+    for path in sorted(
+        item
+        for pattern in ("*.yml", "*.yaml")
+        for item in workflows_root.glob(pattern)
+        if item.is_file()
+    ):
+        lines = path.read_text(encoding="utf-8").splitlines()
+        index = 0
+        while index < len(lines):
+            match = _RUN_BLOCK_PATTERN.match(lines[index])
+            if match is None:
+                index += 1
+                continue
+
+            value = match.group("value").strip()
+            block_lines = [value] if value and value[0] not in "|>" else []
+            end = index + 1
+            if not block_lines:
+                indent = len(match.group("indent"))
+                while end < len(lines):
+                    line = lines[end]
+                    if line.strip():
+                        line_indent = len(line) - len(line.lstrip())
+                        if line_indent <= indent:
+                            break
+                    block_lines.append(line)
+                    end += 1
+
+            block = "\n".join(block_lines)
+            if _TEE_PIPELINE_PATTERN.search(block) and "set -o pipefail" not in block:
+                violations.append(
+                    f"workflow tee pipeline lacks pipefail: {path.as_posix()}:{index + 1}"
+                )
+            index = max(end, index + 1)
+
+    return violations
+
+
 def audit() -> list[str]:
     """Return public-boundary violations for tracked repository files."""
     violations: list[str] = []
@@ -141,6 +189,7 @@ def audit() -> list[str]:
                     violations.append(f"possible {name} outside tests: {normalized}")
 
     violations.extend(_documentation_index_violations())
+    violations.extend(_workflow_pipeline_violations())
     return violations
 
 

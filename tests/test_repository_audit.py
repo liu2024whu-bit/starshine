@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from scripts.audit_public_repository import _documentation_index_violations
+from scripts.audit_public_repository import (
+    _documentation_index_violations,
+    _workflow_pipeline_violations,
+)
 
 
 def _write(path: Path, text: str) -> None:
@@ -54,3 +57,57 @@ def test_documentation_index_ignores_external_and_anchor_links(tmp_path: Path) -
     )
 
     assert _documentation_index_violations(docs) == []
+
+def test_workflow_pipeline_audit_accepts_pipefail_guarded_tee(tmp_path: Path) -> None:
+    workflows = tmp_path / ".github" / "workflows"
+    _write(
+        workflows / "ci.yml",
+        """name: CI
+jobs:
+  test:
+    steps:
+      - name: Run tests
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m pytest 2>&1 | tee pytest.log
+""",
+    )
+
+    assert _workflow_pipeline_violations(workflows) == []
+
+
+def test_workflow_pipeline_audit_rejects_unguarded_tee(tmp_path: Path) -> None:
+    workflows = tmp_path / ".github" / "workflows"
+    _write(
+        workflows / "ci.yml",
+        """name: CI
+jobs:
+  build:
+    steps:
+      - name: Inspect artifacts
+        run: >-
+          python scripts/check_release_artifacts.py dist
+          2>&1 | tee release-artifact-check.log
+""",
+    )
+
+    assert _workflow_pipeline_violations(workflows) == [
+        f"workflow tee pipeline lacks pipefail: {(workflows / 'ci.yml').as_posix()}:6"
+    ]
+
+
+def test_workflow_pipeline_audit_ignores_run_blocks_without_tee(tmp_path: Path) -> None:
+    workflows = tmp_path / ".github" / "workflows"
+    _write(
+        workflows / "latest.yml",
+        """name: Latest
+jobs:
+  test:
+    steps:
+      - run: python -m pytest
+""",
+    )
+
+    assert _workflow_pipeline_violations(workflows) == []
+
