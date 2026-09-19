@@ -182,7 +182,7 @@ def difference_features(
                 raise ValidationError(f"difference failed for input feature {index}") from exc
         if difference.is_empty:
             continue
-        output.append(make_feature(difference, feature.get("properties")))
+        output.append(make_feature(difference.normalize(), feature.get("properties")))
 
     return validate_feature_collection(make_collection(output, crs=input_crs_label))
 
