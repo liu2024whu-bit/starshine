@@ -25,7 +25,8 @@ The public 0.4 line provides:
 - validated GeoJSON FeatureCollection input;
 - projected-CRS checks for distance-based work;
 - buffer, dissolve, point-within-polygon summary and join, projected geometry metrics, explicit
-  reprojection, CRS-safe clipping, deterministic pairwise intersection overlay, and STRtree-backed
+  reprojection, CRS-safe polygon-mask clip/difference, deterministic pairwise intersection overlay,
+  and STRtree-backed
   nearest-feature matching;
 - a versioned JSON workflow format and operator-specific machine-readable schema;
 - structured workflow diagnostics for structure, inputs, parameters, and CRS rules;
@@ -365,10 +366,11 @@ starshine run examples/reproject.workflow.json \
 Reprojection preserves feature order and properties, requires an explicit target CRS, and refuses a
 `source_crs` parameter that conflicts with the collection's declared `starshine:crs`.
 
-## Clip features with an explicit polygon mask
+## Clip or erase features with an explicit polygon mask
 
-The `clip` operator intersects each source feature with the union of one polygon mask collection.
-Both collections must declare equivalent CRS values; clipping never hides an implicit reprojection:
+The `clip` and `difference` operators share one CRS-safe polygon-mask contract. Clip keeps the
+portion inside the union of the mask; Difference keeps the portion outside it. Both require explicit
+equivalent CRS values and never hide an implicit reprojection:
 
 ```bash
 starshine run examples/clip.workflow.json \
@@ -378,9 +380,10 @@ starshine run examples/clip.workflow.json \
   --output examples/output/clipped.geojson
 ```
 
-The operation preserves source property objects and retained feature order, drops empty
-intersections, and retains valid boundary-only intersections. See the
-[clip contract](docs/CLIP.md).
+A Difference workflow uses the same `input` and `mask` bindings with
+`"operation": "difference"`. Both preserve source properties and retained feature order; Difference
+omits completely erased features and retains disjoint features. See the
+[polygon-mask overlay contract](docs/CLIP.md).
 
 ## Intersect two layers with explicit pair provenance
 
