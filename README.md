@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/liu2024whu-bit/starshine/actions/workflows/ci.yml/badge.svg)](https://github.com/liu2024whu-bit/starshine/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/status-0.4.0%20research%20preview-orange.svg)](ROADMAP.md)
+[![Status](https://img.shields.io/badge/status-0.7.0.dev0%20development%20snapshot-blue.svg)](ROADMAP.md)
 
 Starshine Geo is a small, auditable open-source core for reproducible spatial-analysis workflows.
 It focuses on the parts that must remain explicit in GIS automation: coordinate-reference-system
@@ -20,7 +20,7 @@ Spatial workflows often fail silently when geographic coordinates are treated as
 geometries enter overlays, output names overwrite inputs, or planners call unregistered functions.
 Starshine makes those boundaries visible, machine-readable, and executable.
 
-The public 0.4 line provides:
+The current main-branch development snapshot provides:
 
 - validated GeoJSON FeatureCollection input;
 - projected-CRS checks for distance-based work;
@@ -481,17 +481,19 @@ source-distribution members. See [Open-source scope](docs/OPEN_SOURCE_SCOPE.md) 
 
 ## Releases
 
-Version metadata is sourced from `pyproject.toml`, while runtime code reads the installed package
-metadata. CI builds and inspects one wheel and one source distribution, then installs the exact wheel
-in clean supported-Python jobs before a release can be tagged. See the
-[release process](docs/RELEASE_PROCESS.md), [0.4.0 release notes](docs/releases/0.4.0.md), and
-[changelog](CHANGELOG.md).
+`pyproject.toml` identifies the artifact being built. The `main` branch uses a PEP 440 development
+version so CI artifacts cannot be confused with the last stable release, while `CITATION.cff` and
+versioned release notes continue to identify that stable snapshot until a new release is prepared.
+CI builds and inspects one wheel and one source distribution, then installs the exact wheel in clean
+supported-Python jobs. See the [release process](docs/RELEASE_PROCESS.md),
+[0.4.0 release notes](docs/releases/0.4.0.md), and [changelog](CHANGELOG.md).
 
 ## Project status
 
-Starshine Geo 0.4.0 is an alpha-quality research preview. The API is intentionally small while the
-maintainers establish stable contracts, external reproduction, issue triage, release discipline,
-and independent community use.
+Starshine Geo 0.7.0.dev0 is the current development snapshot. It contains reviewed changes recorded
+under `[Unreleased]` and is not a tagged 0.7.0 release. The latest stable release metadata remains
+0.4.0. The API remains intentionally bounded while maintainers strengthen reproducibility evidence,
+release discipline, and independently useful spatial-analysis workflows.
 
 See [ROADMAP.md](ROADMAP.md), [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and
 [architecture notes](docs/ARCHITECTURE.md).

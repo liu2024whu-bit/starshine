@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import tarfile
 import zipfile
 from pathlib import Path, PurePosixPath
@@ -25,6 +26,14 @@ _FORBIDDEN_MEMBER_PARTS = {
 def _project_version() -> str:
     metadata = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
     return str(metadata["project"]["version"])
+
+
+def _latest_release_version() -> str:
+    citation = Path("CITATION.cff").read_text(encoding="utf-8")
+    match = re.search(r"^version:\s*(\S+)\s*$", citation, re.MULTILINE)
+    if match is None:
+        raise RuntimeError("CITATION.cff is missing version")
+    return match.group(1)
 
 
 def _validate_member_names(members: list[tuple[str, int]], archive_name: str) -> None:
@@ -97,7 +106,7 @@ def _check_wheel(path: Path, version: str) -> None:
             raise RuntimeError(f"wheel metadata does not declare version {version}")
 
 
-def _check_sdist(path: Path, version: str) -> None:
+def _check_sdist(path: Path, version: str, release_version: str) -> None:
     if f"-{version}.tar.gz" not in path.name:
         raise RuntimeError(f"sdist filename does not contain version {version}: {path.name}")
     with tarfile.open(path, mode="r:gz") as archive:
@@ -223,7 +232,7 @@ def _check_sdist(path: Path, version: str) -> None:
                 "/examples/data/nearest-candidates.geojson",
                 "/examples/data/join-points.geojson",
                 "/examples/data/join-polygons.geojson",
-                f"/docs/releases/{version}.md",
+                f"/docs/releases/{release_version}.md",
             ),
             path.name,
         )
@@ -231,6 +240,7 @@ def _check_sdist(path: Path, version: str) -> None:
 
 def check(dist_dir: Path) -> None:
     version = _project_version()
+    release_version = _latest_release_version()
     wheels = sorted(dist_dir.glob("*.whl"))
     sdists = sorted(dist_dir.glob("*.tar.gz"))
     if len(wheels) != 1 or len(sdists) != 1:
@@ -238,8 +248,11 @@ def check(dist_dir: Path) -> None:
             f"expected exactly one wheel and one sdist, found {len(wheels)} and {len(sdists)}"
         )
     _check_wheel(wheels[0], version)
-    _check_sdist(sdists[0], version)
-    print(f"Release artifacts passed inspection for Starshine Geo {version}.")
+    _check_sdist(sdists[0], version, release_version)
+    print(
+        "Distribution artifacts passed inspection for "
+        f"Starshine Geo {version}; latest stable metadata is {release_version}."
+    )
 
 
 def main() -> int:

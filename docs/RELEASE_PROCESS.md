@@ -5,16 +5,23 @@ paths, credentials, and unpublished claims are outside the release boundary.
 
 ## Version source
 
-`pyproject.toml` is the single release-version source. Runtime code reads the installed package
+`pyproject.toml` is the distribution-version source. Runtime code reads the installed package
 metadata through `importlib.metadata`; it does not maintain a second hard-coded version string.
+
+The development branch uses a PEP 440 `.devN` version for the next intended release line. This keeps
+CI-built wheels from reusing the version of the latest stable snapshot while work remains under
+`[Unreleased]`. `CITATION.cff` and `docs/releases/<version>.md` continue to identify the latest
+stable release until a new stable release is intentionally prepared.
 
 Before a release:
 
-1. update `project.version` in `pyproject.toml`;
+1. replace the development `project.version` with the stable `X.Y.Z` version in `pyproject.toml`;
 2. move completed entries from `Unreleased` into a dated `CHANGELOG.md` section;
-3. update `CITATION.cff` and the release notes;
-4. confirm the roadmap reflects completed and deferred work;
-5. run the public repository audit and all CI jobs.
+3. update `CITATION.cff` to the same stable version and date;
+4. create or update `docs/releases/X.Y.Z.md` and change the README from development-snapshot status
+   to the stable release status;
+5. confirm the roadmap reflects completed and deferred work;
+6. run the public repository audit and all CI jobs.
 
 ## Local verification
 
@@ -22,7 +29,7 @@ Before a release:
 python -m pip install --upgrade pip
 python -m pip install --constraint requirements/ci-validation.txt -e ".[dev,geopackage,release]"
 python scripts/audit_public_repository.py
-python scripts/check_release_readiness.py
+python scripts/check_release_readiness.py --require-release
 python scripts/verify_teaching_examples.py
 python -m benchmarks.verify
 python -m benchmarks.run --repeat 3 --output benchmark-report.json
@@ -47,14 +54,17 @@ starshine preflight examples/plan.workflow.json --layer source=examples/data/cli
 starshine preflight examples/plan.workflow.json --layer source=examples/data/clip-source.geojson --gpkg-layer mask study.gpkg analysis_mask
 ```
 
-The release-readiness check verifies that package metadata, citation metadata, the dated
-changelog section, README status and release link, and `docs/releases/<version>.md` all describe the
-same current version. The artifact inspector then checks that exactly one wheel and one source
-distribution were produced, that their versions match package metadata, that expected public files
-are present, and that no unsafe archive paths, ignored caches, private-artifact directories, or
-unexpectedly large members were packaged. The source distribution must include the current
-versioned release notes, the reviewed CI constraints, the synthetic teaching inputs, their expected
-inspection report, focused documentation, and the public verification scripts.
+Normal pull-request and `main` CI run the release-readiness checker in development mode: the
+distribution version may be a `.devN` snapshot while the citation, dated changelog section, and
+versioned release notes continue to identify the latest stable release. The explicit
+`--require-release` mode used above rejects development versions and requires package, citation,
+README, changelog, and release-note metadata to describe the same stable version before tagging.
+
+The artifact inspector checks that exactly one wheel and one source distribution were produced, that
+their filenames and metadata match `pyproject.toml`, that the source distribution includes the
+latest stable release notes, and that no unsafe archive paths, ignored caches, private-artifact
+directories, or unexpectedly large members were packaged. A development artifact therefore has a
+development filename while retaining the last stable release snapshot as historical release evidence.
 
 ## Build and metadata format policy
 
@@ -119,8 +129,8 @@ the downloaded wheel and run the public installed-wheel smoke scripts, which ver
   Preflight bindings, repository-relative SARIF locations, pre-I/O duplicate checks, and source
   overwrite protection on every supported Python version;
 - reprojection, projected geometry metrics, deterministic STRtree-backed nearest matching,
-  point-in-polygon joining, and pairwise intersection overlay work through installed APIs and
-  workflow execution;
+  point-in-polygon joining, pairwise intersection, and polygon-mask Difference work through
+  installed APIs and workflow execution;
 - the installed inspection API and `starshine inspect` command produce matching reports;
 - valid and invalid workflow diagnostics work through the installed console command;
 - a self-created point-within-polygon workflow runs through both the Python API and CLI;

@@ -51,6 +51,9 @@ All notable public changes are documented here.
   becoming a second workflow or operator path.
 - all installed console commands now share the primary `cli.py` parser and error boundary; the
   temporary forwarding `entrypoint.py` used while source inventory was introduced has been removed.
+- `main` now builds a PEP 440 development snapshot instead of reusing the `0.4.0` stable version
+  for unreleased behavior; release checks distinguish development artifacts from tagged release
+  metadata while retaining `0.4.0` citation and release notes as the latest stable snapshot.
 
 ## [0.4.0] - 2026-07-29
 
