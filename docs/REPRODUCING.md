@@ -70,6 +70,7 @@ For a contributor checkout:
 ```bash
 ruff check .
 python -m pytest
+python scripts/refresh_public_evidence.py
 python scripts/audit_public_repository.py
 python scripts/verify_teaching_examples.py
 python -m benchmarks.verify
