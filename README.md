@@ -5,50 +5,35 @@
 [![Status](https://img.shields.io/badge/status-0.7.0.dev0%20development%20snapshot-blue.svg)](ROADMAP.md)
 
 Starshine Geo is a small, auditable open-source core for reproducible spatial-analysis workflows.
-It focuses on the parts that must remain explicit in GIS automation: coordinate-reference-system
-handling, geometry validation, bounded operator registries, parameter checks, reproducible
-examples, and testable results.
+It keeps the parts of GIS automation that are easy to hide—CRS assumptions, geometry contracts,
+operator registration, input preparation, output provenance, and distribution evidence—explicit and
+testable.
 
-This repository is not a temporary application-only demo. It is a permanently public project with
-its own issues, pull requests, CI, release process, and synthetic fixtures. Historical provenance is
-documented separately, but current Starshine development is based on this public repository rather
-than private source code or datasets.
+The repository is intentionally bounded. It is not a general-purpose desktop GIS and it does not try
+to maximize operator count. New behavior is expected to reuse the public registry, workflow,
+Preflight, testing, evidence, and release boundaries instead of creating parallel execution paths.
 
-## Why this project exists
+## What the current development snapshot provides
 
-Spatial workflows often fail silently when geographic coordinates are treated as metres, invalid
-geometries enter overlays, output names overwrite inputs, or planners call unregistered functions.
-Starshine makes those boundaries visible, machine-readable, and executable.
+- validated GeoJSON FeatureCollection input and explicit CRS handling;
+- a bounded declarative operator registry with no dynamic `eval`;
+- buffer, dissolve, point summary, reprojection, clip/difference, pairwise intersection,
+  nearest-feature matching, point-in-polygon join, and projected geometry metrics;
+- deterministic Workflow validation, planning, graph, Explain, contract, and Preflight reports;
+- SARIF 2.1.0 export for completed Preflight findings;
+- read-only source inventory, GeoJSON inspection, and geometry-quality reports;
+- optional GeoPackage input/output with explicit layer selection and overwrite protection;
+- deterministic manifests, synthetic benchmark evidence, and path-free runtime diagnostics;
+- self-created reproduction fixtures and clean installed-wheel checks;
+- Python 3.10–3.14 source and built-wheel CI evidence, with clean Linux, Windows, and macOS
+  reproduction on Python 3.14.
 
-The current main-branch development snapshot provides:
-
-- validated GeoJSON FeatureCollection input;
-- projected-CRS checks for distance-based work;
-- buffer, dissolve, point-within-polygon summary and join, projected geometry metrics, explicit
-  reprojection, CRS-safe polygon-mask clip/difference, deterministic pairwise intersection overlay,
-  and STRtree-backed
-  nearest-feature matching;
-- a versioned JSON workflow format and operator-specific machine-readable schema;
-- structured workflow diagnostics for structure, inputs, parameters, and CRS rules;
-- a declarative operator registry and machine-readable catalog with no dynamic `eval`;
-- deterministic data-free workflow plans with dependencies, defaults, layer provenance, and digests;
-- schema-checked JSON workflow graphs and safely escaped Mermaid dependency views;
-- data-free Workflow Explain reports with parameter provenance and review-ready Markdown;
-- planner-derived external-layer contracts for geometry, CRS, and property preparation;
-- actual input preflight reports for geometry, CRS, field, uniqueness, and collision checks;
-- deterministic SARIF 2.1.0 export for repository-relative CI and code-scanning integration;
-- optional path-free reproducibility manifests;
-- optional GeoPackage input/output with explicit layer, CRS, and overwrite rules;
-- deterministic GeoJSON inspection reports with counts, bounds, CRS, fields, and digests;
-- read-only geometry-quality reports for invalid topology, empty and duplicate geometry, coordinate dimensions, CRS metadata, and bounded finding samples;
-- synthetic teaching cases for CRS misuse, invalid geometry, and malformed properties;
-- a deterministic synthetic vector benchmark corpus plus indexed-versus-exhaustive semantic and
-  timing evidence with schema-checked JSON reports;
-- self-created sample data and reproducible command-line examples;
-- public-boundary, package-build, Python 3.10–3.14 source and built-wheel CI checks, plus clean
-  installed-wheel reproduction on Linux, Windows, and macOS with Python 3.14.
+Detailed semantics live in the owned documentation pages rather than in this landing page. Start with
+the [documentation index](docs/README.md).
 
 ## Install for development
+
+Create an isolated environment and install the development extras:
 
 ```bash
 python -m venv .venv
@@ -58,243 +43,43 @@ python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 ```
 
-GeoPackage support is kept outside the base dependency set:
+GeoPackage support is optional:
 
 ```bash
 python -m pip install -e ".[geopackage]"
 ```
 
-Check the installed version and spatial runtime:
+Check the installed package and spatial runtime:
 
 ```bash
 starshine --version
 starshine doctor
-starshine doctor --format json
 ```
 
-`doctor` verifies package metadata, PROJ, GEOS, the declarative operator registry, and a self-created
-workflow without reading project data. See [clean-environment reproduction](docs/REPRODUCING.md).
+For a clean-environment verification path, see
+[REPRODUCING.md](docs/REPRODUCING.md).
 
-## Reproduce the public core from self-created data
+## Quick start
 
-After installation, run the same end-to-end public path used by cross-platform CI:
-
-```bash
-python scripts/reproduce_installed_core.py --output reproduction-report.json
-```
-
-The harness creates its own data and checks `doctor`, validation, planning, contracts, Preflight,
-execution, inspection, geometry quality, the operator catalog, and the manifest. It requires the
-installed CLI and public API to produce the same semantic output digest. See
-[clean-environment reproduction](docs/REPRODUCING.md).
-
-## Verify a built wheel
-
-Editable source tests and installed-wheel tests answer different questions. The source suite checks
-implementation behavior during development; the wheel smoke test proves that the published package
-contains its required modules, declares its runtime dependencies, and exposes the CLI correctly.
-
-After building a wheel, install it non-editably and run the public smoke script:
-
-```bash
-python -m build
-python -m pip install --force-reinstall dist/*.whl
-python scripts/smoke_installed_wheel.py
-```
-
-In CI, the wheel is built once and downloaded into clean Python 3.10, 3.11, and 3.12 jobs that do not
-check out the repository. See the [release process](docs/RELEASE_PROCESS.md) for the exact checks.
-
-## Discover supported operators
-
-The runtime registry is available as a schema-checked JSON catalog:
+Inspect the public operator catalog:
 
 ```bash
 starshine operators
-starshine operators --output operators.json
 ```
 
-The same value is available through `operator_catalog()`. Runtime executors and validators are not
-serialized into the report. See the [operator registry and extension contract](docs/OPERATORS.md) and
-[operator catalog schema](schemas/operator-catalog-v1.schema.json).
-
-## Plan a workflow without reading feature data
-
-The planner validates a workflow, resolves registry defaults, and reports its dependency graph and
-layer provenance without loading GeoJSON or running operators:
+Validate and preflight a workflow before running it:
 
 ```bash
-starshine plan examples/plan.workflow.json \
+starshine validate examples/plan.workflow.json \
   --layer-name source \
   --layer-name mask
-```
 
-Plans include Workflow and Operator Catalog digests, required and unused external layers, ordered
-step dependencies, resolved parameter sources, terminal outputs, and declared output-CRS behavior.
-See [workflow planning](docs/WORKFLOW_PLANNING.md) and the
-[workflow plan schema](schemas/workflow-plan-v1.schema.json).
-
-## Render a workflow graph for review or teaching
-
-The graph command derives a compact dependency view from the canonical plan without reading feature
-data or exposing parameter values:
-
-```bash
-starshine graph examples/plan.workflow.json \
-  --layer-name source \
-  --layer-name mask
-```
-
-Mermaid is the default output. Use `--format json` for a schema-checked graph report suitable for CI
-or a user interface. See [workflow graphs](docs/WORKFLOW_GRAPH.md), the
-[workflow graph schema](schemas/workflow-graph-v1.schema.json), and the tracked
-[Mermaid example](examples/plan.workflow.mmd).
-
-## Explain a workflow for review or teaching
-
-The explain command converts the canonical plan and graph evidence into a step-by-step Markdown
-narrative without loading feature data:
-
-```bash
-starshine explain examples/plan.workflow.json \
-  --layer-name source \
-  --layer-name mask \
-  --layer-name unused
-```
-
-Use `--format json` for a Schema-checked explanation report containing input provenance, direct
-dependencies, provided/default parameter sources, output-CRS behavior, terminal outputs, and
-execution-time limitations. See [workflow explanations](docs/WORKFLOW_EXPLAIN.md), the
-[explanation schema](schemas/workflow-explanation-v1.schema.json), and the tracked
-[Markdown example](examples/plan.workflow.explanation.md).
-
-## Prepare external layers with a workflow contract
-
-The contract command converts registry input metadata and the canonical plan into a deterministic
-checklist without reading feature data:
-
-```bash
-starshine contract examples/plan.workflow.json \
-  --layer-name source \
-  --layer-name mask \
-  --layer-name unused
-```
-
-Markdown is the default output. Use `--format json` for a schema-checked report suitable for CI or a
-data-loading interface. See [workflow input contracts](docs/WORKFLOW_CONTRACTS.md), the
-[contract schema](schemas/workflow-contract-v1.schema.json), and the tracked
-[Markdown example](examples/plan.workflow.contract.md).
-
-## Preflight actual workflow inputs
-
-The preflight command loads external vector layers and checks them against the planner-derived
-contract without executing spatial operators. GeoJSON bindings use `NAME=PATH`:
-
-```bash
 starshine preflight examples/plan.workflow.json \
   --layer source=examples/data/clip-source.geojson \
   --layer mask=examples/data/clip-mask.geojson
 ```
 
-GeoPackage bindings require an explicit workflow name, package path, and vector layer. GeoJSON and
-GeoPackage sources may be mixed in one command:
-
-```bash
-starshine preflight examples/plan.workflow.json \
-  --layer source=examples/data/clip-source.geojson \
-  --gpkg-layer mask study.gpkg analysis_mask
-```
-
-Explicit selection prevents a package from silently changing behavior when another layer is added.
-The containing `.gpkg` file is used for overwrite protection and repository-relative SARIF evidence,
-while the core Preflight API remains FeatureCollection-only. Markdown is the default output. Use
-`--format json` for the canonical schema-checked report or `--format sarif --sarif-root .` for
-repository-relative SARIF 2.1.0. A completed preflight returns
-exit code `0` when valid and `1` when contract violations are reported. See
-[workflow input preflight](docs/WORKFLOW_PREFLIGHT.md),
-[SARIF integration](docs/WORKFLOW_PREFLIGHT_SARIF.md), the
-[preflight schema](schemas/workflow-preflight-v1.schema.json), and the tracked
-[Markdown](examples/plan.workflow.preflight.md) and
-[SARIF](examples/plan.workflow.preflight.sarif) examples.
-
-## Inspect a GeoJSON collection without running a workflow
-
-The inspection command validates one `FeatureCollection` and reports structure without copying
-feature coordinates or property values into the report:
-
-```bash
-starshine inspect examples/data/zones.geojson
-```
-
-Write the same schema-checked report to a file:
-
-```bash
-starshine inspect examples/data/zones.geojson \
-  --output zones.inspection.json
-```
-
-Reports include feature and geometry counts, sorted property fields, declared CRS, collection
-bounds, and a deterministic collection digest. See the
-[inspection contract](docs/INSPECTION.md) and
-[inspection report schema](schemas/inspection-report-v1.schema.json).
-
-## Assess geometry quality without repairing data
-
-The quality command diagnoses geometry problems while preserving the source collection exactly as
-provided:
-
-```bash
-starshine quality examples/geometry-quality.geojson
-```
-
-Markdown is the default. Use `--format json` for the schema-checked report and automation-friendly
-exit codes: `0` for no error-level geometry findings, `1` for a completed report with errors, and `2`
-for source or argument failures. The report detects empty and topologically invalid geometries,
-malformed coordinate structures, mixed dimensions, duplicate normalized geometries, and CRS metadata
-status without copying coordinates or property values. See [geometry quality](docs/GEOMETRY_QUALITY.md),
-the [report schema](schemas/geometry-quality-report-v1.schema.json), and the tracked
-[JSON](examples/geometry-quality.report.json) and [Markdown](examples/geometry-quality.report.md)
-examples. A complete professional review sequence is documented in the
-[reproducible vector quality gate](docs/VECTOR_QUALITY_GATE.md).
-
-## Learn from intentional CRS and geometry failures
-
-The files under `examples/teaching/` are deliberately small and several are intentionally invalid.
-They demonstrate geographic coordinates incorrectly used as a buffer working CRS, a corrected
-projected workflow, a self-intersecting polygon, an empty geometry, and malformed Feature
-properties.
-
-Run the complete documented check set:
-
-```bash
-python scripts/verify_teaching_examples.py
-```
-
-Each failure has an exact command, expected exit code, and stable message fragment or diagnostic path.
-The corrected examples use only synthetic data and produce reviewable inspection or workflow
-summaries. See [synthetic failure examples](docs/TEACHING_FAILURES.md).
-
-## Validate a workflow without running it
-
-The validation command needs only the workflow JSON and the names of layers that will be available.
-It does not read feature data or execute spatial operators.
-
-```bash
-starshine validate tests/fixtures/workflows/valid-buffer.json \
-  --layer-name source
-```
-
-For automation, request a stable JSON diagnostic envelope:
-
-```bash
-starshine validate tests/fixtures/workflows/invalid-buffer-missing-work-crs.json \
-  --layer-name source \
-  --diagnostic-format json
-```
-
-See the [workflow validation contract](docs/WORKFLOW_VALIDATION.md).
-
-## Run the demo
+Run the included synthetic demo:
 
 ```bash
 starshine run examples/workflow.json \
@@ -305,198 +90,88 @@ starshine run examples/workflow.json \
   --manifest examples/output/zone_summary.manifest.json
 ```
 
-The `--manifest` option is optional. When supplied, it records deterministic workflow, input, step,
-output, version, and CRS evidence without copying feature content or CLI file paths. See
-[Reproducibility manifests](docs/REPRODUCIBILITY.md).
-
-Or:
+Reproduce the public core from self-created temporary data:
 
 ```bash
-python examples/run_demo.py
+python scripts/reproduce_installed_core.py --output reproduction-report.json
 ```
 
-The output preserves each study-zone polygon and adds a `site_count` property. The included sample
-should produce `2` for the west zone and `1` for the east zone.
+The reproduction harness exercises the installed CLI and public API across doctor, validation,
+planning, contracts, Preflight, execution, inspection, geometry quality, the operator catalog, and
+manifest generation.
 
-## Run deterministic public benchmarks
+## Documentation
 
-The benchmark corpus is generated entirely from Starshine's public operators and synthetic
-geometries. Correctness verification is separate from timing observations:
+Use the [documentation index](docs/README.md) as the ownership map. The most common entry points are:
 
-```bash
-python -m benchmarks.verify
-python -m benchmarks.run --repeat 5 --output benchmark-report.json
-python scripts/check_benchmark_report.py benchmark-report.json
-```
+| Need | Authoritative document |
+| --- | --- |
+| Understand module boundaries | [Architecture](docs/ARCHITECTURE.md) |
+| Install and reproduce from a clean environment | [Reproducing Starshine](docs/REPRODUCING.md) |
+| Understand operators and extension rules | [Operator registry](docs/OPERATORS.md) |
+| Validate and prepare workflows | [Workflow validation](docs/WORKFLOW_VALIDATION.md), [planning](docs/WORKFLOW_PLANNING.md), [contracts](docs/WORKFLOW_CONTRACTS.md), [Preflight](docs/WORKFLOW_PREFLIGHT.md) |
+| Work with GeoPackage | [GeoPackage](docs/GEOPACKAGE.md) |
+| Inspect sources or geometry quality | [Inspection](docs/INSPECTION.md), [geometry quality](docs/GEOMETRY_QUALITY.md), [vector quality gate](docs/VECTOR_QUALITY_GATE.md) |
+| Understand indexing and performance evidence | [Spatial indexing](docs/SPATIAL_INDEXING.md), [benchmarks](docs/BENCHMARKS.md) |
+| Build and verify distributions | [Release process](docs/RELEASE_PROCESS.md) |
+| Understand public-data and provenance boundaries | [Open-source scope](docs/OPEN_SOURCE_SCOPE.md), [project history](docs/PROJECT_HISTORY.md) |
 
-Reports include corpus, case, and output digests; feature and operation counts; environment metadata;
-and validation and validated-run timing samples. CI validates the report schema and deterministic
-fields but deliberately does not impose fragile wall-clock thresholds. See
-[benchmark documentation](docs/BENCHMARKS.md).
+Operator-specific contracts such as
+[clip/difference](docs/CLIP.md),
+[intersection](docs/INTERSECTION.md),
+[nearest matching](docs/NEAREST.md),
+[spatial join](docs/SPATIAL_JOIN.md), and
+[geometry metrics](docs/GEOMETRY_METRICS.md)
+remain short normative references.
 
-## Workflow format
+## Verification model
 
-```json
-{
-  "version": 1,
-  "steps": [
-    {
-      "operation": "summarize_points_within",
-      "inputs": {"polygons": "zones", "points": "sites"},
-      "parameters": {"polygon_id_field": "id", "count_field": "site_count"},
-      "output": "zone_summary"
-    }
-  ]
-}
-```
+Source-checkout tests and installed-wheel tests answer different questions. Pull-request and
+`main` CI therefore verify both the source tree and the exact built distribution.
 
-Only registered operators can run. Each step must write to a new layer name, so input data cannot
-be overwritten accidentally. See the [workflow schema](schemas/workflow-v1.schema.json) and
-[validation contract](docs/WORKFLOW_VALIDATION.md).
+The current public evidence includes:
 
-A tracked reprojection example transforms the synthetic teaching points to `EPSG:3857`:
+- source tests on Python 3.10–3.14;
+- clean normal-wheel checks on Python 3.10–3.14;
+- clean GeoPackage-extra wheel checks on Python 3.10–3.14;
+- Linux, Windows, and macOS reproduction using Python 3.14;
+- constrained validation-tool CI plus a separate Latest Compatible Dependencies workflow;
+- deterministic tracked workflow evidence checked by `scripts/refresh_public_evidence.py`;
+- release-readiness, Twine, archive-content, and public-repository audits;
+- a workflow audit rule that rejects diagnostic `tee` pipelines without `set -o pipefail`.
 
-```bash
-starshine run examples/reproject.workflow.json \
-  --layer source=examples/teaching/geographic-points.geojson \
-  --output-layer projected \
-  --output examples/output/projected-points.geojson
-```
-
-Reprojection preserves feature order and properties, requires an explicit target CRS, and refuses a
-`source_crs` parameter that conflicts with the collection's declared `starshine:crs`.
-
-## Clip or erase features with an explicit polygon mask
-
-The `clip` and `difference` operators share one CRS-safe polygon-mask contract. Clip keeps the
-portion inside the union of the mask; Difference keeps the portion outside it. Both require explicit
-equivalent CRS values and never hide an implicit reprojection:
-
-```bash
-starshine run examples/clip.workflow.json \
-  --layer source=examples/data/clip-source.geojson \
-  --layer mask=examples/data/clip-mask.geojson \
-  --output-layer clipped \
-  --output examples/output/clipped.geojson
-```
-
-A Difference workflow uses the same `input` and `mask` bindings with
-`"operation": "difference"`. Both preserve source properties and retained feature order; Difference
-omits completely erased features and retains disjoint features. See the
-[polygon-mask overlay contract](docs/CLIP.md).
-
-## Intersect two layers with explicit pair provenance
-
-The `intersection` operator emits one feature for each non-empty left/right geometry intersection.
-It copies left-side properties, attaches one unique right-side identifier, and emits results in stable
-`left input order → right input order` regardless of STRtree traversal order:
-
-```bash
-starshine run examples/intersection.workflow.json \
-  --layer parcels=examples/data/intersection-parcels.geojson \
-  --layer zones=examples/data/intersection-zones.geojson \
-  --output-layer parcel_zone_intersections \
-  --output examples/output/parcel-zone-intersections.geojson
-```
-
-The operator requires equivalent declared CRS values, rejects right-identifier and output-field
-contract violations before producing results, normalizes non-empty intersection geometry, and
-retains lower-dimensional boundary contacts such as shared-edge `LineString` outputs. It never
-reprojects, repairs, snaps, or applies an implicit precision grid. See the
-[pairwise intersection contract](docs/INTERSECTION.md).
-
-## Match each feature to its nearest candidate
-
-The `nearest` operator compares source and candidate geometries in one equivalent projected CRS,
-preserves every source feature, and adds deterministic match and distance fields:
-
-```bash
-starshine run examples/nearest.workflow.json \
-  --layer sources=examples/data/nearest-source.geojson \
-  --layer facilities=examples/data/nearest-candidates.geojson \
-  --output-layer nearest_facilities \
-  --output examples/output/nearest-facilities.geojson
-```
-
-Equal-distance ties use candidate input order even though the underlying STRtree does not promise
-query-result order. Empty candidate collections and matches beyond an optional inclusive distance
-limit produce explicit `null` fields instead of dropping source features. See the
-[nearest-feature contract](docs/NEAREST.md) and
-[spatial-index design](docs/SPATIAL_INDEXING.md).
-
-## Calculate projected geometry metrics
-
-The `geometry_metrics` operation adds area and length fields without changing feature geometry:
-
-```bash
-starshine run examples/geometry-metrics.workflow.json \
-  --layer features=examples/data/metric-features.geojson \
-  --output-layer measured \
-  --output examples/output/measured-features.geojson
-```
-
-The input must declare a projected CRS, and output fields must not collide with source properties.
-See the [geometry metrics contract](docs/GEOMETRY_METRICS.md).
-
-## Join points to polygons with explicit ambiguity handling
-
-The `join_points_to_polygons` operator preserves every point and attaches one polygon identifier
-using boundary-inclusive `covers` semantics:
-
-```bash
-starshine run examples/spatial-join.workflow.json \
-  --layer points=examples/data/join-points.geojson \
-  --layer zones=examples/data/join-polygons.geojson \
-  --output-layer joined_points \
-  --output examples/output/joined-points.geojson
-```
-
-Ambiguous overlaps and shared-boundary matches fail by default. Workflows may explicitly select the
-deterministic `first` policy when polygon input order is an intentional priority rule. Indexed query
-results are sorted back to original polygon order before that policy is applied. Unmatched points
-remain in the output with a configured scalar or `null` value. See the
-[point-in-polygon join contract](docs/SPATIAL_JOIN.md) and
-[spatial-index design](docs/SPATIAL_INDEXING.md).
-
-
-## Optional GeoPackage boundary
-
-The public adapter converts selected GeoPackage layers to and from the same validated in-memory
-GeoJSON contract used by the workflow engine. Multi-layer packages require an explicit layer, CRS
-metadata is preserved and validated, and existing or input-file destinations require an explicit
-overwrite flag. `starshine preflight` can bind explicitly selected package layers through the CLI
-without importing file-format logic into the core Preflight implementation. See the
-[GeoPackage adapter contract](docs/GEOPACKAGE.md).
+See [REPRODUCING.md](docs/REPRODUCING.md) for end-to-end reproduction and
+[RELEASE_PROCESS.md](docs/RELEASE_PROCESS.md) for distribution evidence.
 
 ## Public development boundary
 
-All tracked sample GeoJSON, workflow fixtures, generated benchmark geometries, and GeoPackage
-round-trip data are created for this repository. Current changes must be specified through public
-issues and implemented from public code. Private databases, credentials, unpublished modules,
-personal paths, textbook/OCR material, and research-delivery artifacts are excluded.
+Tracked examples and benchmark geometries are synthetic or created specifically for this repository.
+Private databases, credentials, unpublished modules, personal paths, textbook/OCR material, and
+research-delivery artifacts are outside the public boundary.
 
-CI runs `scripts/audit_public_repository.py` on every pull request and separately inspects wheel and
-source-distribution members. See [Open-source scope](docs/OPEN_SOURCE_SCOPE.md) and
-[project provenance](docs/PROJECT_HISTORY.md).
+The repository audit and release-archive inspection enforce important parts of that boundary. See
+[OPEN_SOURCE_SCOPE.md](docs/OPEN_SOURCE_SCOPE.md) and
+[PROJECT_HISTORY.md](docs/PROJECT_HISTORY.md).
 
 ## Releases
 
-`pyproject.toml` identifies the artifact being built. The `main` branch uses a PEP 440 development
-version so CI artifacts cannot be confused with the last stable release, while `CITATION.cff` and
-versioned release notes continue to identify that stable snapshot until a new release is prepared.
-CI builds and inspects one wheel and one source distribution, then installs the exact wheel in clean
-supported-Python jobs. See the [release process](docs/RELEASE_PROCESS.md),
-[0.4.0 release notes](docs/releases/0.4.0.md), and [changelog](CHANGELOG.md).
+`pyproject.toml` identifies the artifact currently being built. Development snapshots use a PEP 440
+`.devN` version so CI artifacts cannot be confused with the latest stable release.
+
+The current stable snapshot is documented in
+[0.4.0 release notes](docs/releases/0.4.0.md) and the [changelog](CHANGELOG.md).
+Release preparation and artifact verification are defined in
+[RELEASE_PROCESS.md](docs/RELEASE_PROCESS.md).
 
 ## Project status
 
 Starshine Geo 0.7.0.dev0 is the current development snapshot. It contains reviewed changes recorded
 under `[Unreleased]` and is not a tagged 0.7.0 release. The latest stable release metadata remains
-0.4.0. The API remains intentionally bounded while maintainers strengthen reproducibility evidence,
+0.4.0. The public API remains intentionally bounded while maintainers strengthen reproducibility,
 release discipline, and independently useful spatial-analysis workflows.
 
-See [ROADMAP.md](ROADMAP.md), [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and
-[architecture notes](docs/ARCHITECTURE.md).
+See [ROADMAP.md](ROADMAP.md), [CONTRIBUTING.md](CONTRIBUTING.md),
+[SECURITY.md](SECURITY.md), and [architecture notes](docs/ARCHITECTURE.md).
 
 ## License
 
