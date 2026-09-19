@@ -111,7 +111,11 @@ def check(root: Path = ROOT, *, require_release: bool = False) -> dict[str, Any]
             "README development project status does not match the project version",
         )
         _require(
-            f"The latest stable release metadata remains {release_version}." in readme,
+            re.search(
+                rf"The latest stable release metadata remains\s+{re.escape(release_version)}\.",
+                readme,
+            )
+            is not None,
             "README does not distinguish the development snapshot from the latest stable release",
         )
         mode = "development"
