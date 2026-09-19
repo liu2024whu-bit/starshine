@@ -22,7 +22,7 @@ def _project_version() -> str:
     return str(metadata["project"]["version"])
 
 
-def test_release_version_is_consistent_across_public_metadata():
+def test_development_version_is_distinct_from_latest_release_metadata():
     project_version = _project_version()
     citation = (ROOT / "CITATION.cff").read_text(encoding="utf-8")
     changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
@@ -31,8 +31,11 @@ def test_release_version_is_consistent_across_public_metadata():
     assert citation_match is not None
     assert version("starshine-geo") == project_version
     assert starshine_geo.__version__ == project_version
-    assert citation_match.group(1) == project_version
-    assert f"## [{project_version}]" in changelog
+    assert project_version == "0.7.0.dev0"
+    assert citation_match.group(1) == "0.4.0"
+    assert project_version != citation_match.group(1)
+    assert "## [Unreleased]" in changelog
+    assert "## [0.4.0] - 2026-07-29" in changelog
 
 
 def test_manifest_uses_installed_package_version_by_default():
@@ -61,6 +64,7 @@ def test_top_level_api_exports_public_operator_surfaces():
     assert callable(starshine_geo.build_workflow_contract)
     assert callable(starshine_geo.clip_features)
     assert callable(starshine_geo.calculate_geometry_metrics)
+    assert callable(starshine_geo.difference_features)
     assert callable(starshine_geo.dissolve_features)
     assert callable(starshine_geo.explain_workflow)
     assert callable(starshine_geo.intersect_features)
@@ -89,6 +93,7 @@ def test_top_level_api_exports_public_operator_surfaces():
     assert "build_workflow_contract" in starshine_geo.__all__
     assert "clip_features" in starshine_geo.__all__
     assert "calculate_geometry_metrics" in starshine_geo.__all__
+    assert "difference_features" in starshine_geo.__all__
     assert "dissolve_features" in starshine_geo.__all__
     assert "explain_workflow" in starshine_geo.__all__
     assert "intersect_features" in starshine_geo.__all__
@@ -113,8 +118,47 @@ def test_top_level_api_exports_public_operator_surfaces():
     assert "SARIF_SCHEMA_URI" in starshine_geo.__all__
 
 
-def test_release_readiness_check_matches_current_public_metadata():
+def test_release_readiness_check_matches_development_and_stable_metadata():
     summary = check_release_readiness(ROOT)
-    assert summary["version"] == _project_version()
-    assert summary["release_date"] == "2026-07-29"
-    assert summary["release_notes"] == f"docs/releases/{_project_version()}.md"
+    assert summary == {
+        "version": "0.7.0.dev0",
+        "mode": "development",
+        "release_version": "0.4.0",
+        "release_date": "2026-07-29",
+        "release_notes": "docs/releases/0.4.0.md",
+    }
+
+    with pytest.raises(RuntimeError, match="development snapshot"):
+        check_release_readiness(ROOT, require_release=True)
+
+
+def test_release_readiness_stable_mode_remains_executable(tmp_path):
+    (tmp_path / "docs" / "releases").mkdir(parents=True)
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nversion = "1.2.3"\n',
+        encoding="utf-8",
+    )
+    (tmp_path / "CITATION.cff").write_text(
+        "version: 1.2.3\ndate-released: 2026-09-19\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "CHANGELOG.md").write_text(
+        "# Changelog\n\n## [Unreleased]\n\n## [1.2.3] - 2026-09-19\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "docs" / "releases" / "1.2.3.md").write_text(
+        "# Starshine Geo 1.2.3\n\nRelease evidence.\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "README.md").write_text(
+        "[![Status](https://img.shields.io/badge/"
+        "status-1.2.3%20research%20preview-orange.svg)](ROADMAP.md)\n\n"
+        "[1.2.3 release notes](docs/releases/1.2.3.md)\n\n"
+        "Starshine Geo 1.2.3 is an alpha-quality research preview.\n",
+        encoding="utf-8",
+    )
+
+    summary = check_release_readiness(tmp_path, require_release=True)
+    assert summary["mode"] == "release"
+    assert summary["version"] == "1.2.3"
+    assert summary["release_version"] == "1.2.3"
