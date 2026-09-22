@@ -20,6 +20,7 @@ EXPECTED_STEPS = [
     "inspect",
     "quality",
     "operators",
+    "difference",
     "manifest",
 ]
 

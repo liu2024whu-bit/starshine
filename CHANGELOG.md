@@ -65,6 +65,9 @@ All notable public changes are documented here.
   ZIP containing the public harness, report checker, schema, instructions, and exact wheel; CI
   verifies that the bundle itself runs from a no-checkout job without treating that self-check as
   independent evidence.
+- installed-core reproduction now exercises polygon-mask Difference through the public API,
+  Workflow registry, Preflight, installed CLI, and operator catalog so future independent bundle
+  evidence also provides downstream evidence for the first bounded 0.7 operator.
 
 ## [0.4.0] - 2026-07-29
 
