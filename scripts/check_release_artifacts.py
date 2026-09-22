@@ -207,6 +207,7 @@ def _check_sdist(path: Path, version: str, release_version: str) -> None:
                 "/scripts/smoke_installed_geopackage_preflight.py",
                 "/scripts/smoke_installed_geopackage_run.py",
                 "/scripts/reproduce_installed_core.py",
+                "/scripts/independent_reproduction.py",
                 "/scripts/refresh_public_evidence.py",
                 "/scripts/verify_teaching_examples.py",
                 "/examples/geometry-quality.geojson",
