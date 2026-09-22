@@ -4,9 +4,8 @@ import json
 import zipfile
 from pathlib import Path
 
-from jsonschema import Draft202012Validator
-
 import pytest
+from jsonschema import Draft202012Validator
 
 from scripts.check_reproduction_report import EXPECTED_STEPS, check
 from scripts.independent_reproduction import build_bundle, verify_bundle
@@ -30,6 +29,7 @@ def test_self_created_installed_core_reproduction_is_schema_checked(tmp_path):
     report_path = tmp_path / "reproduction-report.json"
     report_path.write_text(json.dumps(report), encoding="utf-8")
     check(report_path)
+
 
 def _write_fake_wheel(path: Path, *, version: str = "9.8.7.dev0") -> None:
     with zipfile.ZipFile(path, mode="w") as archive:
