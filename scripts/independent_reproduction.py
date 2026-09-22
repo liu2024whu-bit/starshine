@@ -157,7 +157,7 @@ def verify_bundle(root: Path) -> dict[str, Any]:
 
     for relative, expected in sorted(files.items()):
         if not isinstance(relative, str) or not isinstance(expected, str):
-            raise RuntimeError("bundle manifest file hashes must be string pairs")
+            raise TypeError("bundle manifest file hashes must be string pairs")
         path = (root / relative).resolve()
         if not path.is_relative_to(root.resolve()):
             raise RuntimeError(f"bundle member escapes root: {relative}")
@@ -169,7 +169,7 @@ def verify_bundle(root: Path) -> dict[str, Any]:
 
     wheel = manifest.get("wheel")
     if not isinstance(wheel, dict):
-        raise RuntimeError("bundle manifest is missing wheel metadata")
+        raise TypeError("bundle manifest is missing wheel metadata")
     wheel_path = (root / str(wheel.get("path", ""))).resolve()
     if not wheel_path.is_relative_to(root.resolve()):
         raise RuntimeError("bundle wheel path escapes root")
