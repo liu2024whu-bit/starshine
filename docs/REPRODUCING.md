@@ -53,11 +53,14 @@ python scripts/reproduce_installed_core.py --output reproduction-report.json
 The script creates all of its vector inputs and workflow in a temporary directory. It then exercises
 the installed console command through this chain:
 
-`doctor → validate → plan → contract → preflight → run → inspect → quality → operators → manifest`
+`doctor → validate → plan → contract → preflight → run → inspect → quality → operators → difference → manifest`
 
 It also executes the same intersection workflow through the public Python API and requires the CLI
-and API output digests to match. It does not depend on the tracked examples or on a developer's
-working directory. The resulting report can be validated in a development checkout with:
+and API output digests to match. The harness separately exercises polygon-mask Difference through
+the public API, Workflow registry, Preflight, installed CLI, and operator catalog, requiring the
+Workflow and CLI outputs to match the direct API result. It does not depend on tracked examples or
+on a developer's working directory. The resulting report can be validated in a development checkout
+with:
 
 ```bash
 python scripts/check_reproduction_report.py reproduction-report.json
