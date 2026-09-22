@@ -81,7 +81,7 @@ pins the exact reviewed Hatchling release used inside PEP 517's isolated build e
 that pin is an explicit artifact-format change and requires rebuilding the wheel and sdist, running
 Twine validation, archive inspection, and all clean installed-wheel matrices.
 
-The current reviewed pair is Hatchling 1.32.0 with Twine 7.0.0. Hatchling 1.32.0 emits Core Metadata
+The current reviewed pair is Hatchling 1.32.3 with Twine 7.0.0. Hatchling 1.32.3 emits Core Metadata
 2.5 by default; Twine 7 validates that metadata through a current `packaging` implementation. Normal
 CI fixes Twine to the reviewed version in `requirements/ci-validation.txt`, while the `release` extra
 permits compatible Twine 7.x maintenance releases for manual/latest-compatible validation. Runtime
