@@ -97,3 +97,24 @@ def test_independent_reproduction_bundle_rejects_tampered_members(tmp_path):
     with pytest.raises(RuntimeError, match="digest mismatch"):
         verify_bundle(extracted)
 
+def test_independent_reproduction_bundle_rejects_wheel_path_escape(tmp_path):
+    root = tmp_path / "source"
+    root.mkdir()
+    _write_bundle_sources(root)
+    wheel = tmp_path / "starshine_geo-9.8.7.dev0-py3-none-any.whl"
+    _write_fake_wheel(wheel)
+    bundle = tmp_path / "bundle.zip"
+    build_bundle(wheel=wheel, revision="c" * 40, output=bundle, root=root)
+
+    extracted = tmp_path / "extracted"
+    with zipfile.ZipFile(bundle) as archive:
+        archive.extractall(extracted)
+
+    manifest_path = extracted / "bundle-manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["wheel"]["path"] = "../outside.whl"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(RuntimeError, match="wheel path escapes root"):
+        verify_bundle(extracted)
+
