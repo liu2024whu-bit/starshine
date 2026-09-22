@@ -120,7 +120,44 @@ both without editing a hard-coded filename.
 The repository's CI performs the same idea without checking out source code in the installed-wheel
 jobs. The exact CI-built wheel is also installed and reproduced on Linux, Windows, and macOS.
 
-## 5. Optional GeoPackage backend
+## 5. Prepare a portable independent-reproduction handoff
+
+The repository can package the exact built wheel together with the public reproduction harness,
+report checker, schema, hashes, and instructions into one deterministic ZIP:
+
+```bash
+wheel="$(find dist -name '*.whl' -print -quit)"
+python scripts/independent_reproduction.py bundle \
+  --wheel "$wheel" \
+  --revision "$(git rev-parse HEAD)" \
+  --output independent-reproduction.zip
+```
+
+Copy only that ZIP to another machine or external CI project. After extraction, the external
+operator runs:
+
+```bash
+python scripts/independent_reproduction.py run --output-dir evidence
+```
+
+The runner verifies every bundled member against `bundle-manifest.json`, creates a fresh virtual
+environment outside any Starshine source checkout, installs the bundled wheel non-editably, confirms
+that `starshine_geo` imports from that clean environment, runs Doctor and the installed-core
+reproduction harness, validates the reproduction report, and writes:
+
+- `evidence/doctor-report.json`;
+- `evidence/reproduction-report.json`;
+- `evidence/independent-reproduction-evidence.json`.
+
+The evidence JSON records the exact public revision, wheel filename and SHA-256, package/Python
+versions, OS and architecture, Doctor status, report digest, output digest, and reproduced steps. It
+does not record the local home-directory or virtual-environment path.
+
+Starshine CI continuously checks that this portable bundle can be created and executed without a
+source checkout. That self-check proves the handoff tooling works; it does **not** count as the
+independent reproduction required by [issue #105](https://github.com/liu2024whu-bit/starshine/issues/105).
+
+## 6. Optional GeoPackage backend
 
 GeoPackage support is intentionally outside the base runtime:
 
