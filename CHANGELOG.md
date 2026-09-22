@@ -61,6 +61,10 @@ All notable public changes are documented here.
 - source and clean installed-wheel compatibility evidence now spans Python 3.10 through 3.14;
   cross-platform reproduction and latest-compatible release tooling use Python 3.14 as the newest
   tested endpoint while Python 3.10 remains an explicit lower-bound test.
+- built wheels can now be handed to an external reproducer as one deterministic, checksum-verified
+  ZIP containing the public harness, report checker, schema, instructions, and exact wheel; CI
+  verifies that the bundle itself runs from a no-checkout job without treating that self-check as
+  independent evidence.
 
 ## [0.4.0] - 2026-07-29
 
