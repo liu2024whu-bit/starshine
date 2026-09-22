@@ -137,6 +137,7 @@ The current public evidence includes:
 - Linux, Windows, and macOS reproduction using Python 3.14;
 - constrained validation-tool CI plus a separate Latest Compatible Dependencies workflow;
 - deterministic tracked workflow evidence checked by `scripts/refresh_public_evidence.py`;
+- a portable clean-wheel reproduction bundle for handoff to an external machine or CI project;
 - release-readiness, Twine, archive-content, and public-repository audits;
 - a workflow audit rule that rejects diagnostic `tee` pipelines without `set -o pipefail`.
 
