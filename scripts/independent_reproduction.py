@@ -6,9 +6,7 @@ import json
 import os
 import platform
 import re
-import shutil
 import subprocess
-import sys
 import tempfile
 import venv
 import zipfile
@@ -50,7 +48,7 @@ def _wheel_version(path: Path) -> str:
 
 def _zip_info(name: str) -> zipfile.ZipInfo:
     info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
-    info.compress_type = zipfile.ZIP_DEFLATED
+    info.compress_type = zipfile.ZIP_STORED
     info.external_attr = 0o644 << 16
     return info
 
@@ -128,7 +126,7 @@ def build_bundle(
     ).encode("utf-8")
 
     output.parent.mkdir(parents=True, exist_ok=True)
-    with zipfile.ZipFile(output, mode="w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
+    with zipfile.ZipFile(output, mode="w") as archive:
         for name in sorted(members):
             archive.writestr(_zip_info(name), members[name])
 
@@ -172,7 +170,9 @@ def verify_bundle(root: Path) -> dict[str, Any]:
     wheel = manifest.get("wheel")
     if not isinstance(wheel, dict):
         raise RuntimeError("bundle manifest is missing wheel metadata")
-    wheel_path = root / str(wheel.get("path", ""))
+    wheel_path = (root / str(wheel.get("path", ""))).resolve()
+    if not wheel_path.is_relative_to(root.resolve()):
+        raise RuntimeError("bundle wheel path escapes root")
     if not wheel_path.is_file():
         raise RuntimeError("bundle wheel is missing")
     if wheel.get("sha256") != _sha256_file(wheel_path):
@@ -240,7 +240,9 @@ def run_bundle(*, output_dir: Path) -> dict[str, Any]:
         ).stdout.strip()
         package_path = Path(package_location).resolve()
         if not package_path.is_relative_to(environment.resolve()):
-            raise RuntimeError("installed starshine_geo is not imported from the clean virtual environment")
+            raise RuntimeError(
+                "installed starshine_geo is not imported from the clean virtual environment"
+            )
 
         version_result = _run([str(starshine), "--version"]).stdout.strip()
         doctor = _run([str(starshine), "doctor", "--format", "json"])
