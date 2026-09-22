@@ -196,8 +196,20 @@ def _venv_starshine(root: Path) -> Path:
     return root / "bin" / "starshine"
 
 
-def _run(command: list[str], *, cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
-    result = subprocess.run(command, cwd=cwd, capture_output=True, text=True, check=False)
+def _run(
+    command: list[str],
+    *,
+    cwd: Path | None = None,
+    env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[str]:
+    result = subprocess.run(
+        command,
+        cwd=cwd,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
     if result.returncode != 0:
         stdout = result.stdout.strip() or "<empty>"
         stderr = result.stderr.strip() or "<empty>"
@@ -255,9 +267,16 @@ def run_bundle(*, output_dir: Path) -> dict[str, Any]:
         )
 
         reproduce_script = root / "scripts" / "reproduce_installed_core.py"
+        installed_env = os.environ.copy()
+        installed_env["PATH"] = (
+            str(starshine.parent)
+            + os.pathsep
+            + installed_env.get("PATH", "")
+        )
         _run(
             [str(python), str(reproduce_script), "--output", str(report_path)],
             cwd=output_dir,
+            env=installed_env,
         )
         checker = root / "scripts" / "check_reproduction_report.py"
         _run([str(python), str(checker), str(report_path)], cwd=output_dir)
