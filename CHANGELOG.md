@@ -43,7 +43,7 @@ All notable public changes are documented here.
 - Workflow Preflight internals are split into a compact public facade, immutable report model,
   finding aggregation, per-layer checks, report assembly, and Markdown rendering modules, with
   architecture tests preventing circular or reversed dependencies while preserving public output.
-- release artifact generation now fixes Hatchling at the reviewed `1.32.0` backend and validates
+- release artifact generation now fixes Hatchling at the reviewed `1.32.3` backend and validates
   its Core Metadata 2.5 output with Twine `7.0.0`, preventing an unbounded isolated-build upgrade
   from silently changing the artifact format for the same Starshine source revision.
 - `preflight` and `run` share one pre-I/O CLI input-binding planner while Workflow execution remains
@@ -61,6 +61,8 @@ All notable public changes are documented here.
 - source and clean installed-wheel compatibility evidence now spans Python 3.10 through 3.14;
   cross-platform reproduction and latest-compatible release tooling use Python 3.14 as the newest
   tested endpoint while Python 3.10 remains an explicit lower-bound test.
+- the reviewed CI validation baseline now uses Ruff `0.16.8`; the isolated build backend is
+  refreshed to Hatchling `1.32.3` after full source, artifact, wheel, and latest-compatible review.
 - built wheels can now be handed to an external reproducer as one deterministic, checksum-verified
   ZIP containing the public harness, report checker, schema, instructions, and exact wheel; CI
   verifies that the bundle itself runs from a no-checkout job without treating that self-check as
