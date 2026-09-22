@@ -67,6 +67,12 @@ latest stable release notes, and that no unsafe archive paths, ignored caches, p
 directories, or unexpectedly large members were packaged. A development artifact therefore has a
 development filename while retaining the last stable release snapshot as historical release evidence.
 
+After artifact inspection, CI also packages the exact wheel with the public installed-core harness,
+report checker, schema, hashes, and instructions as `independent-reproduction.zip`. A dedicated
+no-checkout smoke job extracts that bundle and executes it in a fresh virtual environment. This
+proves the handoff artifact is usable; because the job is still maintained by this repository, its
+result is not counted as the independent external reproduction required by issue #105.
+
 ## Build and metadata format policy
 
 Release artifacts are part of the reproducibility contract, not an incidental by-product of whatever
