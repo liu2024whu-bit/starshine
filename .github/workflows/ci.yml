@@ -154,6 +154,17 @@ jobs:
           set -o pipefail
           python scripts/check_release_artifacts.py dist \
             2>&1 | tee release-artifact-check.log
+      - name: Build portable independent reproduction bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          wheel="$(find dist -name '*.whl' -print -quit)"
+          revision="$(git rev-parse HEAD)"
+          test -n "$wheel"
+          python scripts/independent_reproduction.py bundle \
+            --wheel "$wheel" \
+            --revision "$revision" \
+            --output independent-reproduction.zip
       - name: Upload release inspection diagnostics
         if: failure()
         uses: actions/upload-artifact@v7
@@ -172,6 +183,12 @@ jobs:
           retention-days: 14
       - uses: actions/upload-artifact@v7
         with:
+          name: starshine-independent-reproduction-bundle
+          path: independent-reproduction.zip
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@v7
+        with:
           name: starshine-wheel-smoke-scripts
           path: |
             scripts/smoke_installed_wheel.py
@@ -182,6 +199,32 @@ jobs:
             scripts/smoke_installed_geopackage_run.py
             scripts/reproduce_installed_core.py
           if-no-files-found: error
+          retention-days: 14
+
+  independent-reproduction-bundle-smoke:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+      - uses: actions/download-artifact@v8
+        with:
+          name: starshine-independent-reproduction-bundle
+          path: bundle-artifact
+      - name: Extract and run the portable reproduction bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir bundle
+          python -c "import pathlib, zipfile; p=next(pathlib.Path('bundle-artifact').glob('*.zip')); zipfile.ZipFile(p).extractall('bundle')"
+          python bundle/scripts/independent_reproduction.py run --output-dir bundle-evidence
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: independent-reproduction-bundle-smoke
+          path: bundle-evidence/
+          if-no-files-found: warn
           retention-days: 14
 
   wheel-smoke:
