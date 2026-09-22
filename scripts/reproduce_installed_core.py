@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import starshine_geo
-from starshine_geo import build_doctor_report, digest_json, run_workflow
+from starshine_geo import build_doctor_report, difference_features, digest_json, run_workflow
 
 
 def _feature_collection(features: list[dict[str, Any]]) -> dict[str, Any]:
@@ -102,16 +102,46 @@ def build_reproduction_report(*, require_geopackage: bool = False) -> dict[str, 
     if expected_pairs != [["p-1", "z-a"], ["p-2", "z-a"], ["p-2", "z-b"]]:
         raise RuntimeError("direct public API self-created intersection produced unexpected pairs")
 
+    difference_mask = _feature_collection([_polygon(5, -5, 15, 15, mask="erase")])
+    difference_workflow = {
+        "version": 1,
+        "steps": [
+            {
+                "operation": "difference",
+                "inputs": {"input": "parcels", "mask": "mask"},
+                "parameters": {},
+                "output": "remaining",
+            }
+        ],
+    }
+    difference_direct = difference_features(left, difference_mask)
+    difference_via_workflow = run_workflow(
+        difference_workflow,
+        {"parcels": left, "mask": difference_mask},
+    )["remaining"]
+    if digest_json(difference_via_workflow) != digest_json(difference_direct):
+        raise RuntimeError("Difference Workflow output differs from the public API")
+    if [feature["properties"]["parcel"] for feature in difference_direct["features"]] != [
+        "p-1",
+        "p-2",
+    ]:
+        raise RuntimeError("self-created Difference did not preserve retained input order")
+
     with tempfile.TemporaryDirectory(prefix="starshine-reproduce-") as directory:
         root = Path(directory)
         workflow_path = root / "workflow.json"
+        difference_workflow_path = root / "difference-workflow.json"
         left_path = root / "parcels.geojson"
         right_path = root / "zones.geojson"
+        difference_mask_path = root / "difference-mask.geojson"
         output_path = root / "overlay.geojson"
+        difference_output_path = root / "remaining.geojson"
         manifest_path = root / "overlay.manifest.json"
         _write_json(workflow_path, workflow)
+        _write_json(difference_workflow_path, difference_workflow)
         _write_json(left_path, left)
         _write_json(right_path, right)
+        _write_json(difference_mask_path, difference_mask)
 
         doctor_cli = _run([command, "doctor", "--format", "json"])
         doctor_from_cli = json.loads(doctor_cli.stdout)
@@ -201,6 +231,40 @@ def build_reproduction_report(*, require_geopackage: bool = False) -> dict[str, 
         if digest_json(written) != digest_json(direct):
             raise RuntimeError("installed CLI workflow output differs from the public API")
 
+        difference_preflight = _run(
+            [
+                command,
+                "preflight",
+                str(difference_workflow_path),
+                "--layer",
+                f"parcels={left_path}",
+                "--layer",
+                f"mask={difference_mask_path}",
+                "--format",
+                "json",
+            ]
+        )
+        if not json.loads(difference_preflight.stdout)["valid"]:
+            raise RuntimeError("installed CLI preflight rejected self-created Difference inputs")
+        _run(
+            [
+                command,
+                "run",
+                str(difference_workflow_path),
+                "--layer",
+                f"parcels={left_path}",
+                "--layer",
+                f"mask={difference_mask_path}",
+                "--output-layer",
+                "remaining",
+                "--output",
+                str(difference_output_path),
+            ]
+        )
+        written_difference = json.loads(difference_output_path.read_text(encoding="utf-8"))
+        if digest_json(written_difference) != digest_json(difference_direct):
+            raise RuntimeError("installed CLI Difference output differs from the public API")
+
         inspection = _run([command, "inspect", str(output_path)])
         inspection_report = json.loads(inspection.stdout)
         if inspection_report["feature_count"] != 3:
@@ -217,8 +281,9 @@ def build_reproduction_report(*, require_geopackage: bool = False) -> dict[str, 
         operators = _run([command, "operators"])
         catalog = json.loads(operators.stdout)
         operation_names = [item["name"] for item in catalog["operators"]]
-        if "intersection" not in operation_names:
-            raise RuntimeError("installed operator catalog is missing intersection")
+        for operation in ("intersection", "difference"):
+            if operation not in operation_names:
+                raise RuntimeError(f"installed operator catalog is missing {operation}")
 
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         if manifest["starshine_version"] != starshine_geo.__version__:
@@ -251,6 +316,7 @@ def build_reproduction_report(*, require_geopackage: bool = False) -> dict[str, 
             "inspect",
             "quality",
             "operators",
+            "difference",
             "manifest",
         ],
     }
