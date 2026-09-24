@@ -150,9 +150,10 @@ script:
 - `smoke_installed_wheel.py` owns the broad installed package/API/CLI surface;
 - `reproduce_installed_core.py` owns the portable end-to-end workflow path and representative
   Intersection/Difference overlay evidence used by the independent-reproduction bundle;
-- focused smoke scripts are reserved for behavior the portable core cannot represent naturally,
-  such as SARIF failure output, geometry-quality failure/privacy behavior, and optional GeoPackage
-  file I/O.
+- focused smoke scripts are reserved for behavior the portable core cannot represent naturally:
+  SARIF failure output, geometry-quality failure/privacy behavior, and the single
+  `smoke_installed_geopackage.py` owner for optional GeoPackage inventory, Preflight, run, and
+  persistence behavior.
 
 A new operator does not get a new installed smoke script by default. Add one only when the operator
 introduces a genuinely new distribution boundary or failure/reporting behavior that the broad wheel
