@@ -70,6 +70,9 @@ All notable public changes are documented here.
 - installed-core reproduction now exercises polygon-mask Difference through the public API,
   Workflow registry, Preflight, installed CLI, and operator catalog so future independent bundle
   evidence also provides downstream evidence for the first bounded 0.7 operator.
+- installed overlay verification is consolidated into the portable reproduction harness instead of
+  maintaining a second Intersection/Difference smoke path; focused wheel-smoke scripts are reserved
+  for distinct report/privacy or optional-file-format boundaries.
 
 ## [0.4.0] - 2026-07-29
 
