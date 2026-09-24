@@ -1,5 +1,25 @@
 # Architecture
 
+Starshine is a bounded, auditable vector-workflow core rather than a collection of unrelated GIS
+utilities. The product spine is intentionally narrow:
+
+`GeoJSON + explicit CRS → operator registry → Workflow → planning/contracts/Preflight → execution → result + manifest`
+
+Three layers surround that spine:
+
+1. **Runtime** — GeoJSON/CRS rules, operators, the declarative registry, Workflow execution, and the
+   CLI file adapters. Runtime code owns spatial semantics.
+2. **Diagnostics** — inventory, inspection, geometry quality, planning, graph, Explain, contracts,
+   Preflight, SARIF, and Doctor. These observe or prepare the runtime; they do not create alternate
+   execution paths.
+3. **Evidence** — tests, benchmarks, installed-wheel smoke checks, release inspection, and
+   reproduction bundles. Evidence proves the runtime and diagnostics work; it is not itself a public
+   GIS capability.
+
+A proposed feature should attach to an existing point on this spine. If it requires a second workflow
+executor, another command tree, format-aware operator code, or a new per-operator smoke path, the
+design should be reconsidered before adding files.
+
 Starshine uses a deliberately small modular architecture.
 
 - `geojson.py` validates and normalizes the public data contract.
