@@ -154,6 +154,10 @@ script:
   such as SARIF failure output, geometry-quality failure/privacy behavior, and optional GeoPackage
   file I/O.
 
+A new operator does not get a new installed smoke script by default. Add one only when the operator
+introduces a genuinely new distribution boundary or failure/reporting behavior that the broad wheel
+smoke and portable reproduction harness cannot exercise without distortion.
+
 The installed-wheel scripts and the self-created reproduction harness are required in the source
 distribution so third parties can repeat the same checks after building locally. The standard wheel
 matrix runs the reproduction harness on Python 3.10 through 3.14. A second matrix installs the exact
