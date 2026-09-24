@@ -73,6 +73,9 @@ All notable public changes are documented here.
 - installed overlay verification is consolidated into the portable reproduction harness instead of
   maintaining a second Intersection/Difference smoke path; focused wheel-smoke scripts are reserved
   for distinct report/privacy or optional-file-format boundaries.
+- optional GeoPackage installed evidence now has one smoke owner covering inventory, Preflight,
+  SARIF, workflow execution, persisted output, manifests, and input-protection rules instead of
+  parallel Preflight/run scripts.
 
 ## [0.4.0] - 2026-07-29
 
