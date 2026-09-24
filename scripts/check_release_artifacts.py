@@ -203,7 +203,6 @@ def _check_sdist(path: Path, version: str, release_version: str) -> None:
                 "/scripts/smoke_installed_wheel.py",
                 "/scripts/smoke_installed_preflight_sarif.py",
                 "/scripts/smoke_installed_geometry_quality.py",
-                "/scripts/smoke_installed_overlay.py",
                 "/scripts/smoke_installed_geopackage_preflight.py",
                 "/scripts/smoke_installed_geopackage_run.py",
                 "/scripts/reproduce_installed_core.py",
