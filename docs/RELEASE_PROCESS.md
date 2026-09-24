@@ -62,10 +62,13 @@ versioned release notes continue to identify the latest stable release. The expl
 README, changelog, and release-note metadata to describe the same stable version before tagging.
 
 The artifact inspector checks that exactly one wheel and one source distribution were produced, that
-their filenames and metadata match `pyproject.toml`, that the source distribution includes the
+their filenames and metadata match `pyproject.toml`, that every Python module under
+`src/starshine_geo` is present in both distributions, that the source distribution includes the
 latest stable release notes, and that no unsafe archive paths, ignored caches, private-artifact
-directories, or unexpectedly large members were packaged. A development artifact therefore has a
-development filename while retaining the last stable release snapshot as historical release evidence.
+directories, or unexpectedly large members were packaged. Package-module requirements are derived
+from the source tree rather than duplicated in a manual release checklist. A development artifact
+therefore has a development filename while retaining the last stable release snapshot as historical
+release evidence.
 
 After artifact inspection, CI also packages the exact wheel with the public installed-core harness,
 report checker, schema, hashes, and instructions as `independent-reproduction.zip`. A dedicated

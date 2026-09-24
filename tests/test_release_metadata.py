@@ -10,6 +10,7 @@ except ModuleNotFoundError:  # pragma: no cover - exercised only on Python 3.10
     import tomli as tomllib
 
 import starshine_geo
+from scripts.check_release_artifacts import _package_python_suffixes
 from scripts.check_release_readiness import check as check_release_readiness
 from starshine_geo.cli import main
 from starshine_geo.manifest import build_manifest
@@ -20,6 +21,34 @@ ROOT = Path(__file__).parents[1]
 def _project_version() -> str:
     metadata = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     return str(metadata["project"]["version"])
+
+
+def test_release_artifact_package_surface_is_derived_from_source_tree(tmp_path):
+    source_root = tmp_path / "src" / "starshine_geo"
+    nested = source_root / "nested"
+    nested.mkdir(parents=True)
+    (source_root / "__init__.py").write_text("", encoding="utf-8")
+    (source_root / "workflow.py").write_text("", encoding="utf-8")
+    (nested / "helper.py").write_text("", encoding="utf-8")
+    (source_root / "README.txt").write_text("not a module", encoding="utf-8")
+
+    assert _package_python_suffixes(source_root) == (
+        "starshine_geo/__init__.py",
+        "starshine_geo/nested/helper.py",
+        "starshine_geo/workflow.py",
+    )
+
+
+def test_release_artifact_package_surface_covers_current_core_modules():
+    suffixes = set(_package_python_suffixes(ROOT / "src" / "starshine_geo"))
+
+    assert {
+        "starshine_geo/geojson.py",
+        "starshine_geo/workflow.py",
+        "starshine_geo/manifest.py",
+        "starshine_geo/geopackage.py",
+        "starshine_geo/io.py",
+    } <= suffixes
 
 
 def test_development_version_is_distinct_from_latest_release_metadata():
