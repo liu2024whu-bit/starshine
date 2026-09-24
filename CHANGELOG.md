@@ -76,6 +76,8 @@ All notable public changes are documented here.
 - optional GeoPackage installed evidence now has one smoke owner covering inventory, Preflight,
   SARIF, workflow execution, persisted output, manifests, and input-protection rules instead of
   parallel Preflight/run scripts.
+- wheel and source-distribution inspection now derive the complete `starshine_geo` Python-module
+  surface from the source tree instead of maintaining a second, drift-prone module checklist.
 
 ## [0.4.0] - 2026-07-29
 
