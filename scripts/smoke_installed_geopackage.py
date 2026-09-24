@@ -94,7 +94,7 @@ def main() -> int:
     if starshine_command is None:
         raise RuntimeError("the installed wheel did not provide the starshine console command")
 
-    with tempfile.TemporaryDirectory(prefix="starshine-gpkg-preflight-smoke-") as directory:
+    with tempfile.TemporaryDirectory(prefix="starshine-gpkg-smoke-") as directory:
         root = Path(directory)
         package = root / "data" / "inputs.gpkg"
         package.parent.mkdir()
@@ -102,6 +102,9 @@ def main() -> int:
         json_report_path = root / "reports" / "preflight.json"
         sarif_path = root / "reports" / "preflight.sarif"
         inventory_path = root / "reports" / "inventory.json"
+        result_package = root / "result.gpkg"
+        expected_package = root / "expected.gpkg"
+        manifest_path = root / "manifest.json"
         workflow = _workflow()
         _write_json(workflow_path, workflow)
         _write_package(package)
@@ -245,11 +248,70 @@ def main() -> int:
         if hashlib.sha256(package.read_bytes()).hexdigest() != package_digest:
             raise RuntimeError("GeoPackage Preflight modified its source artifact")
 
+        run_result = _run(
+            [
+                starshine_command,
+                "run",
+                str(workflow_path),
+                "--gpkg-layer",
+                "source",
+                str(package),
+                "analysis_source",
+                "--gpkg-layer",
+                "mask",
+                str(package),
+                "analysis_mask",
+                "--output-layer",
+                "clipped",
+                "--output-format",
+                "geopackage",
+                "--geopackage-output-layer",
+                "clipped_result",
+                "--output",
+                str(result_package),
+                "--manifest",
+                str(manifest_path),
+            ],
+            expected_returncode=0,
+        )
+        if run_result.stderr:
+            raise RuntimeError(f"unexpected GeoPackage run stderr: {run_result.stderr}")
+
+        expected = starshine_geo.run_workflow(
+            workflow,
+            {
+                "source": starshine_geo.read_geopackage(package, layer="analysis_source"),
+                "mask": starshine_geo.read_geopackage(package, layer="analysis_mask"),
+            },
+        )["clipped"]
+        starshine_geo.write_geopackage(
+            expected,
+            expected_package,
+            layer="clipped_result",
+        )
+        cli_output = starshine_geo.read_geopackage(result_package, layer="clipped_result")
+        persisted_expected = starshine_geo.read_geopackage(
+            expected_package,
+            layer="clipped_result",
+        )
+        if starshine_geo.digest_json(cli_output) != starshine_geo.digest_json(
+            persisted_expected
+        ):
+            raise RuntimeError("installed GeoPackage CLI result differs from persisted public API")
+
+        if not manifest_path.is_file():
+            raise RuntimeError("installed GeoPackage run did not produce a manifest")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if manifest.get("starshine_version") != installed_version:
+            raise RuntimeError("GeoPackage run manifest version differs from installed metadata")
+        if manifest.get("output_layer", {}).get("name") != "clipped":
+            raise RuntimeError("GeoPackage run manifest records the wrong output layer")
+
     print(
         json.dumps(
             {
                 "artifact_uri": "data/inputs.gpkg",
-                "formats": ["inventory", "json", "sarif"],
+                "formats": ["inventory", "preflight-json", "preflight-sarif", "run"],
                 "starshine_version": installed_version,
                 "status": "ok",
             },

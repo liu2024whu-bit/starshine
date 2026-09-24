@@ -194,8 +194,7 @@ jobs:
             scripts/smoke_installed_wheel.py
             scripts/smoke_installed_preflight_sarif.py
             scripts/smoke_installed_geometry_quality.py
-            scripts/smoke_installed_geopackage_preflight.py
-            scripts/smoke_installed_geopackage_run.py
+            scripts/smoke_installed_geopackage.py
             scripts/reproduce_installed_core.py
           if-no-files-found: error
           retention-days: 14
@@ -289,7 +288,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
-  geopackage-preflight-wheel-smoke:
+  geopackage-wheel-smoke:
     needs: build
     runs-on: ubuntu-latest
     strategy:
@@ -322,16 +321,12 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          script="$(find smoke -name smoke_installed_geopackage_preflight.py -print -quit)"
-          run_script="$(find smoke -name smoke_installed_geopackage_run.py -print -quit)"
+          script="$(find smoke -name smoke_installed_geopackage.py -print -quit)"
           reproduce_script="$(find smoke -name reproduce_installed_core.py -print -quit)"
           test -n "$script"
-          test -n "$run_script"
           test -n "$reproduce_script"
           python "$script" \
-            2>&1 | tee gpkg-preflight-wheel-smoke-${{ matrix.python-version }}.log
-          python "$run_script" \
-            2>&1 | tee gpkg-run-wheel-smoke-${{ matrix.python-version }}.log
+            2>&1 | tee gpkg-wheel-smoke-${{ matrix.python-version }}.log
           python "$reproduce_script" \
             --require-geopackage \
             --output gpkg-reproduction-report-${{ matrix.python-version }}.json \
@@ -340,11 +335,10 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: gpkg-preflight-wheel-failure-${{ matrix.python-version }}
+          name: gpkg-wheel-failure-${{ matrix.python-version }}
           path: |
             gpkg-wheel-install-${{ matrix.python-version }}.log
-            gpkg-preflight-wheel-smoke-${{ matrix.python-version }}.log
-            gpkg-run-wheel-smoke-${{ matrix.python-version }}.log
+            gpkg-wheel-smoke-${{ matrix.python-version }}.log
             gpkg-reproduction-${{ matrix.python-version }}.log
             gpkg-reproduction-report-${{ matrix.python-version }}.json
           if-no-files-found: warn
