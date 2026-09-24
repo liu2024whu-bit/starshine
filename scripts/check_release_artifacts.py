@@ -21,6 +21,7 @@ _FORBIDDEN_MEMBER_PARTS = {
     "ocr",
     "runtime_outputs",
 }
+_PACKAGE_SOURCE_ROOT = Path("src/starshine_geo")
 
 
 def _project_version() -> str:
@@ -55,6 +56,25 @@ def _require_suffixes(names: list[str], suffixes: tuple[str, ...], archive_name:
         raise RuntimeError(f"{archive_name} is missing expected files: {missing}")
 
 
+def _package_python_suffixes(source_root: Path = _PACKAGE_SOURCE_ROOT) -> tuple[str, ...]:
+    if not source_root.is_dir():
+        raise RuntimeError(f"package source directory does not exist: {source_root}")
+    suffixes = tuple(
+        sorted(
+            path.relative_to(source_root.parent).as_posix()
+            for path in source_root.rglob("*.py")
+            if path.is_file()
+        )
+    )
+    if not suffixes:
+        raise RuntimeError(f"package source directory contains no Python modules: {source_root}")
+    return suffixes
+
+
+def _sdist_package_suffixes(source_root: Path = _PACKAGE_SOURCE_ROOT) -> tuple[str, ...]:
+    return tuple(f"/src/{suffix}" for suffix in _package_python_suffixes(source_root))
+
+
 def _check_wheel(path: Path, version: str) -> None:
     if f"-{version}-" not in path.name:
         raise RuntimeError(f"wheel filename does not contain version {version}: {path.name}")
@@ -66,36 +86,7 @@ def _check_wheel(path: Path, version: str) -> None:
         _require_suffixes(
             names,
             (
-                "starshine_geo/__init__.py",
-                "starshine_geo/_cli_layer_sources.py",
-                "starshine_geo/_cli_run_output.py",
-                "starshine_geo/_version.py",
-                "starshine_geo/_preflight_checks.py",
-                "starshine_geo/_preflight_findings.py",
-                "starshine_geo/_preflight_model.py",
-                "starshine_geo/_preflight_render.py",
-                "starshine_geo/_preflight_report.py",
-                "starshine_geo/cli.py",
-                "starshine_geo/inventory.py",
-                "starshine_geo/contract_specs.py",
-                "starshine_geo/contracts.py",
-                "starshine_geo/explain.py",
-                "starshine_geo/_geometry_quality_coordinates.py",
-                "starshine_geo/_geometry_quality_findings.py",
-                "starshine_geo/_geometry_quality_model.py",
-                "starshine_geo/_geometry_quality_render.py",
-                "starshine_geo/_geometry_quality_report.py",
-                "starshine_geo/geometry_quality.py",
-                "starshine_geo/graph.py",
-                "starshine_geo/inspection.py",
-                "starshine_geo/metrics.py",
-                "starshine_geo/operator_registry.py",
-                "starshine_geo/operators.py",
-                "starshine_geo/_spatial_index.py",
-                "starshine_geo/doctor.py",
-                "starshine_geo/planning.py",
-                "starshine_geo/preflight.py",
-                "starshine_geo/preflight_sarif.py",
+                *_package_python_suffixes(),
                 ".dist-info/METADATA",
             ),
             path.name,
@@ -167,21 +158,7 @@ def _check_sdist(path: Path, version: str, release_version: str) -> None:
                 "/schemas/workflow-plan-v1.schema.json",
                 "/schemas/workflow-preflight-v1.schema.json",
                 "/schemas/workflow-v1.schema.json",
-                "/src/starshine_geo/_cli_layer_sources.py",
-                "/src/starshine_geo/_cli_run_output.py",
-                "/src/starshine_geo/_spatial_index.py",
-                "/src/starshine_geo/inventory.py",
-                "/src/starshine_geo/doctor.py",
-                "/src/starshine_geo/_preflight_checks.py",
-                "/src/starshine_geo/_preflight_findings.py",
-                "/src/starshine_geo/_preflight_model.py",
-                "/src/starshine_geo/_preflight_render.py",
-                "/src/starshine_geo/_preflight_report.py",
-                "/src/starshine_geo/_geometry_quality_coordinates.py",
-                "/src/starshine_geo/_geometry_quality_findings.py",
-                "/src/starshine_geo/_geometry_quality_model.py",
-                "/src/starshine_geo/_geometry_quality_render.py",
-                "/src/starshine_geo/_geometry_quality_report.py",
+                *_sdist_package_suffixes(),
                 "/tests/test_doctor.py",
                 "/tests/test_geometry_quality.py",
                 "/tests/test_geometry_quality_architecture.py",
