@@ -60,12 +60,15 @@ published. The current `main` branch builds `0.7.0.dev0`; the latest stable rele
 - [x] privacy-aware GeoJSON/GeoPackage source inventory
 - [x] documentation ownership/index to prevent parallel or duplicated documentation
 
-## Next — 0.6 engineering consolidation
+## 0.6 — Engineering consolidation
 
-The next phase is intentionally **not another broad operator expansion**. The priority is to make the
-existing public surface easier to understand, verify, and extend.
+This phase consolidated the existing public surface instead of expanding it sideways. The internal
+architecture, documentation ownership, diagnostics, CLI boundaries, and release evidence work listed
+below is complete. One evidence task remains intentionally external: an independent operator or CI
+environment must reproduce the clean-wheel handoff before the corresponding note can be published.
 
-- [ ] publish a reproducibility note from an independent environment
+- [ ] publish a dated independent-environment reproducibility note after issue #105 has accepted
+  external clean-wheel evidence
 - [x] enforce documentation-index ownership, local-link validity, and documentation-tree containment
   in the existing public-repository audit
 - [x] audit the documentation set for duplicated or conflicting normative statements now that every
@@ -78,25 +81,37 @@ existing public surface easier to understand, verify, and extend.
   architecture tests in addition to the existing Preflight, quality, indexing, and CLI/I/O checks
 - [x] align duplicate-identifier failures across Preflight and direct operators without echoing
   property values into runtime diagnostics
-- [x] review the current operator set against concrete spatial-analysis gaps and select polygon-mask
+- [x] review the operator set against concrete spatial-analysis gaps and select polygon-mask
   Difference as the first bounded 0.7 addition because it reuses registry, contracts, Preflight,
   Workflow execution, I/O adapters, tests, and release evidence without a parallel execution path
 
-A feature is not considered complete merely because its implementation works. New public behavior must
-have a clear owner in the architecture, a stable contract, synthetic or redistributable evidence,
-appropriate tests, documentation without duplication, and clean distribution/reproduction coverage.
+A feature is not considered complete merely because its implementation works. New public behavior
+must have a clear owner on the product spine, a stable contract, synthetic or redistributable
+evidence, appropriate tests, documentation without duplication, and clean
+distribution/reproduction coverage.
 
-For 0.6, deletion, consolidation, executable architecture rules, and clearer diagnostics are preferred
-over increasing module count. A 0.7 feature phase should begin only after the remaining overlap and
-normative-document audits are small enough that new behavior has an obvious place to live.
+## 0.7 — Stabilize the bounded analysis core
 
-## 0.7 — Bounded overlay expansion
+The current 0.7 development line is a stabilization phase, not a mandate to add more overlay
+operations. The priority is to prove that the bounded analysis core is understandable, installable,
+reproducible, and releasable before expanding the operator catalog again.
 
-- [x] CRS-safe polygon-mask Difference/Erase through the existing public API and Workflow registry
-- [ ] evaluate the next spatial-analysis gap only after Difference has independent downstream use or
-  evidence; avoid broad union/identity/join-policy expansion without a concrete contract need
+- [x] add CRS-safe polygon-mask Difference/Erase through the existing public API and Workflow registry
+- [x] provide a portable, checksum-verified independent-reproduction handoff built from the exact
+  reviewed wheel
+- [x] consolidate installed evidence around explicit owners instead of adding a smoke script for each
+  operator or file-format path
+- [x] derive wheel and source-distribution package coverage from the actual `src/starshine_geo`
+  source tree and verify the supported Python 3.10–3.14 matrix
+- [ ] obtain accepted independent clean-wheel evidence for issue #105 and record the dated result
+  without treating repository-owned CI as external validation
+- [ ] prepare a stable 0.7.0 release candidate only after the independent evidence prerequisite is
+  satisfied and the release-readiness chain passes from a stable version commit
+- [ ] evaluate another spatial-analysis gap only after real downstream use or a concrete public issue
+  demonstrates the need; do not add generic union, identity, or broad join-policy surfaces merely to
+  match a larger GIS library
 
-The independent-environment reproducibility note remains an open evidence task from 0.6; it does not
-change the dependency or execution architecture used by bounded 0.7 operators.
+Until those evidence and release conditions are met, maintenance should prefer deleting duplicate
+paths, fixing correctness gaps, and simplifying ownership over increasing module or operator count.
 
 See [the documentation index](docs/README.md) for the current ownership map.
