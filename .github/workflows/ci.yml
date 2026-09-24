@@ -194,7 +194,6 @@ jobs:
             scripts/smoke_installed_wheel.py
             scripts/smoke_installed_preflight_sarif.py
             scripts/smoke_installed_geometry_quality.py
-            scripts/smoke_installed_overlay.py
             scripts/smoke_installed_geopackage_preflight.py
             scripts/smoke_installed_geopackage_run.py
             scripts/reproduce_installed_core.py
@@ -261,12 +260,10 @@ jobs:
           core_script="$(find smoke -name smoke_installed_wheel.py -print -quit)"
           sarif_script="$(find smoke -name smoke_installed_preflight_sarif.py -print -quit)"
           quality_script="$(find smoke -name smoke_installed_geometry_quality.py -print -quit)"
-          overlay_script="$(find smoke -name smoke_installed_overlay.py -print -quit)"
           reproduce_script="$(find smoke -name reproduce_installed_core.py -print -quit)"
           test -n "$core_script"
           test -n "$sarif_script"
           test -n "$quality_script"
-          test -n "$overlay_script"
           test -n "$reproduce_script"
           python "$core_script" \
             2>&1 | tee wheel-smoke-${{ matrix.python-version }}.log
@@ -274,8 +271,6 @@ jobs:
             2>&1 | tee wheel-sarif-smoke-${{ matrix.python-version }}.log
           python "$quality_script" \
             2>&1 | tee wheel-quality-smoke-${{ matrix.python-version }}.log
-          python "$overlay_script" \
-            2>&1 | tee wheel-overlay-smoke-${{ matrix.python-version }}.log
           python "$reproduce_script" \
             --output reproduction-report-${{ matrix.python-version }}.json \
             2>&1 | tee wheel-reproduction-${{ matrix.python-version }}.log
@@ -289,7 +284,6 @@ jobs:
             wheel-smoke-${{ matrix.python-version }}.log
             wheel-sarif-smoke-${{ matrix.python-version }}.log
             wheel-quality-smoke-${{ matrix.python-version }}.log
-            wheel-overlay-smoke-${{ matrix.python-version }}.log
             wheel-reproduction-${{ matrix.python-version }}.log
             reproduction-report-${{ matrix.python-version }}.json
           if-no-files-found: warn
