@@ -143,12 +143,22 @@ the downloaded wheel and run the public installed-wheel smoke scripts, which ver
 - a self-created point-within-polygon workflow runs through both the Python API and CLI;
 - the generated result and reproducibility manifest contain the expected public values.
 
-Installation and smoke output are retained as short CI artifacts when a matrix job fails. The
-installed-wheel scripts and the self-created reproduction harness are required in the source
+Installation and smoke output are retained as short CI artifacts when a matrix job fails. Installed
+evidence has explicit ownership so adding a public operator does not automatically add another smoke
+script:
+
+- `smoke_installed_wheel.py` owns the broad installed package/API/CLI surface;
+- `reproduce_installed_core.py` owns the portable end-to-end workflow path and representative
+  Intersection/Difference overlay evidence used by the independent-reproduction bundle;
+- focused smoke scripts are reserved for behavior the portable core cannot represent naturally,
+  such as SARIF failure output, geometry-quality failure/privacy behavior, and optional GeoPackage
+  file I/O.
+
+The installed-wheel scripts and the self-created reproduction harness are required in the source
 distribution so third parties can repeat the same checks after building locally. The standard wheel
-matrix runs the reproduction harness on Python 3.10 through 3.14. A second matrix installs the
-exact same wheel on Linux, Windows, and macOS with Python 3.14 and runs the harness without checking
-out the repository. Schema validation of the reproduction report is deliberately performed in the
+matrix runs the reproduction harness on Python 3.10 through 3.14. A second matrix installs the exact
+same wheel on Linux, Windows, and macOS with Python 3.14 and runs the harness without checking out
+the repository. Schema validation of the reproduction report is deliberately performed in the
 source/dev job; the end-user wheel jobs require only the normal runtime dependencies. The benchmark
 artifact contains both the complete corpus report and the indexed-versus-exhaustive report;
 semantic equality is mandatory while timing has no shared-runner threshold.
