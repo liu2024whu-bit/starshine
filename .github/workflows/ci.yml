@@ -372,11 +372,19 @@ jobs:
 
   server-wheel-smoke:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.14"]
+        include:
+          - os: ubuntu-latest
+            python-version: "3.10"
+          - os: ubuntu-latest
+            python-version: "3.14"
+          - os: windows-latest
+            python-version: "3.14"
+          - os: macos-latest
+            python-version: "3.14"
     steps:
       - uses: actions/setup-python@v7
         with:
@@ -390,26 +398,20 @@ jobs:
           name: starshine-wheel-smoke-scripts
           path: smoke
       - name: Install exact wheel with optional server dependencies
-        shell: bash
         run: |
-          set -o pipefail
-          wheel="$(find dist -name '*.whl' -print -quit)"
-          test -n "$wheel"
           python -m pip install --upgrade pip
-          python -m pip install "${wheel}[server]" "httpx>=0.28,<1"
+          python -c "import pathlib, subprocess, sys; wheel = next(pathlib.Path('dist').rglob('*.whl')); subprocess.check_call([sys.executable, '-m', 'pip', 'install', str(wheel) + '[server]', 'httpx>=0.28,<1'])"
       - name: Run installed server smoke
-        shell: bash
-        run: |
-          set -o pipefail
-          script="$(find smoke -name smoke_installed_server.py -print -quit)"
-          test -n "$script"
-          python "$script" 2>&1 | tee server-wheel-smoke-${{ matrix.python-version }}.log
+        run: >-
+          python -c "import pathlib, subprocess, sys;
+          script = next(pathlib.Path('smoke').rglob('smoke_installed_server.py'));
+          subprocess.check_call([sys.executable, str(script)])"
       - name: Upload server smoke diagnostics
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: server-wheel-failure-${{ matrix.python-version }}
-          path: server-wheel-smoke-${{ matrix.python-version }}.log
+          name: server-wheel-failure-${{ matrix.os }}-${{ matrix.python-version }}
+          path: server-wheel-smoke-*.log
           if-no-files-found: warn
           retention-days: 7
 
