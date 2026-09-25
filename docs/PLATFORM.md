@@ -37,13 +37,35 @@ accounts, fetch URLs, start arbitrary processes, or persist user data. Those cap
 resource, security, and lifecycle boundaries and must not arrive accidentally as side effects of a
 thin API adapter.
 
+## Data-aware assurance before execution
+
+The next platform increment accepts **small inline GeoJSON FeatureCollections for Preflight only**.
+This is deliberate: it proves that the service adds Starshine's actual value—early, deterministic
+assurance—before introducing execution lifecycle infrastructure.
+
+- `GET /api/v1/limits` publishes the current inline request boundary.
+- `POST /api/v1/workflows/preflight` accepts one Workflow plus named inline FeatureCollections and
+  returns the canonical `starshine_geo.preflight_workflow_inputs` report.
+- invalid data remains a normal Preflight report with `valid: false` when the Core can diagnose it;
+- structurally invalid Workflows retain the stable Workflow diagnostic response;
+- Server capacity limits return HTTP 413 before spatial execution;
+- workflow execution remains explicitly disabled.
+
+Current inline Preflight limits are intentionally small: a 2 MiB request body, at most 8 named
+layers, 16 Workflow steps, 2,000 features per layer, and 5,000 features in total. These are service
+boundaries, not claims about Core algorithm capacity.
+
+See [PRODUCT.md](PRODUCT.md) for why assurance precedes upload/job infrastructure.
+
 ## Next platform increments
 
 ### 0.8B — bounded execution
 
-Add an explicit per-job workspace and hard resource limits before accepting data. Start with GeoJSON,
-then add explicitly selected GeoPackage layers. Every execution path must run the existing Preflight
-and Workflow engine, preserve immutable inputs, and return result + manifest evidence.
+Execution is the next separate capability. Before enabling it, Starshine still needs an explicit
+per-job workspace, immutable inputs, output limits, and a credible execution-time/isolation boundary.
+GeoJSON should remain the first execution format; explicit GeoPackage layers can follow. Every
+execution path must run the existing Preflight and Workflow engine and return result + manifest
+evidence.
 
 ### 0.8C — Web workbench
 
