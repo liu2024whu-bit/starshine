@@ -114,7 +114,9 @@ def main() -> int:
         output_layer=expected_result,
     )
     assert execution_payload["status"] == "succeeded"
-    assert execution_payload["result"] == expected_result
+    assert starshine_geo.digest_json(execution_payload["result"]) == starshine_geo.digest_json(
+        expected_result
+    )
     assert execution_payload["manifest"] == expected_manifest
     assert execution_payload["preflight"] == preflight.json()
     assert execution_payload["execution_policy"]["mode"] == "isolated_subprocess"
