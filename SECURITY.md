@@ -2,8 +2,9 @@
 
 ## Supported versions
 
-Security fixes currently target the latest `0.2.x` release and the `main` branch. Older preview
-releases may receive documentation updates, but users should reproduce findings against the latest
+Security fixes target the latest stable release line documented by `CITATION.cff` and
+`docs/releases/`, together with the `main` development branch. Older snapshots may receive
+documentation-only corrections, but security findings should be reproduced against the latest
 public commit when possible.
 
 ## Reporting a vulnerability
