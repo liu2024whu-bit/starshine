@@ -70,10 +70,20 @@ The post-0.7 platform is an adapter above the public core rather than a fourth e
 `starshine_geo` surfaces; it does not import private core modules or spatial backends such as
 Shapely, PyProj, GeoPandas, or Pyogrio directly. Architecture tests enforce both directions.
 
-The initial 0.8A server surface is deliberately data-free: health/version, operator discovery,
-Workflow validation, and planning. File upload, Preflight over uploaded data, execution, persistence,
-authentication, network fetching, and background jobs require separate resource/security contracts
-before they are introduced. See [PLATFORM.md](PLATFORM.md).
+The platform grows in one direction from review to assurance to execution. Data-aware Preflight and
+bounded execution reuse the public Core; they do not create another Workflow engine. The execution
+adapter uses a fixed child-process protocol:
+
+`HTTP route → canonical Preflight → execution supervisor → fixed worker module → public run_workflow() → result + manifest`
+
+The HTTP process never executes spatial operators directly. The supervisor owns a temporary
+workspace, read-only serialized request artifact, wall-clock and resident-memory limits, process-tree
+termination, response-size policy, and cleanup. The worker accepts only Server-created request and
+response paths; it does not accept user-provided module names, commands, filesystem paths, URLs, or
+plugins. The child command uses `shell=False` and Python isolated mode.
+
+File upload, persistent projects, authentication, network fetching, and background jobs remain
+separate resource/security contracts. See [PLATFORM.md](PLATFORM.md).
 
 ## Source metadata dependency direction
 
@@ -174,3 +184,6 @@ in-place mutation of input datasets.
     new commands extend `cli.py` instead of adding forwarding entry modules.
 14. **Platform adapters stay above the core.** HTTP and browser layers consume public Core APIs and
     never become alternate owners of Workflow validation, CRS policy, operators, or persistence semantics.
+15. **Execution is supervised, not embedded.** Service execution must pass canonical Preflight and
+    run in a killable child process with explicit resource and output boundaries; HTTP worker threads
+    do not become a second in-process GIS runtime.
