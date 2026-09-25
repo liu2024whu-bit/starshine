@@ -51,8 +51,10 @@ def test_release_artifact_package_surface_covers_current_core_modules():
         "starshine_geo/io.py",
         "starshine_server/__init__.py",
         "starshine_server/app.py",
+        "starshine_server/execution.py",
         "starshine_server/limits.py",
         "starshine_server/models.py",
+        "starshine_server/worker.py",
     } <= suffixes
 
 
