@@ -59,8 +59,10 @@ def main() -> int:
 
     limits = client.get("/api/v1/limits")
     limits.raise_for_status()
-    assert limits.json()["workflow_execution_enabled"] is False
+    assert limits.json()["workflow_execution_enabled"] is True
     assert limits.json()["inline_preflight"]["max_layers"] == 8
+    assert limits.json()["inline_execution"]["mode"] == "isolated_subprocess"
+    assert limits.json()["inline_execution"]["timeout_seconds"] == 10
 
     workflow = {
         "version": 1,
@@ -93,8 +95,32 @@ def main() -> int:
     assert preflight.json() == starshine_geo.preflight_workflow_inputs(workflow, layers)
     assert preflight.json()["valid"] is True
 
+    execution = client.post(
+        "/api/v1/workflows/execute",
+        json={
+            "workflow": workflow,
+            "layers": layers,
+            "output_layer": "clipped",
+        },
+    )
+    execution.raise_for_status()
+    execution_payload = execution.json()
+    expected_context = starshine_geo.run_workflow(workflow, layers)
+    expected_result = expected_context["clipped"]
+    expected_manifest = starshine_geo.build_manifest(
+        workflow,
+        layers,
+        output_layer_name="clipped",
+        output_layer=expected_result,
+    )
+    assert execution_payload["status"] == "succeeded"
+    assert execution_payload["result"] == expected_result
+    assert execution_payload["manifest"] == expected_manifest
+    assert execution_payload["preflight"] == preflight.json()
+    assert execution_payload["execution_policy"]["mode"] == "isolated_subprocess"
+
     print(
-        "Installed Starshine Server assurance smoke passed for "
+        "Installed Starshine Server bounded-execution smoke passed for "
         f"Starshine Geo {starshine_geo.__version__}."
     )
     return 0
