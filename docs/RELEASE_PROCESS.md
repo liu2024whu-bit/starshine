@@ -139,8 +139,8 @@ the downloaded wheel and run the public installed-wheel smoke scripts, which ver
   Preflight bindings, repository-relative SARIF locations, pre-I/O duplicate checks, and source
   overwrite protection on every supported Python version;
 - a focused installed-wheel server smoke installs the optional `server` extra and verifies that
-  health, operator discovery, Workflow validation, and planning delegate to the packaged Core rather
-  than a source checkout;
+  health, operator discovery, Workflow validation, planning, published limits, and data-aware
+  Preflight delegate to the packaged Core rather than a source checkout;
 - reprojection, projected geometry metrics, deterministic STRtree-backed nearest matching,
   point-in-polygon joining, pairwise intersection, and polygon-mask Difference work through
   installed APIs and workflow execution;
