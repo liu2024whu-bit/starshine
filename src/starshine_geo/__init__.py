@@ -7,7 +7,7 @@ from .contracts import (
     render_workflow_contract_markdown,
 )
 from .doctor import DOCTOR_REPORT_VERSION, build_doctor_report, render_doctor_text
-from .errors import WorkflowDiagnostic, WorkflowValidationError
+from .errors import StarshineError, ValidationError, WorkflowDiagnostic, WorkflowValidationError
 from .explain import (
     WORKFLOW_EXPLANATION_VERSION,
     explain_workflow,
@@ -67,11 +67,13 @@ __all__ = [
     "SARIF_SCHEMA_URI",
     "SARIF_VERSION",
     "SOURCE_INVENTORY_VERSION",
+    "StarshineError",
     "WORKFLOW_CONTRACT_VERSION",
     "WORKFLOW_EXPLANATION_VERSION",
     "WORKFLOW_GRAPH_VERSION",
     "WORKFLOW_PLAN_VERSION",
     "WORKFLOW_PREFLIGHT_VERSION",
+    "ValidationError",
     "WorkflowDiagnostic",
     "WorkflowValidationError",
     "__version__",
