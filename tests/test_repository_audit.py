@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from scripts.audit_public_repository import (
+    _codeowners_literal_path_violations,
     _documentation_index_violations,
     _workflow_pipeline_violations,
 )
@@ -57,6 +58,28 @@ def test_documentation_index_ignores_external_and_anchor_links(tmp_path: Path) -
     )
 
     assert _documentation_index_violations(docs) == []
+
+
+def test_codeowners_audit_accepts_existing_literal_paths(tmp_path: Path) -> None:
+    codeowners = tmp_path / ".github" / "CODEOWNERS"
+    _write(codeowners, "/scripts/check.py @maintainer\n/docs/ @maintainer\n* @maintainer\n")
+    _write(tmp_path / "scripts" / "check.py", "print('ok')\n")
+    (tmp_path / "docs").mkdir()
+
+    assert _codeowners_literal_path_violations(codeowners, tmp_path) == []
+
+
+def test_codeowners_audit_rejects_missing_literal_path(tmp_path: Path) -> None:
+    codeowners = tmp_path / ".github" / "CODEOWNERS"
+    _write(
+        codeowners,
+        "# release owner\n/scripts/removed_smoke.py @maintainer\n*.md @maintainer\n",
+    )
+
+    assert _codeowners_literal_path_violations(codeowners, tmp_path) == [
+        "CODEOWNERS literal path is missing: /scripts/removed_smoke.py (line 2)"
+    ]
+
 
 def test_workflow_pipeline_audit_accepts_pipefail_guarded_tee(tmp_path: Path) -> None:
     workflows = tmp_path / ".github" / "workflows"
