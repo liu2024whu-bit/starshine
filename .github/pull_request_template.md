@@ -10,8 +10,9 @@
 
 ## Validation
 
+- [ ] `python scripts/audit_public_repository.py`
 - [ ] `ruff check .`
-- [ ] `pytest`
+- [ ] `python -m pytest`
 - [ ] Demo or focused reproduction added/updated
 - [ ] No credentials, private data, copyrighted source material, or machine-specific paths
 
