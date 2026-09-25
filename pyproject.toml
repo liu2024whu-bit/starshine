@@ -41,6 +41,12 @@ dev = [
   "tomli>=2,<3; python_version < '3.11'",
 ]
 geopackage = ["geopandas>=1.0,<2", "pyogrio>=0.9,<1"]
+server = [
+  "fastapi>=0.141,<1",
+  "pydantic>=2.13,<3",
+  "uvicorn>=0.52,<1",
+]
+server-test = ["httpx>=0.28,<1"]
 release = [
   "build>=1.2,<2",
   "tomli>=2,<3; python_version < '3.11'",
@@ -51,7 +57,7 @@ release = [
 starshine = "starshine_geo.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/starshine_geo"]
+packages = ["src/starshine_geo", "src/starshine_server"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
