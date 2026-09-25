@@ -51,6 +51,8 @@ def test_release_artifact_package_surface_covers_current_core_modules():
         "starshine_geo/io.py",
         "starshine_server/__init__.py",
         "starshine_server/app.py",
+        "starshine_server/limits.py",
+        "starshine_server/models.py",
     } <= suffixes
 
 
@@ -90,6 +92,8 @@ def test_cli_reports_installed_version(capsys):
 
 
 def test_top_level_api_exports_public_operator_surfaces():
+    assert issubclass(starshine_geo.StarshineError, Exception)
+    assert issubclass(starshine_geo.ValidationError, starshine_geo.StarshineError)
     assert callable(starshine_geo.assess_geometry_quality)
     assert callable(starshine_geo.build_workflow_graph)
     assert callable(starshine_geo.build_workflow_preflight_sarif)
@@ -119,6 +123,8 @@ def test_top_level_api_exports_public_operator_surfaces():
     assert starshine_geo.WORKFLOW_PREFLIGHT_VERSION == 1
     assert starshine_geo.SARIF_VERSION == "2.1.0"
     assert starshine_geo.SARIF_SCHEMA_URI.endswith("sarif-2.1.0.json")
+    assert "StarshineError" in starshine_geo.__all__
+    assert "ValidationError" in starshine_geo.__all__
     assert "assess_geometry_quality" in starshine_geo.__all__
     assert "build_workflow_graph" in starshine_geo.__all__
     assert "build_workflow_preflight_sarif" in starshine_geo.__all__
