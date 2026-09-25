@@ -107,6 +107,47 @@ def _documentation_index_violations(docs_root: Path = Path("docs")) -> list[str]
     return violations
 
 
+
+def _codeowners_literal_path_violations(
+    codeowners_path: Path = Path(".github/CODEOWNERS"),
+    repo_root: Path = Path("."),
+) -> list[str]:
+    """Require literal CODEOWNERS paths to keep pointing at tracked repository surfaces."""
+    if not codeowners_path.is_file():
+        return []
+
+    root = repo_root.resolve()
+    violations: list[str] = []
+    for line_number, raw_line in enumerate(
+        codeowners_path.read_text(encoding="utf-8").splitlines(),
+        start=1,
+    ):
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+
+        pattern = line.split(maxsplit=1)[0]
+        if not pattern.startswith("/") or any(char in pattern for char in "*?[]\\"):
+            continue
+
+        relative = pattern.lstrip("/")
+        candidate = (root / relative).resolve(strict=False)
+        try:
+            candidate.relative_to(root)
+        except ValueError:
+            violations.append(
+                f"CODEOWNERS literal path escapes repository: {pattern} (line {line_number})"
+            )
+            continue
+
+        if not candidate.exists():
+            violations.append(
+                f"CODEOWNERS literal path is missing: {pattern} (line {line_number})"
+            )
+
+    return violations
+
+
 def _workflow_pipeline_violations(
     workflows_root: Path = Path(".github/workflows"),
 ) -> list[str]:
@@ -189,6 +230,7 @@ def audit() -> list[str]:
                     violations.append(f"possible {name} outside tests: {normalized}")
 
     violations.extend(_documentation_index_violations())
+    violations.extend(_codeowners_literal_path_violations())
     violations.extend(_workflow_pipeline_violations())
     return violations
 
