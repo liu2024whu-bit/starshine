@@ -77,7 +77,8 @@ def test_execute_endpoint_returns_core_result_and_manifest() -> None:
 
     assert payload["status"] == "succeeded"
     assert payload["output_layer"] == "buffered"
-    assert payload["result"] == expected_result
+    # HTTP JSON normalizes geometry coordinate tuples to arrays; compare canonical JSON semantics.
+    assert starshine_geo.digest_json(payload["result"]) == starshine_geo.digest_json(expected_result)
     assert payload["manifest"] == expected_manifest
     assert payload["preflight"] == starshine_geo.preflight_workflow_inputs(
         WORKFLOW,
