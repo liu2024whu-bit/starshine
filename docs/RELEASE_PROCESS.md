@@ -27,7 +27,7 @@ Before a release:
 
 ```bash
 python -m pip install --upgrade pip
-python -m pip install --constraint requirements/ci-validation.txt -e ".[dev,geopackage,release]"
+python -m pip install --constraint requirements/ci-validation.txt -e ".[dev,geopackage,server,server-test,release]"
 python scripts/audit_public_repository.py
 python scripts/check_release_readiness.py --require-release
 python scripts/verify_teaching_examples.py
@@ -63,7 +63,7 @@ README, changelog, and release-note metadata to describe the same stable version
 
 The artifact inspector checks that exactly one wheel and one source distribution were produced, that
 their filenames and metadata match `pyproject.toml`, that every Python module under
-`src/starshine_geo` is present in both distributions, that the source distribution includes the
+`src/` is present in both distributions, that the source distribution includes the
 latest stable release notes, and that no unsafe archive paths, ignored caches, private-artifact
 directories, or unexpectedly large members were packaged. Package-module requirements are derived
 from the source tree rather than duplicated in a manual release checklist. A development artifact
@@ -138,6 +138,9 @@ the downloaded wheel and run the public installed-wheel smoke scripts, which ver
 - separate clean-wheel jobs install the `geopackage` extra and verify explicit multi-layer and mixed
   Preflight bindings, repository-relative SARIF locations, pre-I/O duplicate checks, and source
   overwrite protection on every supported Python version;
+- a focused installed-wheel server smoke installs the optional `server` extra and verifies that
+  health, operator discovery, Workflow validation, and planning delegate to the packaged Core rather
+  than a source checkout;
 - reprojection, projected geometry metrics, deterministic STRtree-backed nearest matching,
   point-in-polygon joining, pairwise intersection, and polygon-mask Difference work through
   installed APIs and workflow execution;
@@ -154,9 +157,9 @@ script:
 - `reproduce_installed_core.py` owns the portable end-to-end workflow path and representative
   Intersection/Difference overlay evidence used by the independent-reproduction bundle;
 - focused smoke scripts are reserved for behavior the portable core cannot represent naturally:
-  SARIF failure output, geometry-quality failure/privacy behavior, and the single
+  SARIF failure output, geometry-quality failure/privacy behavior, the single
   `smoke_installed_geopackage.py` owner for optional GeoPackage inventory, Preflight, run, and
-  persistence behavior.
+  persistence behavior, and `smoke_installed_server.py` for the separate HTTP distribution boundary.
 
 A new operator does not get a new installed smoke script by default. Add one only when the operator
 introduces a genuinely new distribution boundary or failure/reporting behavior that the broad wheel
