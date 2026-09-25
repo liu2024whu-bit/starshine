@@ -141,7 +141,9 @@ the downloaded wheel and run the public installed-wheel smoke scripts, which ver
 - a focused installed-wheel server smoke installs the optional `server` extra and verifies that
   health, operator discovery, Workflow validation, planning, published limits, data-aware Preflight,
   and process-isolated bounded execution delegate to the packaged Core rather than a source checkout;
-  the execution smoke also compares the HTTP result and manifest with direct public-Core evidence;
+  Linux covers Python 3.10 and 3.14, while Python 3.14 additionally exercises the same exact-wheel
+  execution boundary on Windows and macOS; the smoke compares the HTTP result and manifest with
+  direct public-Core evidence;
 - reprojection, projected geometry metrics, deterministic STRtree-backed nearest matching,
   point-in-polygon joining, pairwise intersection, and polygon-mask Difference work through
   installed APIs and workflow execution;
