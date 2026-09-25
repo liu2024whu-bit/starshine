@@ -7,7 +7,7 @@ Starshine welcomes focused contributions that improve reproducibility, validatio
 1. Open an issue describing the problem, expected behavior, data assumptions, and CRS assumptions.
 2. Create a focused branch.
 3. Add or update tests for every behavior change.
-4. Run `ruff check .` and `python -m pytest`.
+4. Run `python scripts/audit_public_repository.py`, `ruff check .`, and `python -m pytest`.
 5. Open a pull request explaining the GIS semantics, failure boundaries, and reproducibility impact.
 
 ## Operator requirements
