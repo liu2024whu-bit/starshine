@@ -9,7 +9,13 @@ from fastapi.testclient import TestClient
 
 import starshine_geo
 from starshine_server import create_app
-from starshine_server.limits import MAX_FEATURES_PER_LAYER, MAX_REQUEST_BYTES
+from starshine_server.limits import (
+    MAX_EXECUTION_MEMORY_BYTES,
+    MAX_EXECUTION_RESPONSE_BYTES,
+    MAX_EXECUTION_SECONDS,
+    MAX_FEATURES_PER_LAYER,
+    MAX_REQUEST_BYTES,
+)
 
 VALID_WORKFLOW = {
     "version": 1,
@@ -77,7 +83,13 @@ def test_limits_endpoint_makes_the_inline_boundary_client_visible() -> None:
             "max_features_per_layer": 2_000,
             "max_total_features": 5_000,
         },
-        "workflow_execution_enabled": False,
+        "inline_execution": {
+            "mode": "isolated_subprocess",
+            "timeout_seconds": MAX_EXECUTION_SECONDS,
+            "memory_limit_bytes": MAX_EXECUTION_MEMORY_BYTES,
+            "max_response_bytes": MAX_EXECUTION_RESPONSE_BYTES,
+        },
+        "workflow_execution_enabled": True,
     }
 
 

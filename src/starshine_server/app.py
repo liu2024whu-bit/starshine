@@ -7,13 +7,15 @@ from fastapi.responses import JSONResponse
 
 import starshine_geo
 
+from .execution import ExecutionBoundaryError, PreflightRejectedError, execute_inline_workflow
 from .limits import (
     RequestBodyLimitMiddleware,
     RequestLimitError,
     enforce_inline_preflight_limits,
+    execution_limits,
     inline_preflight_limits,
 )
-from .models import InlinePreflightRequest, WorkflowRequest
+from .models import InlineExecutionRequest, InlinePreflightRequest, WorkflowRequest
 
 API_VERSION = 1
 
@@ -46,8 +48,9 @@ def create_app() -> FastAPI:
         title="Starshine Server",
         version=starshine_geo.__version__,
         description=(
-            "HTTP assurance adapter for the auditable Starshine Geo workflow core. "
-            "The current data-aware surface performs bounded Preflight but does not execute workflows."
+            "Bounded HTTP adapter for the auditable Starshine Geo workflow core. "
+            "The current execution surface requires canonical Preflight and runs the Core "
+            "in a supervised child process."
         ),
         docs_url="/api/docs",
         redoc_url=None,
@@ -70,6 +73,29 @@ def create_app() -> FastAPI:
     ) -> JSONResponse:
         del request
         return _validation_error_response(exc)
+
+    @app.exception_handler(PreflightRejectedError)
+    async def preflight_rejected_error_handler(
+        request: Request,
+        exc: PreflightRejectedError,
+    ) -> JSONResponse:
+        del request
+        return JSONResponse(
+            status_code=422,
+            content={
+                "error": "preflight_failed",
+                "message": str(exc),
+                "preflight": exc.report,
+            },
+        )
+
+    @app.exception_handler(ExecutionBoundaryError)
+    async def execution_boundary_error_handler(
+        request: Request,
+        exc: ExecutionBoundaryError,
+    ) -> JSONResponse:
+        del request
+        return JSONResponse(status_code=exc.status_code, content=exc.as_dict())
 
     @app.exception_handler(RequestLimitError)
     async def request_limit_error_handler(
@@ -96,7 +122,8 @@ def create_app() -> FastAPI:
     def limits() -> dict[str, Any]:
         return {
             "inline_preflight": inline_preflight_limits(),
-            "workflow_execution_enabled": False,
+            "inline_execution": execution_limits(),
+            "workflow_execution_enabled": True,
         }
 
     @app.post("/api/v1/workflows/validate")
@@ -115,6 +142,14 @@ def create_app() -> FastAPI:
     def preflight(request: InlinePreflightRequest) -> dict[str, Any]:
         enforce_inline_preflight_limits(request.workflow, request.layers)
         return starshine_geo.preflight_workflow_inputs(request.workflow, request.layers)
+
+    @app.post("/api/v1/workflows/execute")
+    def execute(request: InlineExecutionRequest) -> dict[str, Any]:
+        return execute_inline_workflow(
+            request.workflow,
+            request.layers,
+            output_layer=request.output_layer,
+        )
 
     return app
 

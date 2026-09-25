@@ -139,8 +139,11 @@ the downloaded wheel and run the public installed-wheel smoke scripts, which ver
   Preflight bindings, repository-relative SARIF locations, pre-I/O duplicate checks, and source
   overwrite protection on every supported Python version;
 - a focused installed-wheel server smoke installs the optional `server` extra and verifies that
-  health, operator discovery, Workflow validation, planning, published limits, and data-aware
-  Preflight delegate to the packaged Core rather than a source checkout;
+  health, operator discovery, Workflow validation, planning, published limits, data-aware Preflight,
+  and process-isolated bounded execution delegate to the packaged Core rather than a source checkout;
+  Linux covers Python 3.10 and 3.14, while Python 3.14 additionally exercises the same exact-wheel
+  execution boundary on Windows and macOS; the smoke compares the HTTP result and manifest with
+  direct public-Core evidence;
 - reprojection, projected geometry metrics, deterministic STRtree-backed nearest matching,
   point-in-polygon joining, pairwise intersection, and polygon-mask Difference work through
   installed APIs and workflow execution;
@@ -159,7 +162,8 @@ script:
 - focused smoke scripts are reserved for behavior the portable core cannot represent naturally:
   SARIF failure output, geometry-quality failure/privacy behavior, the single
   `smoke_installed_geopackage.py` owner for optional GeoPackage inventory, Preflight, run, and
-  persistence behavior, and `smoke_installed_server.py` for the separate HTTP distribution boundary.
+  persistence behavior, and `smoke_installed_server.py` for the separate HTTP assurance/execution
+  distribution boundary.
 
 A new operator does not get a new installed smoke script by default. Add one only when the operator
 introduces a genuinely new distribution boundary or failure/reporting behavior that the broad wheel
