@@ -222,3 +222,19 @@ def test_expected_core_validation_errors_have_a_stable_http_boundary(monkeypatch
         "error": "validation",
         "message": "synthetic expected validation failure",
     }
+
+
+def test_preflight_endpoint_never_executes_the_workflow(monkeypatch) -> None:
+    def forbidden_execution(*args, **kwargs):
+        del args, kwargs
+        raise AssertionError("Preflight must not execute spatial operators")
+
+    monkeypatch.setattr(starshine_geo, "run_workflow", forbidden_execution)
+
+    response = _client().post(
+        "/api/v1/workflows/preflight",
+        json={"workflow": VALID_WORKFLOW, "layers": {"source": POINT_LAYER}},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["valid"] is True
