@@ -47,9 +47,9 @@ def _execute(request: dict[str, Any]) -> dict[str, Any]:
     layers = request.get("layers")
     output_layer = request.get("output_layer")
     if not isinstance(workflow, dict) or not isinstance(layers, dict):
-        raise ValueError("worker request is missing Workflow inputs")
+        raise TypeError("worker request is missing Workflow inputs")
     if not isinstance(output_layer, str) or not output_layer:
-        raise ValueError("worker request is missing output_layer")
+        raise TypeError("worker request is missing output_layer")
 
     context = starshine_geo.run_workflow(workflow, layers)
     if output_layer not in context:
@@ -85,8 +85,6 @@ def main(argv: list[str] | None = None) -> int:
             "status": "core_error",
             "message": str(exc),
         }
-    except Exception:
-        return 1
 
     _write_response(args.response, response)
     return 0
