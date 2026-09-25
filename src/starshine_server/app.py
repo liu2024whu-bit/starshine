@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
-import starshine_geo
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
+
+import starshine_geo
 
 API_VERSION = 1
 
