@@ -22,6 +22,7 @@ instead of creating another page.
 | Compare performance evidence | [BENCHMARKS.md](BENCHMARKS.md) | Synthetic corpus and benchmark interpretation |
 | Learn from intentional failures | [TEACHING_FAILURES.md](TEACHING_FAILURES.md) | Synthetic CRS and geometry failure cases |
 | Release the package | [RELEASE_PROCESS.md](RELEASE_PROCESS.md) | Build, archive, wheel and release evidence |
+| Understand the platform boundary | [PLATFORM.md](PLATFORM.md) | Post-0.7 Server/Web layering and staged platform growth |
 | Understand project scope | [OPEN_SOURCE_SCOPE.md](OPEN_SOURCE_SCOPE.md) | Public-data and provenance boundary |
 
 ## Operator references
@@ -57,6 +58,7 @@ The workflow documents form one progression:
 - [ARCHITECTURE.md](ARCHITECTURE.md) is the authority for dependency boundaries.
 - [BENCHMARKS.md](BENCHMARKS.md) is the authority for performance-evidence interpretation.
 - [RELEASE_PROCESS.md](RELEASE_PROCESS.md) is the authority for distribution verification.
+- [PLATFORM.md](PLATFORM.md) is the authority for the optional Server/Web adapter boundary.
 - [PROJECT_HISTORY.md](PROJECT_HISTORY.md) records historical context, provenance, and historical
   validation snapshots; it is not a current feature specification.
 

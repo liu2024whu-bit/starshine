@@ -59,6 +59,22 @@ Starshine uses a deliberately small modular architecture.
 
 The workflow layer does not import functions from arbitrary module names and does not use `eval`, `exec`, shell commands, or user-provided Python. Each operator returns an in-memory FeatureCollection; the CLI is the only component that writes a selected result to disk.
 
+
+## Platform adapter dependency direction
+
+The post-0.7 platform is an adapter above the public core rather than a fourth execution path:
+
+`Web client → starshine_server → starshine_geo public API → registry / Workflow / diagnostics`
+
+`starshine_geo` never imports `starshine_server`. The server package may call only public
+`starshine_geo` surfaces; it does not import private core modules or spatial backends such as
+Shapely, PyProj, GeoPandas, or Pyogrio directly. Architecture tests enforce both directions.
+
+The initial 0.8A server surface is deliberately data-free: health/version, operator discovery,
+Workflow validation, and planning. File upload, Preflight over uploaded data, execution, persistence,
+authentication, network fetching, and background jobs require separate resource/security contracts
+before they are introduced. See [PLATFORM.md](PLATFORM.md).
+
 ## Source metadata dependency direction
 
 Source discovery is intentionally separate from deep inspection and Workflow execution:
@@ -156,3 +172,5 @@ in-place mutation of input datasets.
     planning while keeping values, extents, and expensive metadata out unless explicitly requested.
 13. **One installed command tree.** Public console commands share one parser and one error boundary;
     new commands extend `cli.py` instead of adding forwarding entry modules.
+14. **Platform adapters stay above the core.** HTTP and browser layers consume public Core APIs and
+    never become alternate owners of Workflow validation, CRS policy, operators, or persistence semantics.

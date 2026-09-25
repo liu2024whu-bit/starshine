@@ -114,4 +114,42 @@ reproducible, and releasable before expanding the operator catalog again.
 Until those evidence and release conditions are met, maintenance should prefer deleting duplicate
 paths, fixing correctness gaps, and simplifying ownership over increasing module or operator count.
 
+
+## 0.8 — Expose the core through a bounded platform adapter
+
+0.8 begins only after the stable 0.7.0 release is completed. The goal is not to move GIS logic into
+HTTP handlers; it is to make the existing auditable core usable from a service and, later, a browser.
+
+### 0.8A — read-only API foundation
+
+- [x] define the one-way `starshine_server → public starshine_geo API` dependency boundary
+- [x] add optional FastAPI/Pydantic/Uvicorn server dependencies without changing core-only installs
+- [x] expose health/version, canonical operator catalog, Workflow validation, and deterministic plan
+- [x] preserve Core Workflow diagnostics at the HTTP boundary
+- [x] enforce Core/Server dependency direction with architecture tests
+- [x] verify the server from source and from the exact built wheel
+- [ ] merge the foundation only after 0.7.0 has been tagged and its release evidence accepted
+
+### 0.8B — bounded execution service
+
+- [ ] define hard request, feature-count, output-size, and execution-time limits
+- [ ] add isolated per-job workspaces and immutable uploaded inputs
+- [ ] accept GeoJSON first, then explicit GeoPackage layers
+- [ ] require the existing Preflight path before execution
+- [ ] return selected result + manifest evidence without exposing server filesystem paths
+- [ ] add a job abstraction only when measured runtime requires asynchronous execution
+
+### 0.8C — Web workbench
+
+- [ ] build operator selection and Workflow editing from the canonical catalog/contracts
+- [ ] surface plan/graph/explain and Preflight findings before execution
+- [ ] add map preview without reproducing spatial-analysis semantics in JavaScript
+- [ ] make CRS assumptions and output provenance visible in the user flow
+
+### 0.8D / 0.9 — persistence and collaboration
+
+Authentication, persistent projects, object storage, PostGIS, and background workers are deferred
+until concrete usage demonstrates their need. See issue #126 and [PLATFORM.md](docs/PLATFORM.md).
+
+
 See [the documentation index](docs/README.md) for the current ownership map.

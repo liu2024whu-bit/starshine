@@ -55,5 +55,6 @@ def test_latest_compatible_workflow_remains_unconstrained_and_scheduled():
     assert "schedule:" in workflow
     assert "workflow_dispatch:" in workflow
     assert "--constraint" not in workflow
-    assert '.[dev]' in workflow
+    assert '.[dev,server,server-test]' in workflow
     assert '.[release]' in workflow
+    assert "fastapi pydantic uvicorn httpx" in workflow

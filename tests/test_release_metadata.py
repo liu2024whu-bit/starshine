@@ -24,13 +24,14 @@ def _project_version() -> str:
 
 
 def test_release_artifact_package_surface_is_derived_from_source_tree(tmp_path):
-    source_root = tmp_path / "src" / "starshine_geo"
-    nested = source_root / "nested"
+    source_root = tmp_path / "src"
+    package_root = source_root / "starshine_geo"
+    nested = package_root / "nested"
     nested.mkdir(parents=True)
-    (source_root / "__init__.py").write_text("", encoding="utf-8")
-    (source_root / "workflow.py").write_text("", encoding="utf-8")
+    (package_root / "__init__.py").write_text("", encoding="utf-8")
+    (package_root / "workflow.py").write_text("", encoding="utf-8")
     (nested / "helper.py").write_text("", encoding="utf-8")
-    (source_root / "README.txt").write_text("not a module", encoding="utf-8")
+    (package_root / "README.txt").write_text("not a module", encoding="utf-8")
 
     assert _package_python_suffixes(source_root) == (
         "starshine_geo/__init__.py",
@@ -40,7 +41,7 @@ def test_release_artifact_package_surface_is_derived_from_source_tree(tmp_path):
 
 
 def test_release_artifact_package_surface_covers_current_core_modules():
-    suffixes = set(_package_python_suffixes(ROOT / "src" / "starshine_geo"))
+    suffixes = set(_package_python_suffixes(ROOT / "src"))
 
     assert {
         "starshine_geo/geojson.py",
@@ -48,6 +49,8 @@ def test_release_artifact_package_surface_covers_current_core_modules():
         "starshine_geo/manifest.py",
         "starshine_geo/geopackage.py",
         "starshine_geo/io.py",
+        "starshine_server/__init__.py",
+        "starshine_server/app.py",
     } <= suffixes
 
 
