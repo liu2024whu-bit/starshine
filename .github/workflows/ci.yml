@@ -380,3 +380,43 @@ jobs:
           path: reproduction-report.json
           if-no-files-found: warn
           retention-days: 14
+
+  ci-gate:
+    name: ci-gate
+    if: always()
+    needs:
+      - repository-audit
+      - test
+      - geopackage
+      - benchmark
+      - source-reproduction
+      - build
+      - independent-reproduction-bundle-smoke
+      - wheel-smoke
+      - geopackage-wheel-smoke
+      - cross-platform-reproduction
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require all CI jobs to succeed
+        env:
+          CI_RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import sys
+
+          needs = json.loads(os.environ["CI_RESULTS"])
+          failed = {
+              name: details.get("result")
+              for name, details in needs.items()
+              if details.get("result") != "success"
+          }
+          if failed:
+              for name, result in sorted(failed.items()):
+                  print(f"{name}: {result}")
+              sys.exit(1)
+
+          print("All required CI jobs succeeded.")
+          PY
+
