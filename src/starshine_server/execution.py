@@ -123,8 +123,19 @@ def _supervise_process(
 ) -> None:
     """Wait for a child while enforcing wall-clock and resident-memory boundaries."""
     started = time.monotonic()
+    if child.poll() is not None:
+        return
+
     try:
         process = psutil.Process(child.pid)
+    except psutil.NoSuchProcess:
+        if child.poll() is not None:
+            return
+        raise ExecutionBoundaryError(
+            code="worker_supervision_failed",
+            message="The execution worker could not be supervised safely.",
+            status_code=500,
+        ) from None
     except psutil.Error as exc:
         with suppress(Exception):
             child.kill()
