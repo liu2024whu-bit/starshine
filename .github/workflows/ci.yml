@@ -50,6 +50,26 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
+
+  server-api:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.14"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: >-
+          python -m pip install --constraint requirements/ci-validation.txt
+          -e ".[dev,server,server-test]"
+      - run: ruff check src/starshine_server tests/test_server_api.py tests/test_server_architecture.py
+      - run: python -m pytest -q tests/test_server_api.py tests/test_server_architecture.py
+
   geopackage:
     runs-on: ubuntu-latest
     steps:
@@ -135,7 +155,7 @@ jobs:
           retention-days: 14
 
   build:
-    needs: [repository-audit, test, geopackage, benchmark, source-reproduction]
+    needs: [repository-audit, test, server-api, geopackage, benchmark, source-reproduction]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -195,6 +215,7 @@ jobs:
             scripts/smoke_installed_preflight_sarif.py
             scripts/smoke_installed_geometry_quality.py
             scripts/smoke_installed_geopackage.py
+            scripts/smoke_installed_server.py
             scripts/reproduce_installed_core.py
           if-no-files-found: error
           retention-days: 14
@@ -344,6 +365,50 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
+
+  server-wheel-smoke:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.14"]
+    steps:
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: actions/download-artifact@v8
+        with:
+          name: starshine-geo-dist
+          path: dist
+      - uses: actions/download-artifact@v8
+        with:
+          name: starshine-wheel-smoke-scripts
+          path: smoke
+      - name: Install exact wheel with optional server dependencies
+        shell: bash
+        run: |
+          set -o pipefail
+          wheel="$(find dist -name '*.whl' -print -quit)"
+          test -n "$wheel"
+          python -m pip install --upgrade pip
+          python -m pip install "${wheel}[server]" "httpx>=0.28,<1"
+      - name: Run installed server smoke
+        shell: bash
+        run: |
+          set -o pipefail
+          script="$(find smoke -name smoke_installed_server.py -print -quit)"
+          test -n "$script"
+          python "$script" 2>&1 | tee server-wheel-smoke-${{ matrix.python-version }}.log
+      - name: Upload server smoke diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: server-wheel-failure-${{ matrix.python-version }}
+          path: server-wheel-smoke-${{ matrix.python-version }}.log
+          if-no-files-found: warn
+          retention-days: 7
+
   cross-platform-reproduction:
     needs: build
     runs-on: ${{ matrix.os }}
@@ -387,6 +452,7 @@ jobs:
     needs:
       - repository-audit
       - test
+      - server-api
       - geopackage
       - benchmark
       - source-reproduction
@@ -394,6 +460,7 @@ jobs:
       - independent-reproduction-bundle-smoke
       - wheel-smoke
       - geopackage-wheel-smoke
+      - server-wheel-smoke
       - cross-platform-reproduction
     runs-on: ubuntu-latest
     steps:
