@@ -161,6 +161,19 @@ The authoring code is a separate static module and contains no current operator 
 CI executes its pure candidate-step functions with a synthetic catalog operator, while source tests
 prevent hard-coded operator branches or schema-validation keywords from entering that module.
 
+Selected input roles also show **unresolved catalog contract guidance** before insertion. The browser
+presents the catalog's geometry-type list, CRS contract object, required-field declarations,
+written-field declarations, and notes without resolving them against current parameter values.
+Parameter-driven field names remain parameter references at this stage.
+
+This guidance is intentionally not a compatibility check. The browser does not infer geometry
+compatibility, CRS equivalence, field existence, or collision outcomes. After insertion, the existing
+canonical `/contract` review remains the authority for the resolved Workflow contract; real loaded
+data remains the responsibility of Preflight.
+
+Guidance rendering lives in its own static module with no API calls, JSON parsing, or Workflow access,
+and CI exercises its pure formatting function with a synthetic contract.
+
 That boundary leaves the remaining 0.8C increments explicit: bounded feature-data assurance and only
 then a map/result surface.
 
