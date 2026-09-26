@@ -78,7 +78,8 @@ def main() -> int:
     workbench_api = client.get("/workbench/api.js")
     workbench_api.raise_for_status()
     assert "/api/v1/workflows/contract" in workbench_api.text
-    assert "/api/v1/workflows/preflight" not in workbench_api.text
+    assert "/api/v1/limits" in workbench_api.text
+    assert "/api/v1/workflows/preflight" in workbench_api.text
     assert "/api/v1/workflows/execute" not in workbench_api.text
 
     workbench_render = client.get("/workbench/render.js")
@@ -89,8 +90,13 @@ def main() -> int:
     workbench_composer = client.get("/workbench/composer.js")
     workbench_composer.raise_for_status()
     assert "buildStepDraft" in workbench_composer.text
-    assert "/api/v1/workflows/preflight" not in workbench_composer.text
     assert "/api/v1/workflows/execute" not in workbench_composer.text
+
+    workbench_assurance = client.get("/workbench/assurance.js")
+    workbench_assurance.raise_for_status()
+    assert "assertPreflightMatchesReview" in workbench_assurance.text
+    assert "plan_digest" in workbench_assurance.text
+    assert "/api/v1/workflows/execute" not in workbench_assurance.text
 
     workbench_styles = client.get("/workbench/styles.css")
     workbench_styles.raise_for_status()
