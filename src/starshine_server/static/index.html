@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Review Starshine workflows before loading or executing spatial data.">
+  <title>Starshine Workbench</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div>
+      <p class="eyebrow">Starshine Server</p>
+      <h1>Workflow review workbench</h1>
+      <p class="subtitle">
+        Inspect canonical workflow requirements, structure, and explanations before data enters the
+        execution boundary.
+      </p>
+    </div>
+    <div class="header-badges" aria-label="Workbench status">
+      <span class="badge badge-safe">Review only</span>
+      <span class="badge" id="server-version">Core version pending</span>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <section class="catalog-strip" aria-labelledby="catalog-heading">
+      <div class="section-heading compact">
+        <div>
+          <p class="eyebrow">Canonical catalog</p>
+          <h2 id="catalog-heading">Available operators</h2>
+        </div>
+        <p id="catalog-status" class="muted" role="status" aria-live="polite">Loading…</p>
+      </div>
+      <div id="operator-catalog" class="operator-catalog" aria-label="Available Starshine operators"></div>
+    </section>
+
+    <div class="workbench-grid">
+      <section class="editor-panel panel" aria-labelledby="editor-heading">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Input</p>
+            <h2 id="editor-heading">Describe the workflow</h2>
+          </div>
+          <span class="badge">JSON</span>
+        </div>
+
+        <label for="workflow-editor">Workflow</label>
+        <textarea id="workflow-editor" class="code-editor" spellcheck="false">{
+  "version": 1,
+  "steps": [
+    {
+      "operation": "buffer",
+      "inputs": {
+        "input": "source"
+      },
+      "parameters": {
+        "distance": 100,
+        "source_crs": "EPSG:4326",
+        "work_crs": "EPSG:3857"
+      },
+      "output": "buffered"
+    }
+  ]
+}</textarea>
+
+        <label for="layer-names">External layer names <span class="label-note">one per line</span></label>
+        <textarea id="layer-names" class="layer-editor" spellcheck="false">source</textarea>
+
+        <div class="editor-actions">
+          <button id="review-button" class="primary-button" type="button">Review workflow</button>
+          <span id="request-status" class="request-status" role="status" aria-live="polite">
+            Ready for review.
+          </span>
+        </div>
+
+        <aside class="boundary-note" aria-label="Workbench boundary">
+          <strong>No feature data is sent by this screen.</strong>
+          This first workbench slice uses only data-free review endpoints. Preflight, execution,
+          uploads, persistence, and maps remain outside this surface.
+        </aside>
+      </section>
+
+      <section class="review-panel panel" aria-labelledby="review-heading">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Core-owned evidence</p>
+            <h2 id="review-heading">Review</h2>
+          </div>
+          <span id="review-state" class="badge">Not reviewed</span>
+        </div>
+
+        <div class="tab-list" role="tablist" aria-label="Workflow review reports">
+          <button class="tab-button is-active" type="button" role="tab" aria-selected="true"
+            aria-controls="overview-panel" id="overview-tab" data-panel-target="overview-panel">
+            Overview
+          </button>
+          <button class="tab-button" type="button" role="tab" aria-selected="false"
+            aria-controls="contract-panel" id="contract-tab" data-panel-target="contract-panel">
+            Contract
+          </button>
+          <button class="tab-button" type="button" role="tab" aria-selected="false"
+            aria-controls="graph-panel" id="graph-tab" data-panel-target="graph-panel">
+            Graph
+          </button>
+          <button class="tab-button" type="button" role="tab" aria-selected="false"
+            aria-controls="explain-panel" id="explain-tab" data-panel-target="explain-panel">
+            Explain
+          </button>
+          <button class="tab-button" type="button" role="tab" aria-selected="false"
+            aria-controls="evidence-panel" id="evidence-tab" data-panel-target="evidence-panel">
+            Evidence
+          </button>
+        </div>
+
+        <section class="tab-panel" id="overview-panel" role="tabpanel" aria-labelledby="overview-tab">
+          <div id="overview-content" class="empty-state">
+            <p>Review a workflow to see its canonical plan and evidence chain.</p>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="contract-panel" role="tabpanel" aria-labelledby="contract-tab" hidden>
+          <div id="contract-content" class="empty-state">
+            <p>External-layer preparation requirements will appear here.</p>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="graph-panel" role="tabpanel" aria-labelledby="graph-tab" hidden>
+          <div id="graph-content" class="empty-state">
+            <p>Canonical graph nodes and edges will appear here.</p>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="explain-panel" role="tabpanel" aria-labelledby="explain-tab" hidden>
+          <div id="explain-content" class="empty-state">
+            <p>Core-generated step explanations will appear here.</p>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="evidence-panel" role="tabpanel" aria-labelledby="evidence-tab" hidden>
+          <div id="evidence-content" class="empty-state">
+            <p>Machine-readable review evidence will appear here.</p>
+          </div>
+        </section>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <span>Starshine Workbench</span>
+    <span>Browser code presents canonical Server/Core reports; it does not implement GIS semantics.</span>
+  </footer>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
