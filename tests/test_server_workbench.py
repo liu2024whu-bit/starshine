@@ -334,7 +334,7 @@ def test_browser_execution_is_bound_to_current_passing_preflight() -> None:
     assert 'id="execution-result"' in index
 
     assert "state.preflightRequest = request" in app
-    assert "buildExecutionRequest(state.preflightRequest, outputLayer)" in app
+    assert "buildExecutionRequest(state.preflightRequest, outputLayer, outputs)" in app
     assert "state.preflight.valid !== true" in app
     assert "resetExecution" in app
     assert "ENDPOINTS.execute" in app
