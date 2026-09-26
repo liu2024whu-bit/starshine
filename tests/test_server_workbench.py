@@ -29,6 +29,7 @@ def test_workbench_assets_are_served_from_the_server_package() -> None:
     api_script = client.get("/workbench/api.js")
     render_script = client.get("/workbench/render.js")
     composer_script = client.get("/workbench/composer.js")
+    assurance_script = client.get("/workbench/assurance.js")
 
     assert index.status_code == 200
     assert index.headers["content-type"].startswith("text/html")
@@ -58,6 +59,10 @@ def test_workbench_assets_are_served_from_the_server_package() -> None:
     assert "buildStepDraft" in composer_script.text
     assert "parameter.default" in composer_script.text
 
+    assert assurance_script.status_code == 200
+    assert "assertPreflightMatchesReview" in assurance_script.text
+    assert "parseNamedLayers" in assurance_script.text
+
 
 def test_workbench_has_no_external_browser_runtime_or_dynamic_html_sink() -> None:
     index = (STATIC_ROOT / "index.html").read_text(encoding="utf-8")
@@ -84,7 +89,7 @@ def test_workbench_has_no_external_browser_runtime_or_dynamic_html_sink() -> Non
         assert forbidden not in script
 
 
-def test_workbench_first_slice_uses_review_endpoints_only() -> None:
+def test_workbench_uses_review_and_preflight_endpoints_without_execution() -> None:
     script = "\n".join(
         path.read_text(encoding="utf-8")
         for path in sorted(STATIC_ROOT.glob("*.js"))
@@ -93,16 +98,17 @@ def test_workbench_first_slice_uses_review_endpoints_only() -> None:
     expected = {
         "/healthz",
         "/api/v1/operators",
+        "/api/v1/limits",
         "/api/v1/workflows/validate",
         "/api/v1/workflows/plan",
         "/api/v1/workflows/contract",
         "/api/v1/workflows/graph",
         "/api/v1/workflows/explain",
+        "/api/v1/workflows/preflight",
     }
     for path in expected:
         assert path in script
 
-    assert "/api/v1/workflows/preflight" not in script
     assert "/api/v1/workflows/execute" not in script
     assert "starshine_geo" not in script
     assert "starshine_server" not in script
@@ -133,3 +139,26 @@ def test_step_composer_keeps_canonical_validation_as_the_authority() -> None:
     assert "workflow.steps.push(step)" in app
     assert "ENDPOINTS.validate" in app
     assert "Review workflow" in (STATIC_ROOT / "index.html").read_text(encoding="utf-8")
+
+
+def test_preflight_ui_is_gated_by_review_freshness() -> None:
+    app = (STATIC_ROOT / "app.js").read_text(encoding="utf-8")
+
+    assert "reviewFresh: false" in app
+    assert "elements.preflightButton.disabled = true" in app
+    assert "elements.workflow.addEventListener(\"input\", onReviewedInputChanged)" in app
+    assert "elements.layerNames.addEventListener(\"input\", onReviewedInputChanged)" in app
+    assert "elements.preflightLayers.addEventListener(\"input\", onPreflightDataChanged)" in app
+    assert "assertPreflightMatchesReview(state.reports, report)" in app
+
+
+def test_assurance_module_does_not_reimplement_geojson_or_crs_validation() -> None:
+    assurance = (STATIC_ROOT / "assurance.js").read_text(encoding="utf-8")
+
+    assert "workflow_digest" in assurance
+    assert "plan_digest" in assurance
+    assert "contract_digest" in assurance
+    assert "geometry" not in assurance
+    assert "FeatureCollection" not in assurance
+    assert "EPSG:" not in assurance
+    assert "starshine:crs" not in assurance
