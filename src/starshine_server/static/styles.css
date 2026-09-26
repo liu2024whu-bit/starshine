@@ -226,6 +226,128 @@ label {
   padding: 12px 14px;
 }
 
+.composer-panel {
+  margin-top: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+  background: #fbfcfc;
+}
+
+.composer-panel summary {
+  padding: 13px 14px;
+  cursor: pointer;
+  color: var(--accent-strong);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.composer-panel[open] summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.composer-intro,
+.composer-help,
+.composer-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.composer-intro {
+  padding: 14px 14px 0;
+}
+
+.composer-panel > label,
+.composer-panel > .composer-help,
+.composer-panel > .composer-input,
+.composer-panel > .composer-select,
+.composer-panel > #composer-fields,
+.composer-panel > .composer-actions {
+  margin-left: 14px;
+  margin-right: 14px;
+}
+
+.composer-select,
+.composer-input,
+.parameter-editor,
+.composer-field input {
+  width: 100%;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--text);
+}
+
+.composer-select,
+.composer-input,
+.composer-field input {
+  min-height: 38px;
+  padding: 8px 10px;
+}
+
+.parameter-editor {
+  resize: vertical;
+  padding: 9px 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.composer-subheading {
+  margin: 16px 0 8px;
+  font-size: 0.82rem;
+}
+
+.composer-field {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.composer-field label {
+  margin: 0 0 5px;
+}
+
+.composer-meta {
+  margin-top: 4px;
+  color: var(--accent-strong);
+  overflow-wrap: anywhere;
+}
+
+.composer-field input,
+.composer-field .parameter-editor {
+  margin-top: 8px;
+}
+
+.composer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  padding: 14px 0;
+}
+
+.secondary-button {
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-small);
+  background: #ffffff;
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.secondary-button:hover {
+  background: var(--accent-soft);
+}
+
+.secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .editor-actions {
   margin-top: 18px;
 }
