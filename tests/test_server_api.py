@@ -149,6 +149,82 @@ def test_plan_endpoint_is_deterministic_and_uses_the_core_plan() -> None:
     assert first.json()["terminal_layers"] == ["buffered"]
 
 
+def test_review_endpoints_return_canonical_core_reports() -> None:
+    payload = {"workflow": VALID_WORKFLOW, "layer_names": ["source"]}
+    client = _client()
+
+    plan = client.post("/api/v1/workflows/plan", json=payload)
+    contract = client.post("/api/v1/workflows/contract", json=payload)
+    graph = client.post("/api/v1/workflows/graph", json=payload)
+    explanation = client.post("/api/v1/workflows/explain", json=payload)
+
+    assert plan.status_code == 200
+    assert contract.status_code == 200
+    assert graph.status_code == 200
+    assert explanation.status_code == 200
+
+    assert contract.json() == starshine_geo.build_workflow_contract(
+        VALID_WORKFLOW,
+        ["source"],
+    )
+    assert graph.json() == starshine_geo.build_workflow_graph(
+        VALID_WORKFLOW,
+        ["source"],
+    )
+    assert explanation.json() == starshine_geo.explain_workflow(
+        VALID_WORKFLOW,
+        ["source"],
+    )
+
+    plan_digest = plan.json()["plan_digest"]
+    assert contract.json()["plan_digest"] == plan_digest
+    assert graph.json()["plan_digest"] == plan_digest
+    assert explanation.json()["plan_digest"] == plan_digest
+    assert explanation.json()["graph_digest"] == graph.json()["graph_digest"]
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/v1/workflows/contract",
+        "/api/v1/workflows/graph",
+        "/api/v1/workflows/explain",
+    ],
+)
+def test_review_endpoints_preserve_workflow_validation_diagnostics(path: str) -> None:
+    invalid = {
+        "version": 1,
+        "steps": [
+            {
+                "operation": "buffer",
+                "inputs": {"input": "source"},
+                "parameters": {
+                    "distance": 10,
+                    "source_crs": "EPSG:4326",
+                },
+                "output": "buffered",
+            }
+        ],
+    }
+
+    response = _client().post(
+        path,
+        json={"workflow": invalid, "layer_names": ["source"]},
+    )
+
+    assert response.status_code == 422
+    assert response.json() == {
+        "error": "workflow_validation",
+        "diagnostic": {
+            "code": "missing_parameter",
+            "message": "missing required parameter for buffer: work_crs",
+            "path": "steps[0].parameters.work_crs",
+            "step_index": 0,
+            "operation": "buffer",
+        },
+    }
+
+
 def test_preflight_endpoint_returns_the_canonical_core_report() -> None:
     payload = {
         "workflow": VALID_WORKFLOW,
