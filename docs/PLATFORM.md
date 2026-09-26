@@ -271,6 +271,30 @@ A map is intentionally deferred. The raw result and canonical manifest are made 
 later visual layer can consume established result evidence rather than becoming part of execution
 semantics.
 
+## Projection-free canonical result preview
+
+A successful current browser execution can now be viewed as a local SVG coordinate-space preview.
+This is intentionally **not** a projection-aware map and does not introduce a browser GIS runtime.
+
+`preview.js` receives only the canonical execution result and performs one presentation transform:
+finite two-dimensional coordinates are fitted into a fixed SVG viewport while preserving aspect
+ratio. Point/MultiPoint, LineString/MultiLineString, Polygon/MultiPolygon, and GeometryCollection
+fragments are drawn when their coordinate arrays are usable. Malformed fragments are ignored rather
+than converted into browser validation findings.
+
+The preview does not read CRS metadata, look up EPSG definitions, reproject coordinates, calculate
+distance/area, test topology, repair geometry, query spatial relationships, load tiles, or contact a
+network service. `render_preview.js` only creates SVG/DOM elements.
+
+The raw result and Core-generated manifest in the Execute view remain authoritative. If the SVG is
+empty, incomplete, or visually distorted because raw coordinates are not appropriate for direct
+screen-space fitting, the canonical execution evidence is unchanged.
+
+The preview shares the execution lifecycle: any edit or new Preflight that invalidates current
+execution evidence also clears the preview. This gives the Workbench a bounded visual result surface
+without committing Starshine to Leaflet, MapLibre, OpenLayers, a tile provider, or a browser
+projection engine.
+
 ## Next platform increments
 
 ### 0.8C — Web workbench
