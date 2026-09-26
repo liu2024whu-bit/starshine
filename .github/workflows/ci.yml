@@ -79,6 +79,8 @@ jobs:
           for file in src/starshine_server/static/*.js; do
             node --input-type=module --check < "$file"
           done
+      - name: Exercise Workbench authoring logic
+        run: node tests/workbench_authoring.mjs
       - run: >-
           python -m pytest -q tests/test_server_api.py
           tests/test_server_execution.py tests/test_server_handoff.py
