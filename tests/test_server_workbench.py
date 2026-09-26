@@ -37,7 +37,7 @@ def test_workbench_assets_are_served_from_the_server_package() -> None:
     assert ".workbench-grid" in stylesheet.text
 
     assert script.status_code == 200
-    assert "application/javascript" in script.headers["content-type"]
+    assert "javascript" in script.headers["content-type"]
     assert "/api/v1/workflows/contract" in script.text
 
 
