@@ -138,7 +138,8 @@ def test_assisted_editor_keeps_core_defaults_and_validation_authoritative() -> N
     assert "parameter.default" not in editor
     assert "decoded.present" in editor
     assert "ENDPOINTS.validate" in app
-    assert "Server/Core have not validated it yet" in app
+    assert "A draft step was inserted. Run Review workflow for canonical validation." in app
+    assert 'setReviewState(elements.reviewState, "Not reviewed")' in app
     assert "/api/v1/workflows/execute" not in app
 
 
