@@ -5,8 +5,8 @@ roadmap is a guardrail against adding disconnected features faster than the arch
 surface can absorb them.
 
 Roadmap headings describe development phases, not proof that every matching package version was
-published. The current `main` branch builds `0.7.0.dev0`; the latest stable release metadata remains
-`0.4.0` until a separately verified stable release is prepared.
+published. The current release-candidate line builds stable `0.7.0`; tagging and GitHub Release
+publication remain separate steps after the stable artifact evidence is accepted.
 
 ## 0.1 — Public core
 
@@ -105,7 +105,7 @@ reproducible, and releasable before expanding the operator catalog again.
   source tree and verify the supported Python 3.10–3.14 matrix
 - [x] obtain accepted independent clean-wheel evidence for issue #105 and record the dated result
   without treating repository-owned CI as external validation
-- [ ] prepare a stable 0.7.0 release candidate only after the independent evidence prerequisite is
+- [x] prepare a stable 0.7.0 release candidate only after the independent evidence prerequisite is
   satisfied and the release-readiness chain passes from a stable version commit
 - [ ] evaluate another spatial-analysis gap only after real downstream use or a concrete public issue
   demonstrates the need; do not add generic union, identity, or broad join-policy surfaces merely to
