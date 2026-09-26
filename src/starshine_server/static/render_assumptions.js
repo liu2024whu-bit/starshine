@@ -139,8 +139,15 @@ function renderStepAssumptions(container, explanation) {
   container.appendChild(stack);
 }
 
-function renderEvidenceChain(container, reports) {
+function renderEvidenceChain(container, reports, preflight) {
   container.appendChild(textElement("h3", "Pre-execution evidence chain"));
+
+  const status = document.createElement("div");
+  status.className = "field-meta";
+  status.appendChild(metaChip("data-free review: current"));
+  status.appendChild(metaChip(`Preflight evidence: ${preflight ? "current" : "not available"}`));
+  container.appendChild(status);
+
   const digests = document.createElement("div");
   digests.className = "digest-list";
   digests.appendChild(digestRow("Workflow", reports.plan.workflow_digest));
@@ -149,10 +156,24 @@ function renderEvidenceChain(container, reports) {
   digests.appendChild(digestRow("Contract", reports.contract.contract_digest));
   digests.appendChild(digestRow("Graph", reports.graph.graph_digest));
   digests.appendChild(digestRow("Explanation", reports.explain.explanation_digest));
+  digests.appendChild(
+    digestRow("Preflight", preflight ? preflight.preflight_digest : "not available"),
+  );
   container.appendChild(digests);
 }
 
-export function renderCrsEvidence(container, reports) {
+export function resetCrsEvidence(
+  container,
+  message = "Review the current Workflow to see canonical CRS assumptions and evidence.",
+) {
+  clearNode(container);
+  const placeholder = document.createElement("div");
+  placeholder.className = "empty-state";
+  placeholder.appendChild(textElement("p", message));
+  container.appendChild(placeholder);
+}
+
+export function renderCrsEvidence(container, reports, preflight = null) {
   clearNode(container);
 
   const notice = document.createElement("aside");
@@ -173,5 +194,5 @@ export function renderCrsEvidence(container, reports) {
 
   renderExternalLayerAssumptions(container, reports.contract);
   renderStepAssumptions(container, reports.explain);
-  renderEvidenceChain(container, reports);
+  renderEvidenceChain(container, reports, preflight);
 }
