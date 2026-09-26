@@ -85,6 +85,12 @@ def main() -> int:
     assert "textContent" in workbench_render.text
     assert "innerHTML" not in workbench_render.text
 
+    workbench_authoring = client.get("/workbench/authoring.js")
+    workbench_authoring.raise_for_status()
+    assert "buildCandidateStep" in workbench_authoring.text
+    assert "JSON.parse" in workbench_authoring.text
+    assert "fetch(" not in workbench_authoring.text
+
     workbench_styles = client.get("/workbench/styles.css")
     workbench_styles.raise_for_status()
     assert ".workbench-grid" in workbench_styles.text
