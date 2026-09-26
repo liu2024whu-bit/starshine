@@ -1,3 +1,4 @@
+import { renderInputContractGuidance } from "./guidance.js";
 function hasOwn(object, key) {
   return Object.prototype.hasOwnProperty.call(object, key);
 }
@@ -120,6 +121,7 @@ function renderInputFields(container, operator) {
     if (input.description) {
       group.appendChild(textElement("p", input.description, "builder-help"));
     }
+    renderInputContractGuidance(group, input.contract);
     container.appendChild(group);
   }
 }
