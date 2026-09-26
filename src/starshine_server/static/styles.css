@@ -310,6 +310,60 @@ label {
   line-height: 1.5;
 }
 
+.builder-guidance {
+  margin-top: 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfc;
+}
+
+.builder-guidance > summary {
+  cursor: pointer;
+  padding: 8px 10px;
+  color: var(--accent-strong);
+  font-size: 0.75rem;
+  font-weight: 750;
+}
+
+.builder-guidance-body {
+  display: grid;
+  gap: 8px;
+  padding: 0 10px 10px;
+}
+
+.builder-guidance-row {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 8px;
+  font-size: 0.72rem;
+}
+
+.builder-guidance-row strong {
+  color: var(--muted);
+}
+
+.builder-guidance-row code {
+  overflow-wrap: anywhere;
+  color: var(--text);
+}
+
+.builder-guidance-notes {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.builder-guidance-notes ul {
+  margin: 5px 0 0;
+  padding-left: 18px;
+}
+
+.builder-guidance-boundary {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
 .code-editor,
 .layer-editor {
   width: 100%;
@@ -600,7 +654,8 @@ label {
   }
 
   .summary-grid,
-  .builder-columns {
+  .builder-columns,
+  .builder-guidance-row {
     grid-template-columns: 1fr;
   }
 
