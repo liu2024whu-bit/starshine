@@ -73,6 +73,7 @@ def main() -> int:
     workbench_script.raise_for_status()
     assert 'from "./api.js"' in workbench_script.text
     assert 'from "./render.js"' in workbench_script.text
+    assert 'from "./composer.js"' in workbench_script.text
 
     workbench_api = client.get("/workbench/api.js")
     workbench_api.raise_for_status()
@@ -84,6 +85,12 @@ def main() -> int:
     workbench_render.raise_for_status()
     assert "textContent" in workbench_render.text
     assert "innerHTML" not in workbench_render.text
+
+    workbench_composer = client.get("/workbench/composer.js")
+    workbench_composer.raise_for_status()
+    assert "buildStepDraft" in workbench_composer.text
+    assert "/api/v1/workflows/preflight" not in workbench_composer.text
+    assert "/api/v1/workflows/execute" not in workbench_composer.text
 
     workbench_styles = client.get("/workbench/styles.css")
     workbench_styles.raise_for_status()
