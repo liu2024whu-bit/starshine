@@ -128,6 +128,54 @@ jobs:
           }
           if (!invalidJsonRejected) throw new Error("invalid JSON literal was accepted");
           NODE
+      - name: Verify Workbench Preflight only binds JSON to reviewed evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {
+            assertPreflightMatchesReview,
+            parseNamedLayers,
+          } from "./src/starshine_server/static/assurance.js";
+
+          const layers = parseNamedLayers('{"source":{"arbitrary":"browser does not validate GIS"}}');
+          if (!layers.source) throw new Error("named layer envelope was not parsed");
+
+          const reports = {
+            plan: {
+              workflow_digest: "workflow",
+              plan_digest: "plan",
+            },
+            contract: {
+              contract_digest: "contract",
+            },
+          };
+          assertPreflightMatchesReview(reports, {
+            workflow_digest: "workflow",
+            plan_digest: "plan",
+            contract_digest: "contract",
+          });
+
+          let mismatchRejected = false;
+          try {
+            assertPreflightMatchesReview(reports, {
+              workflow_digest: "workflow",
+              plan_digest: "different-plan",
+              contract_digest: "contract",
+            });
+          } catch {
+            mismatchRejected = true;
+          }
+          if (!mismatchRejected) throw new Error("stale Preflight evidence was accepted");
+
+          let arrayRejected = false;
+          try {
+            parseNamedLayers("[]");
+          } catch {
+            arrayRejected = true;
+          }
+          if (!arrayRejected) throw new Error("non-object named-layer envelope was accepted");
+          NODE
       - run: >-
           python -m pytest -q tests/test_server_api.py
           tests/test_server_execution.py tests/test_server_handoff.py
