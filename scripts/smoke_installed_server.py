@@ -71,9 +71,19 @@ def main() -> int:
 
     workbench_script = client.get("/workbench/app.js")
     workbench_script.raise_for_status()
-    assert "/api/v1/workflows/contract" in workbench_script.text
-    assert "/api/v1/workflows/preflight" not in workbench_script.text
-    assert "/api/v1/workflows/execute" not in workbench_script.text
+    assert 'from "./api.js"' in workbench_script.text
+    assert 'from "./render.js"' in workbench_script.text
+
+    workbench_api = client.get("/workbench/api.js")
+    workbench_api.raise_for_status()
+    assert "/api/v1/workflows/contract" in workbench_api.text
+    assert "/api/v1/workflows/preflight" not in workbench_api.text
+    assert "/api/v1/workflows/execute" not in workbench_api.text
+
+    workbench_render = client.get("/workbench/render.js")
+    workbench_render.raise_for_status()
+    assert "textContent" in workbench_render.text
+    assert "innerHTML" not in workbench_render.text
 
     workbench_styles = client.get("/workbench/styles.css")
     workbench_styles.raise_for_status()
