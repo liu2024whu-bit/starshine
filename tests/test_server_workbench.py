@@ -35,6 +35,8 @@ def test_workbench_assets_are_served_from_the_server_package() -> None:
     render_preflight_script = client.get("/workbench/render_preflight.js")
     editor_script = client.get("/workbench/editor.js")
     assurance_script = client.get("/workbench/assurance.js")
+    execution_script = client.get("/workbench/execution.js")
+    render_execution_script = client.get("/workbench/render_execution.js")
 
     assert index.status_code == 200
     assert index.headers["content-type"].startswith("text/html")
@@ -59,12 +61,14 @@ def test_workbench_assets_are_served_from_the_server_package() -> None:
     assert "/api/v1/limits" in api_script.text
     assert "/api/v1/workflows/contract" in api_script.text
     assert "/api/v1/workflows/preflight" in api_script.text
+    assert "/api/v1/workflows/execute" in api_script.text
 
     assert render_script.status_code == 200
     assert 'from "./render_ui.js"' in render_script.text
     assert 'from "./render_review.js"' in render_script.text
     assert 'from "./render_editor.js"' in render_script.text
     assert 'from "./render_preflight.js"' in render_script.text
+    assert 'from "./render_execution.js"' in render_script.text
 
     assert dom_script.status_code == 200
     assert "textContent" in dom_script.text
@@ -94,6 +98,14 @@ def test_workbench_assets_are_served_from_the_server_package() -> None:
     assert "buildPreflightRequest" in assurance_script.text
     assert "assertPreflightEvidenceChain" in assurance_script.text
 
+    assert execution_script.status_code == 200
+    assert "buildExecutionRequest" in execution_script.text
+    assert "assertExecutionEvidenceChain" in execution_script.text
+
+    assert render_execution_script.status_code == 200
+    assert "renderExecutionControls" in render_execution_script.text
+    assert "renderExecutionResult" in render_execution_script.text
+
 
 def test_workbench_has_no_external_browser_runtime_or_dynamic_html_sink() -> None:
     index = (STATIC_ROOT / "index.html").read_text(encoding="utf-8")
@@ -120,7 +132,7 @@ def test_workbench_has_no_external_browser_runtime_or_dynamic_html_sink() -> Non
         assert forbidden not in script
 
 
-def test_workbench_uses_review_and_preflight_endpoints_but_never_execution() -> None:
+def test_workbench_uses_review_preflight_and_bounded_execution_endpoints() -> None:
     script = "\n".join(
         path.read_text(encoding="utf-8")
         for path in sorted(STATIC_ROOT.glob("*.js"))
@@ -136,11 +148,11 @@ def test_workbench_uses_review_and_preflight_endpoints_but_never_execution() -> 
         "/api/v1/workflows/graph",
         "/api/v1/workflows/explain",
         "/api/v1/workflows/preflight",
+        "/api/v1/workflows/execute",
     }
     for path in expected:
         assert path in script
 
-    assert "/api/v1/workflows/execute" not in script
     assert "starshine_geo" not in script
     assert "starshine_server" not in script
 
@@ -164,7 +176,9 @@ def test_assisted_editor_keeps_core_defaults_and_validation_authoritative() -> N
     assert "ENDPOINTS.validate" in app
     assert "A draft step was inserted. Run Review workflow for canonical validation." in app
     assert 'setReviewState(elements.reviewState, "Not reviewed")' in app
-    assert "/api/v1/workflows/execute" not in app
+    assert "ENDPOINTS.execute" in app
+    assert "state.preflight.valid !== true" in app
+    assert "state.preflightRequest" in app
 
 
 def test_inline_preflight_browser_layer_has_no_gis_or_upload_semantics() -> None:
@@ -198,6 +212,7 @@ def test_workbench_presentation_modules_keep_one_way_dependencies() -> None:
         STATIC_ROOT / "render_editor.js",
         STATIC_ROOT / "render_preflight.js",
         STATIC_ROOT / "render_assumptions.js",
+        STATIC_ROOT / "render_execution.js",
     ]
 
     assert len(facade.splitlines()) < 40
@@ -210,6 +225,7 @@ def test_workbench_presentation_modules_keep_one_way_dependencies() -> None:
             './api.js',
             './editor.js',
             './assurance.js',
+            './execution.js',
             "fetch(",
             "/api/v1/",
         ):
@@ -220,6 +236,7 @@ def test_workbench_presentation_modules_keep_one_way_dependencies() -> None:
         './api.js',
         './editor.js',
         './assurance.js',
+        './execution.js',
         "fetch(",
         "/api/v1/",
     ):
@@ -264,9 +281,11 @@ def test_crs_evidence_view_uses_canonical_reports_without_crs_engine() -> None:
     ):
         assert forbidden not in assumptions
 
-    assert "not a result manifest" in assumptions
-    assert "does not execute workflows" in assumptions
-    assert "renderCrsEvidence(elements.crsEvidence, state.reports, report)" in app
+    assert "Manifest workflow" in assumptions
+    assert "Result layer" in assumptions
+    assert "Core-generated manifest" in assumptions
+    assert "renderCrsEvidence(elements.crsEvidence, state.reports, report, null)" in app
+    assert "renderCrsEvidence(elements.crsEvidence, state.reports, state.preflight, execution)" in app
     assert "resetCrsEvidence(elements.crsEvidence" in app
 
 
@@ -278,3 +297,48 @@ def test_crs_evidence_preflight_digest_uses_existing_preflight_lifecycle() -> No
     assert 'Preflight evidence: ${preflight ? "current" : "not available"}' in assumptions
     assert "state.preflight = null" in app
     assert "renderCrsEvidence(elements.crsEvidence, state.reports, null)" in app
+
+
+def test_browser_execution_helper_has_no_gis_or_dom_semantics() -> None:
+    execution = (STATIC_ROOT / "execution.js").read_text(encoding="utf-8")
+
+    assert "terminal_layers" in execution
+    assert "preflight_digest" in execution
+    assert "execution_policy" in execution
+    assert "result" in execution
+    assert "manifest" in execution
+
+    lowered = execution.lower()
+    for forbidden in (
+        "featurecollection",
+        "geometry",
+        "starshine:crs",
+        "document.",
+        "window.",
+        "fetch(",
+        "/api/v1/",
+        "proj4",
+        "pyproj",
+    ):
+        assert forbidden not in lowered
+
+
+def test_browser_execution_is_bound_to_current_passing_preflight() -> None:
+    index = (STATIC_ROOT / "index.html").read_text(encoding="utf-8")
+    app = (STATIC_ROOT / "app.js").read_text(encoding="utf-8")
+    execution = (STATIC_ROOT / "execution.js").read_text(encoding="utf-8")
+
+    assert 'id="execution-tab"' in index
+    assert 'id="execution-output"' in index
+    assert 'id="execution-button"' in index
+    assert 'id="execution-result"' in index
+
+    assert "state.preflightRequest = request" in app
+    assert "buildExecutionRequest(state.preflightRequest, outputLayer)" in app
+    assert "state.preflight.valid !== true" in app
+    assert "resetExecution" in app
+    assert "ENDPOINTS.execute" in app
+
+    assert "execution.output_layer !== expectedOutputLayer" in execution
+    assert "returnedPreflight.preflight_digest !== currentPreflight.preflight_digest" in execution
+    assert "sameJson(execution.execution_policy, executionPolicy)" in execution
