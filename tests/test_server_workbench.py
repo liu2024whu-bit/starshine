@@ -29,6 +29,7 @@ def test_workbench_assets_are_served_from_the_server_package() -> None:
     api_script = client.get("/workbench/api.js")
     render_script = client.get("/workbench/render.js")
     authoring_script = client.get("/workbench/authoring.js")
+    guidance_script = client.get("/workbench/guidance.js")
 
     assert index.status_code == 200
     assert index.headers["content-type"].startswith("text/html")
@@ -56,6 +57,10 @@ def test_workbench_assets_are_served_from_the_server_package() -> None:
     assert authoring_script.status_code == 200
     assert "buildCandidateStep" in authoring_script.text
     assert "JSON.parse" in authoring_script.text
+
+    assert guidance_script.status_code == 200
+    assert "contractGuidanceRows" in guidance_script.text
+    assert "Unresolved catalog contract guidance" in guidance_script.text
 
 
 def test_workbench_has_no_external_browser_runtime_or_dynamic_html_sink() -> None:
@@ -143,3 +148,25 @@ def test_workbench_step_builder_does_not_expand_the_network_boundary() -> None:
     assert "/api/" not in source
     assert "localStorage" not in source
     assert "sessionStorage" not in source
+
+
+def test_workbench_input_guidance_stays_read_only_and_unresolved() -> None:
+    source = (STATIC_ROOT / "guidance.js").read_text(encoding="utf-8")
+
+    assert "contract.geometry_types" not in source
+    assert "JSON.stringify" in source
+    assert "fetch(" not in source
+    assert "/api/" not in source
+    assert "JSON.parse" not in source
+    assert "localStorage" not in source
+    assert "sessionStorage" not in source
+
+    for forbidden_resolver in (
+        "EPSG:",
+        "pyproj",
+        "proj4",
+        "resolve_parameters",
+        "equivalent_crs",
+        "validate",
+    ):
+        assert forbidden_resolver not in source
