@@ -1,5 +1,33 @@
 function sameJson(left, right) {
-  return JSON.stringify(left) === JSON.stringify(right);
+  if (Object.is(left, right)) {
+    return true;
+  }
+  if (Array.isArray(left) || Array.isArray(right)) {
+    return (
+      Array.isArray(left) &&
+      Array.isArray(right) &&
+      left.length === right.length &&
+      left.every((value, index) => sameJson(value, right[index]))
+    );
+  }
+  if (
+    left &&
+    right &&
+    typeof left === "object" &&
+    typeof right === "object"
+  ) {
+    const leftKeys = Object.keys(left).sort();
+    const rightKeys = Object.keys(right).sort();
+    return (
+      leftKeys.length === rightKeys.length &&
+      leftKeys.every(
+        (key, index) =>
+          key === rightKeys[index] &&
+          sameJson(left[key], right[key]),
+      )
+    );
+  }
+  return false;
 }
 
 export function terminalOutputNames(reviewReports) {
@@ -10,7 +38,7 @@ export function terminalOutputNames(reviewReports) {
   return plan.terminal_layers.filter((name) => typeof name === "string" && name.length > 0);
 }
 
-export function buildExecutionRequest(preflightRequest, outputLayer) {
+export function buildExecutionRequest(preflightRequest, outputLayer, terminalOutputs) {
   if (
     !preflightRequest ||
     typeof preflightRequest !== "object" ||
@@ -23,6 +51,9 @@ export function buildExecutionRequest(preflightRequest, outputLayer) {
   }
   if (typeof outputLayer !== "string" || !outputLayer) {
     throw new Error("Choose a canonical terminal output before execution.");
+  }
+  if (!Array.isArray(terminalOutputs) || !terminalOutputs.includes(outputLayer)) {
+    throw new Error("Execution output must be one of the current canonical terminal layers.");
   }
 
   return {
