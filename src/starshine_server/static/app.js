@@ -120,10 +120,6 @@ function collectDraftValues() {
 }
 
 function invalidateReview(message = "Workflow changes have not been reviewed yet.") {
-  if (state.reports === null) {
-    updateLayerSuggestions(elements.builderFields, currentLayerSuggestions());
-    return;
-  }
   state.reports = null;
   resetReview(elements, message);
   setReviewState(elements.reviewState, "Not reviewed");
@@ -156,11 +152,11 @@ function insertDraftStep() {
       elements.requestStatus,
       "Draft step inserted; Server/Core have not validated it yet.",
     );
+    renderSelectedOperator();
     setRequestStatus(
       elements.builderStatus,
       "Draft inserted into Workflow JSON. Review it before treating the step as valid.",
     );
-    renderSelectedOperator();
   } catch (error) {
     setRequestStatus(elements.builderStatus, error.message, true);
   }
