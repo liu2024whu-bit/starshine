@@ -119,6 +119,8 @@ def test_workbench_authoring_stays_catalog_driven_and_schema_display_only() -> N
     assert "parameter.schema" in source
     assert "JSON.stringify(parameter.schema)" in source
     assert "JSON.parse(text)" in source
+    assert "Default from catalog:" in source
+    assert 'control.value = ""' in source
 
     for forbidden_semantics in (
         "exclusiveMinimum",
