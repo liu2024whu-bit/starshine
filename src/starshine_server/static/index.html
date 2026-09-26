@@ -66,6 +66,37 @@
   ]
 }</textarea>
 
+        <details class="composer-panel">
+          <summary>Compose a step from the canonical catalog</summary>
+          <p class="composer-intro">
+            This helper reduces typing only. It does not validate Starshine semantics or apply
+            registry defaults; use Review workflow after adding a step.
+          </p>
+
+          <label for="composer-operator">Operator</label>
+          <select id="composer-operator" class="composer-select">
+            <option value="">Catalog loading…</option>
+          </select>
+          <p id="composer-details" class="composer-help">
+            The canonical operator catalog is still loading.
+          </p>
+
+          <div id="composer-fields"></div>
+
+          <label for="composer-output">Output layer name</label>
+          <input id="composer-output" class="composer-input" type="text"
+            autocomplete="off" spellcheck="false">
+
+          <div class="composer-actions">
+            <button id="composer-add" class="secondary-button" type="button" disabled>
+              Add step to Workflow JSON
+            </button>
+            <span id="composer-status" class="request-status" role="status" aria-live="polite">
+              No step composed yet.
+            </span>
+          </div>
+        </details>
+
         <label for="layer-names">External layer names <span class="label-note">one per line</span></label>
         <textarea id="layer-names" class="layer-editor" spellcheck="false">source</textarea>
 
