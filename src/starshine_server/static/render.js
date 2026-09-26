@@ -411,3 +411,34 @@ export function renderStepBuilder(container, operator, layerNames) {
   );
   container.appendChild(outputField);
 }
+
+
+export function updateLayerSuggestions(container, layerNames) {
+  const datalist = container.querySelector("#builder-layer-suggestions");
+  if (!datalist) {
+    return;
+  }
+  clearNode(datalist);
+  for (const layerName of Array.isArray(layerNames) ? layerNames : []) {
+    const option = document.createElement("option");
+    option.value = layerName;
+    datalist.appendChild(option);
+  }
+}
+
+export function resetReview(containers, message = "Workflow changes have not been reviewed yet.") {
+  const targets = [
+    containers.overview,
+    containers.contract,
+    containers.graph,
+    containers.explain,
+    containers.evidence,
+  ];
+  for (const target of targets) {
+    clearNode(target);
+    const placeholder = document.createElement("div");
+    placeholder.className = "empty-state";
+    placeholder.appendChild(textElement("p", message));
+    target.appendChild(placeholder);
+  }
+}
