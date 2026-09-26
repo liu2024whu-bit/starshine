@@ -68,7 +68,7 @@ function buildParameterField(parameter, index) {
   input.className = "parameter-editor";
   input.rows = 2;
   input.spellcheck = false;
-  input.placeholder = 'JSON value, e.g. 100, "EPSG:4326", true, or null';
+  input.placeholder = 'JSON value, e.g. 100, "text", true, or null';
   input.dataset.parameterName = parameter.name;
   wrapper.appendChild(input);
   return wrapper;
