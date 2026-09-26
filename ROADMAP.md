@@ -147,6 +147,7 @@ HTTP handlers; it is to make the existing auditable core usable from a service a
 ### 0.8C — Web workbench
 
 - [x] expose canonical contract/graph/explain JSON reports before browser code owns any review semantics
+- [x] package a same-origin review-only Workbench and verify its assets from the exact Server wheel
 - [ ] build operator selection and Workflow editing from the canonical catalog/contracts
 - [ ] surface plan/graph/explain and Preflight findings before execution
 - [ ] add map preview without reproducing spatial-analysis semantics in JavaScript
