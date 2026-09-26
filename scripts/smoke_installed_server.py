@@ -91,6 +91,12 @@ def main() -> int:
     assert "JSON.parse" in workbench_authoring.text
     assert "fetch(" not in workbench_authoring.text
 
+    workbench_guidance = client.get("/workbench/guidance.js")
+    workbench_guidance.raise_for_status()
+    assert "contractGuidanceRows" in workbench_guidance.text
+    assert "JSON.parse" not in workbench_guidance.text
+    assert "fetch(" not in workbench_guidance.text
+
     workbench_styles = client.get("/workbench/styles.css")
     workbench_styles.raise_for_status()
     assert ".workbench-grid" in workbench_styles.text
