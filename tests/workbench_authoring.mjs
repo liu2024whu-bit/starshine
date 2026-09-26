@@ -57,7 +57,7 @@ const candidate = buildCandidateStep(catalogOperator, {
   parameters: {
     required_value: '{"mode":"review"}',
     optional_value: "",
-    defaulted_value: "5",
+    defaulted_value: "",
   },
   output: "candidate_output",
 });
@@ -71,7 +71,6 @@ assertEqual(
     },
     parameters: {
       required_value: { mode: "review" },
-      defaulted_value: 5,
     },
     output: "candidate_output",
   },
@@ -99,7 +98,7 @@ try {
     parameters: {
       required_value: "",
       optional_value: "",
-      defaulted_value: "5",
+      defaulted_value: "",
     },
     output: "candidate_output",
   });
@@ -117,7 +116,7 @@ try {
     parameters: {
       required_value: "{not-json}",
       optional_value: "",
-      defaulted_value: "5",
+      defaulted_value: "",
     },
     output: "candidate_output",
   });
