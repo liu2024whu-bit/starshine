@@ -1,3 +1,4 @@
+import { initializeStepComposer } from "./composer.js";
 import { ENDPOINTS, requestJson } from "./api.js";
 import {
   initializeTabs,
@@ -21,6 +22,12 @@ const elements = {
   serverVersion: document.querySelector("#server-version"),
   catalogStatus: document.querySelector("#catalog-status"),
   operatorCatalog: document.querySelector("#operator-catalog"),
+  composerOperator: document.querySelector("#composer-operator"),
+  composerDetails: document.querySelector("#composer-details"),
+  composerFields: document.querySelector("#composer-fields"),
+  composerOutput: document.querySelector("#composer-output"),
+  composerStatus: document.querySelector("#composer-status"),
+  composerAdd: document.querySelector("#composer-add"),
   overview: document.querySelector("#overview-content"),
   contract: document.querySelector("#contract-content"),
   graph: document.querySelector("#graph-content"),
@@ -39,6 +46,21 @@ function parseWorkflow() {
     throw new Error("Workflow JSON must be an object.");
   }
   return value;
+}
+
+function appendWorkflowStep(step) {
+  const workflow = parseWorkflow();
+  if (!Array.isArray(workflow.steps)) {
+    throw new Error("Workflow JSON must contain a steps array before the composer can add a step.");
+  }
+  workflow.steps.push(step);
+  elements.workflow.value = JSON.stringify(workflow, null, 2);
+  state.reports = null;
+  setReviewState(elements.reviewState, "Not reviewed");
+  setRequestStatus(
+    elements.requestStatus,
+    "Workflow changed. Run canonical review before treating it as valid.",
+  );
 }
 
 function parseLayerNames() {
@@ -68,6 +90,16 @@ async function loadServiceMetadata() {
     ]);
     state.catalog = catalog;
     renderCatalog(elements.operatorCatalog, elements.catalogStatus, catalog);
+    initializeStepComposer({
+      catalog,
+      select: elements.composerOperator,
+      details: elements.composerDetails,
+      fields: elements.composerFields,
+      output: elements.composerOutput,
+      status: elements.composerStatus,
+      addButton: elements.composerAdd,
+      onAdd: appendWorkflowStep,
+    });
     const version = health.core_version || "unknown";
     elements.serverVersion.textContent = `Core ${version}`;
   } catch (error) {
