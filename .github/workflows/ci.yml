@@ -70,11 +70,12 @@ jobs:
       - run: >-
           ruff check src/starshine_server examples/server_handoff.py
           tests/test_server_api.py tests/test_server_execution.py
-          tests/test_server_handoff.py tests/test_server_architecture.py
+          tests/test_server_handoff.py tests/test_server_workbench.py
+          tests/test_server_architecture.py
       - run: >-
           python -m pytest -q tests/test_server_api.py
           tests/test_server_execution.py tests/test_server_handoff.py
-          tests/test_server_architecture.py
+          tests/test_server_workbench.py tests/test_server_architecture.py
 
   geopackage:
     runs-on: ubuntu-latest
