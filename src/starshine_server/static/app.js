@@ -270,13 +270,21 @@ function recordPreflightDraft(event) {
   if (!control || !control.dataset || !control.dataset.preflightLayer) {
     return;
   }
+  const hadCurrentPreflight = state.preflight !== null;
   state.layerDrafts[control.dataset.preflightLayer] = control.value;
   state.preflight = null;
   resetPreflightResult(
     elements.preflightResult,
-    "Inline data changed. Run Preflight again for current evidence.",
+    hadCurrentPreflight
+      ? "Inline data changed. Run Preflight again for current evidence."
+      : "Inline data is ready for canonical Preflight.",
   );
-  setRequestStatus(elements.preflightStatus, "Inline data changed; Preflight evidence is stale.");
+  setRequestStatus(
+    elements.preflightStatus,
+    hadCurrentPreflight
+      ? "Inline data changed; Preflight evidence is stale."
+      : "Inline data changed; run canonical Preflight when ready.",
+  );
 }
 
 async function runPreflight() {
