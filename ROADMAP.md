@@ -140,6 +140,7 @@ HTTP handlers; it is to make the existing auditable core usable from a service a
 - [x] accept bounded inline GeoJSON execution through a fixed supervised child process
 - [x] require the existing Preflight path before every execution
 - [x] return selected result + manifest evidence without exposing server filesystem paths
+- [x] provide one standard-library HTTP handoff with real-Uvicorn CI evidence before designing Web UI
 - [ ] add explicit GeoPackage execution input only after a file-upload/container boundary is designed
 - [ ] add a job abstraction only when measured runtime requires asynchronous execution
 
