@@ -162,3 +162,42 @@ def test_assurance_module_does_not_reimplement_geojson_or_crs_validation() -> No
     assert "FeatureCollection" not in assurance
     assert "EPSG:" not in assurance
     assert "starshine:crs" not in assurance
+
+
+def test_assumptions_view_uses_canonical_reports_without_crs_engine() -> None:
+    render = (STATIC_ROOT / "render.js").read_text(encoding="utf-8")
+    app = (STATIC_ROOT / "app.js").read_text(encoding="utf-8")
+    index = (STATIC_ROOT / "index.html").read_text(encoding="utf-8")
+
+    assert 'id="assumptions-tab"' in index
+    assert 'id="assumptions-content"' in index
+    assert "renderAssumptions" in render
+    assert "use.crs" in render
+    assert "step.output_crs" in render
+    assert "reports.plan.produced_layers" in render
+    assert "reports.plan.terminal_layers" in render
+    assert "operator_catalog_digest" in render
+    assert "preflight.preflight_digest" in render
+
+    for forbidden in (
+        "proj4",
+        "pyproj",
+        "reproject",
+        "from_epsg",
+        "to_epsg",
+        "lookupCrs",
+        "parseCrs",
+    ):
+        assert forbidden not in render
+
+    assert "reviewFresh" in app
+    assert "state.preflight" in app
+    assert "refreshAssumptions()" in app
+
+
+def test_assumptions_view_does_not_claim_execution_provenance() -> None:
+    render = (STATIC_ROOT / "render.js").read_text(encoding="utf-8")
+
+    assert "not execution provenance" in render
+    assert "Result and manifest evidence only exist after canonical execution" in render
+    assert "execution_manifest" not in render
