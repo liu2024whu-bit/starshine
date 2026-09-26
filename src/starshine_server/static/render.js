@@ -196,6 +196,140 @@ function renderExplanation(container, explanation) {
   container.appendChild(stack);
 }
 
+function formatCrsContract(crs) {
+  if (!crs || typeof crs !== "object") {
+    return "not reported";
+  }
+  const parts = [`mode: ${crs.mode || "not reported"}`];
+  if (crs.parameter) {
+    parts.push(`parameter: ${crs.parameter}`);
+  }
+  if (Object.prototype.hasOwnProperty.call(crs, "value")) {
+    parts.push(`value: ${JSON.stringify(crs.value)}`);
+  }
+  if (crs.equivalent_to_layer) {
+    parts.push(`equivalent to layer: ${crs.equivalent_to_layer}`);
+  }
+  return parts.join(" · ");
+}
+
+function fieldRequirementText(field) {
+  const constraints = [];
+  if (field.unique) constraints.push("unique");
+  if (field.non_null) constraints.push("non-null");
+  if (field.finite_json_scalar) constraints.push("finite JSON scalar");
+  return constraints.length ? `${field.name} (${constraints.join(", ")})` : field.name;
+}
+
+export function renderAssumptions(container, reports, preflight, reviewFresh) {
+  clearNode(container);
+
+  if (!reports || !reports.plan || !reports.contract) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.appendChild(
+      textElement("p", "Review a Workflow to see canonical input assumptions, output behavior, and evidence."),
+    );
+    container.appendChild(empty);
+    return;
+  }
+
+  const status = document.createElement("div");
+  status.className = "summary-grid";
+  status.appendChild(summaryCard("Data-free review", reviewFresh ? "current" : "stale"));
+  status.appendChild(summaryCard("Data-aware Preflight", preflight ? "current" : "not available"));
+  status.appendChild(
+    summaryCard("Produced layers", formatList(reports.plan.produced_layers)),
+  );
+  status.appendChild(
+    summaryCard("Terminal layers", formatList(reports.plan.terminal_layers)),
+  );
+  container.appendChild(status);
+
+  const layersHeading = textElement("h3", "External-layer assumptions");
+  container.appendChild(layersHeading);
+  const layerStack = document.createElement("div");
+  layerStack.className = "report-stack";
+
+  for (const layer of Array.isArray(reports.contract.layers) ? reports.contract.layers : []) {
+    const card = document.createElement("article");
+    card.className = "report-card";
+    card.appendChild(
+      textElement("div", layer.unused ? "unused" : layer.required ? "required" : "declared", "node-kind"),
+    );
+    card.appendChild(textElement("h3", layer.name || "Unnamed layer"));
+
+    const uses = Array.isArray(layer.uses) ? layer.uses : [];
+    if (!uses.length) {
+      card.appendChild(textElement("p", "No canonical Workflow input use is reported for this layer."));
+    }
+    for (const use of uses) {
+      card.appendChild(
+        textElement(
+          "p",
+          `Step ${use.step_index}: ${use.operation} / ${use.input_name}`,
+        ),
+      );
+      appendList(card, "Canonical geometry types", use.geometry_types || []);
+      card.appendChild(textElement("p", `CRS contract · ${formatCrsContract(use.crs)}`));
+      appendList(
+        card,
+        "Required fields",
+        Array.isArray(use.required_fields) ? use.required_fields.map(fieldRequirementText) : [],
+      );
+      appendList(
+        card,
+        "Fields written by operator",
+        Array.isArray(use.written_fields)
+          ? use.written_fields.map(
+              (field) => `${field.name} (collision policy: ${field.collision_policy})`,
+            )
+          : [],
+      );
+    }
+    layerStack.appendChild(card);
+  }
+  container.appendChild(layerStack);
+
+  container.appendChild(textElement("h3", "Planned outputs"));
+  const stepStack = document.createElement("div");
+  stepStack.className = "report-stack";
+  for (const step of Array.isArray(reports.plan.steps) ? reports.plan.steps : []) {
+    const card = document.createElement("article");
+    card.className = "report-card";
+    card.appendChild(textElement("div", `Step ${step.index}`, "node-kind"));
+    card.appendChild(textElement("h3", step.operation || "Unnamed operation"));
+    card.appendChild(textElement("p", `Output layer: ${step.output || "not reported"}`));
+    card.appendChild(
+      textElement("p", `Canonical output CRS behavior: ${step.output_crs || "not reported"}`),
+    );
+    stepStack.appendChild(card);
+  }
+  container.appendChild(stepStack);
+
+  container.appendChild(textElement("h3", "Canonical evidence chain"));
+  const evidence = document.createElement("div");
+  evidence.className = "digest-list";
+  evidence.appendChild(digestRow("Workflow", reports.plan.workflow_digest));
+  evidence.appendChild(digestRow("Operator catalog", reports.plan.operator_catalog_digest));
+  evidence.appendChild(digestRow("Plan", reports.plan.plan_digest));
+  evidence.appendChild(digestRow("Contract", reports.contract.contract_digest));
+  evidence.appendChild(digestRow("Graph", reports.graph.graph_digest));
+  evidence.appendChild(digestRow("Explanation", reports.explain.explanation_digest));
+  evidence.appendChild(digestRow("Preflight", preflight ? preflight.preflight_digest : "not available"));
+  container.appendChild(evidence);
+
+  const note = document.createElement("article");
+  note.className = "boundary-note";
+  note.appendChild(
+    textElement(
+      "p",
+      "This is review/assurance evidence, not execution provenance. Result and manifest evidence only exist after canonical execution.",
+    ),
+  );
+  container.appendChild(note);
+}
+
 export function renderPreflight(container, report) {
   clearNode(container);
 
