@@ -36,7 +36,7 @@ export function layerSuggestions(workflow, externalLayerNames) {
   return suggestions;
 }
 
-export function decodeDraftValue(rawValue) {
+export function decodeDraftValue(rawValue, parameterName = "parameter") {
   const raw = typeof rawValue === "string" ? rawValue.trim() : "";
   if (!raw) {
     return { present: false, value: null };
@@ -44,8 +44,8 @@ export function decodeDraftValue(rawValue) {
 
   try {
     return { present: true, value: JSON.parse(raw) };
-  } catch {
-    return { present: true, value: raw };
+  } catch (error) {
+    throw new Error(`Parameter ${parameterName} must be valid JSON: ${error.message}`);
   }
 }
 
@@ -70,7 +70,10 @@ export function buildDraftStep(operator, inputValues, parameterValues, outputVal
     if (!parameter || typeof parameter.name !== "string") {
       continue;
     }
-    const decoded = decodeDraftValue(parameterValues && parameterValues[parameter.name]);
+    const decoded = decodeDraftValue(
+      parameterValues && parameterValues[parameter.name],
+      parameter.name,
+    );
     if (decoded.present) {
       parameters[parameter.name] = decoded.value;
     }
