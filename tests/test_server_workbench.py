@@ -9,6 +9,7 @@ pytest.importorskip("httpx")
 
 from fastapi.testclient import TestClient
 
+import starshine_geo
 from starshine_server import create_app
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,6 +28,7 @@ def test_workbench_assets_are_served_from_the_server_package() -> None:
     script = client.get("/workbench/app.js")
     api_script = client.get("/workbench/api.js")
     render_script = client.get("/workbench/render.js")
+    composer_script = client.get("/workbench/composer.js")
 
     assert index.status_code == 200
     assert index.headers["content-type"].startswith("text/html")
@@ -44,12 +46,17 @@ def test_workbench_assets_are_served_from_the_server_package() -> None:
     assert "javascript" in script.headers["content-type"]
     assert 'from "./api.js"' in script.text
     assert 'from "./render.js"' in script.text
+    assert 'from "./composer.js"' in script.text
 
     assert api_script.status_code == 200
     assert "/api/v1/workflows/contract" in api_script.text
 
     assert render_script.status_code == 200
     assert "textContent" in render_script.text
+
+    assert composer_script.status_code == 200
+    assert "buildStepDraft" in composer_script.text
+    assert "parameter.default" in composer_script.text
 
 
 def test_workbench_has_no_external_browser_runtime_or_dynamic_html_sink() -> None:
@@ -99,3 +106,30 @@ def test_workbench_first_slice_uses_review_endpoints_only() -> None:
     assert "/api/v1/workflows/execute" not in script
     assert "starshine_geo" not in script
     assert "starshine_server" not in script
+
+
+def test_step_composer_has_no_operator_specific_branches() -> None:
+    composer = (STATIC_ROOT / "composer.js").read_text(encoding="utf-8")
+    catalog = starshine_geo.operator_catalog()
+
+    for operator in catalog["operators"]:
+        name = operator["name"]
+        assert f'case "{name}"' not in composer
+        assert f"case '{name}'" not in composer
+        assert f'if (operator.name === "{name}")' not in composer
+        assert f"if (operator.name === '{name}')" not in composer
+
+    assert "parameter.validator" not in composer
+    assert "source_crs" not in composer
+    assert "work_crs" not in composer
+    assert "EPSG:" not in composer
+
+
+def test_step_composer_keeps_canonical_validation_as_the_authority() -> None:
+    composer = (STATIC_ROOT / "composer.js").read_text(encoding="utf-8")
+    app = (STATIC_ROOT / "app.js").read_text(encoding="utf-8")
+
+    assert "JSON.parse(raw)" in composer
+    assert "workflow.steps.push(step)" in app
+    assert "ENDPOINTS.validate" in app
+    assert "Review workflow" in (STATIC_ROOT / "index.html").read_text(encoding="utf-8")
