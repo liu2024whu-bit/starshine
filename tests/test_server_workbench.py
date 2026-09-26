@@ -9,6 +9,7 @@ pytest.importorskip("httpx")
 
 from fastapi.testclient import TestClient
 
+import starshine_geo
 from starshine_server import create_app
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,6 +28,7 @@ def test_workbench_assets_are_served_from_the_server_package() -> None:
     script = client.get("/workbench/app.js")
     api_script = client.get("/workbench/api.js")
     render_script = client.get("/workbench/render.js")
+    authoring_script = client.get("/workbench/authoring.js")
 
     assert index.status_code == 200
     assert index.headers["content-type"].startswith("text/html")
@@ -50,6 +52,10 @@ def test_workbench_assets_are_served_from_the_server_package() -> None:
 
     assert render_script.status_code == 200
     assert "textContent" in render_script.text
+
+    assert authoring_script.status_code == 200
+    assert "buildCandidateStep" in authoring_script.text
+    assert "JSON.parse" in authoring_script.text
 
 
 def test_workbench_has_no_external_browser_runtime_or_dynamic_html_sink() -> None:
@@ -99,3 +105,39 @@ def test_workbench_first_slice_uses_review_endpoints_only() -> None:
     assert "/api/v1/workflows/execute" not in script
     assert "starshine_geo" not in script
     assert "starshine_server" not in script
+
+
+def test_workbench_authoring_stays_catalog_driven_and_schema_display_only() -> None:
+    source = (STATIC_ROOT / "authoring.js").read_text(encoding="utf-8")
+
+    catalog = starshine_geo.operator_catalog()
+    operator_names = [item["name"] for item in catalog["operators"]]
+    for name in operator_names:
+        assert f'"{name}"' not in source
+        assert f"'{name}'" not in source
+
+    assert "parameter.schema" in source
+    assert "JSON.stringify(parameter.schema)" in source
+    assert "JSON.parse(text)" in source
+
+    for forbidden_semantics in (
+        "exclusiveMinimum",
+        "minimum",
+        "maximum",
+        "pattern",
+        "anyOf",
+        "EPSG:",
+        "pyproj",
+        "proj4",
+    ):
+        assert forbidden_semantics not in source
+
+
+def test_workbench_step_builder_does_not_expand_the_network_boundary() -> None:
+    source = (STATIC_ROOT / "authoring.js").read_text(encoding="utf-8")
+
+    assert "fetch(" not in source
+    assert "XMLHttpRequest" not in source
+    assert "/api/" not in source
+    assert "localStorage" not in source
+    assert "sessionStorage" not in source
