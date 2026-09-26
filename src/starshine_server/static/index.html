@@ -166,6 +166,10 @@
             Explain
           </button>
           <button class="tab-button" type="button" role="tab" aria-selected="false"
+            aria-controls="assumptions-panel" id="assumptions-tab" data-panel-target="assumptions-panel">
+            Assumptions
+          </button>
+          <button class="tab-button" type="button" role="tab" aria-selected="false"
             aria-controls="preflight-panel" id="preflight-tab" data-panel-target="preflight-panel">
             Preflight
           </button>
@@ -196,6 +200,12 @@
         <section class="tab-panel" id="explain-panel" role="tabpanel" aria-labelledby="explain-tab" hidden>
           <div id="explain-content" class="empty-state">
             <p>Core-generated step explanations will appear here.</p>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="assumptions-panel" role="tabpanel" aria-labelledby="assumptions-tab" hidden>
+          <div id="assumptions-content" class="empty-state">
+            <p>Review a Workflow to see canonical input assumptions, output behavior, and evidence.</p>
           </div>
         </section>
 
