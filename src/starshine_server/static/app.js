@@ -5,6 +5,11 @@ import {
   requiredLayerNames,
 } from "./assurance.js";
 import {
+  assertExecutionEvidenceChain,
+  buildExecutionRequest,
+  terminalOutputNames,
+} from "./execution.js";
+import {
   appendDraftStep,
   buildDraftStep,
   findCatalogOperator,
@@ -15,11 +20,14 @@ import {
   populateOperatorSelect,
   renderCatalog,
   renderCrsEvidence,
+  renderExecutionControls,
+  renderExecutionResult,
   renderPreflightBindings,
   renderPreflightReport,
   renderReports,
   renderStepBuilder,
   resetCrsEvidence,
+  resetExecutionResult,
   resetPreflightResult,
   resetPreflightWorkspace,
   resetReview,
@@ -33,6 +41,8 @@ const state = {
   limits: null,
   reports: null,
   preflight: null,
+  preflightRequest: null,
+  execution: null,
   layerDrafts: {},
 };
 
@@ -59,6 +69,10 @@ const elements = {
   preflightButton: document.querySelector("#preflight-button"),
   preflightStatus: document.querySelector("#preflight-status"),
   preflightResult: document.querySelector("#preflight-result"),
+  executionOutput: document.querySelector("#execution-output"),
+  executionButton: document.querySelector("#execution-button"),
+  executionStatus: document.querySelector("#execution-status"),
+  executionResult: document.querySelector("#execution-result"),
 };
 
 function parseWorkflow() {
@@ -138,17 +152,61 @@ function collectDraftValues() {
   };
 }
 
+function resetExecution(message = "Current passing Preflight required before execution.") {
+  state.execution = null;
+  const outputs = state.reports ? terminalOutputNames(state.reports) : [];
+  renderExecutionControls(
+    elements.executionOutput,
+    elements.executionButton,
+    outputs,
+    false,
+  );
+  resetExecutionResult(elements.executionResult, message);
+  setRequestStatus(elements.executionStatus, message);
+  if (state.reports) {
+    renderCrsEvidence(elements.crsEvidence, state.reports, state.preflight, null);
+  }
+}
+
+function prepareExecutionForCurrentPreflight() {
+  const outputs = terminalOutputNames(state.reports);
+  const enabled =
+    state.preflight !== null &&
+    state.preflight.valid === true &&
+    state.preflightRequest !== null &&
+    outputs.length > 0;
+
+  state.execution = null;
+  renderExecutionControls(
+    elements.executionOutput,
+    elements.executionButton,
+    outputs,
+    enabled,
+  );
+  resetExecutionResult(elements.executionResult);
+  setRequestStatus(
+    elements.executionStatus,
+    enabled
+      ? "Passing Preflight is current. Choose a terminal output and execute explicitly."
+      : "Execution requires a current passing canonical Preflight.",
+    !enabled && state.preflight !== null && state.preflight.valid === false,
+  );
+}
+
 function disablePreflightUntilReview(message) {
   state.preflight = null;
+  state.preflightRequest = null;
   elements.preflightButton.disabled = true;
   resetPreflightWorkspace(elements.preflightInputs, elements.preflightResult, message);
   setRequestStatus(elements.preflightStatus, message);
+  resetExecution("Review and passing Preflight are required before execution.");
 }
 
 function preparePreflightForCurrentReview() {
   const names = requiredLayerNames(state.reports);
   state.preflight = null;
-  renderCrsEvidence(elements.crsEvidence, state.reports, null);
+  state.preflightRequest = null;
+  renderCrsEvidence(elements.crsEvidence, state.reports, null, null);
   renderPreflightBindings(
     elements.preflightInputs,
     names,
@@ -164,6 +222,7 @@ function preparePreflightForCurrentReview() {
       ? "Paste JSON for one or more required layers, then run canonical Preflight."
       : "The current canonical plan has no required external layers to Preflight.",
   );
+  resetExecution("Run and pass canonical Preflight before execution.");
 }
 
 function invalidateReview(message = "Workflow changes have not been reviewed yet.") {
@@ -224,6 +283,7 @@ async function loadServiceMetadata() {
     setRequestStatus(elements.requestStatus, error.message, true);
     setRequestStatus(elements.builderStatus, "Catalog unavailable; assisted editing is disabled.", true);
     setRequestStatus(elements.preflightStatus, "Server metadata is unavailable.", true);
+    setRequestStatus(elements.executionStatus, "Server metadata is unavailable.", true);
     setReviewState(elements.reviewState, "Server unavailable", true);
   }
 }
@@ -279,9 +339,11 @@ function recordPreflightDraft(event) {
   const hadCurrentPreflight = state.preflight !== null;
   state.layerDrafts[control.dataset.preflightLayer] = control.value;
   state.preflight = null;
+  state.preflightRequest = null;
   if (state.reports) {
-    renderCrsEvidence(elements.crsEvidence, state.reports, null);
+    renderCrsEvidence(elements.crsEvidence, state.reports, null, null);
   }
+  resetExecution("Inline data changed. Pass Preflight again before execution.");
   resetPreflightResult(
     elements.preflightResult,
     hadCurrentPreflight
@@ -303,6 +365,9 @@ async function runPreflight() {
   }
 
   elements.preflightButton.disabled = true;
+  state.preflight = null;
+  state.preflightRequest = null;
+  resetExecution("A new Preflight is running; previous execution evidence is stale.");
   setRequestStatus(elements.preflightStatus, "Running canonical Preflight…");
 
   try {
@@ -317,8 +382,10 @@ async function runPreflight() {
     });
     assertPreflightEvidenceChain(report, state.reports);
     state.preflight = report;
+    state.preflightRequest = request;
     renderPreflightReport(elements.preflightResult, report);
-    renderCrsEvidence(elements.crsEvidence, state.reports, report);
+    renderCrsEvidence(elements.crsEvidence, state.reports, report, null);
+    prepareExecutionForCurrentPreflight();
     setRequestStatus(
       elements.preflightStatus,
       report.valid
@@ -328,13 +395,69 @@ async function runPreflight() {
     );
   } catch (error) {
     state.preflight = null;
+    state.preflightRequest = null;
+    resetExecution("Preflight did not produce current passing evidence.");
     if (state.reports) {
-      renderCrsEvidence(elements.crsEvidence, state.reports, null);
+      renderCrsEvidence(elements.crsEvidence, state.reports, null, null);
     }
     resetPreflightResult(elements.preflightResult, "Preflight did not produce current evidence.");
     setRequestStatus(elements.preflightStatus, error.message, true);
   } finally {
     elements.preflightButton.disabled = requiredLayerNames(state.reports).length === 0;
+  }
+}
+
+async function runExecution() {
+  if (
+    !state.reports ||
+    !state.preflight ||
+    state.preflight.valid !== true ||
+    !state.preflightRequest
+  ) {
+    setRequestStatus(
+      elements.executionStatus,
+      "Review and a current passing canonical Preflight are required before execution.",
+      true,
+    );
+    return;
+  }
+
+  const outputLayer = elements.executionOutput.value;
+  elements.executionButton.disabled = true;
+  state.execution = null;
+  resetExecutionResult(elements.executionResult, "Bounded execution is running…");
+  setRequestStatus(elements.executionStatus, "Running bounded isolated execution…");
+
+  try {
+    const request = buildExecutionRequest(state.preflightRequest, outputLayer);
+    const execution = await requestJson(ENDPOINTS.execute, {
+      method: "POST",
+      body: request,
+    });
+    assertExecutionEvidenceChain(
+      execution,
+      state.preflight,
+      outputLayer,
+      state.limits && state.limits.inline_execution,
+    );
+    state.execution = execution;
+    renderExecutionResult(elements.executionResult, execution);
+    renderCrsEvidence(elements.crsEvidence, state.reports, state.preflight, execution);
+    setRequestStatus(
+      elements.executionStatus,
+      "Bounded execution succeeded; canonical result and manifest evidence are current.",
+    );
+  } catch (error) {
+    state.execution = null;
+    resetExecutionResult(elements.executionResult, "Execution did not produce current result evidence.");
+    renderCrsEvidence(elements.crsEvidence, state.reports, state.preflight, null);
+    setRequestStatus(elements.executionStatus, error.message, true);
+  } finally {
+    elements.executionButton.disabled =
+      !state.preflight ||
+      state.preflight.valid !== true ||
+      !state.preflightRequest ||
+      terminalOutputNames(state.reports).length === 0;
   }
 }
 
@@ -345,6 +468,7 @@ elements.workflow.addEventListener("input", () => invalidateReview());
 elements.layerNames.addEventListener("input", () => invalidateReview());
 elements.preflightInputs.addEventListener("input", recordPreflightDraft);
 elements.preflightButton.addEventListener("click", runPreflight);
+elements.executionButton.addEventListener("click", runExecution);
 
 initializeTabs();
 loadServiceMetadata();
