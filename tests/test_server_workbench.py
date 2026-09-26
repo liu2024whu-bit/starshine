@@ -25,6 +25,8 @@ def test_workbench_assets_are_served_from_the_server_package() -> None:
     index = client.get("/workbench/")
     stylesheet = client.get("/workbench/styles.css")
     script = client.get("/workbench/app.js")
+    api_script = client.get("/workbench/api.js")
+    render_script = client.get("/workbench/render.js")
 
     assert index.status_code == 200
     assert index.headers["content-type"].startswith("text/html")
@@ -40,13 +42,24 @@ def test_workbench_assets_are_served_from_the_server_package() -> None:
 
     assert script.status_code == 200
     assert "javascript" in script.headers["content-type"]
-    assert "/api/v1/workflows/contract" in script.text
+    assert 'from "./api.js"' in script.text
+    assert 'from "./render.js"' in script.text
+
+    assert api_script.status_code == 200
+    assert "/api/v1/workflows/contract" in api_script.text
+
+    assert render_script.status_code == 200
+    assert "textContent" in render_script.text
 
 
 def test_workbench_has_no_external_browser_runtime_or_dynamic_html_sink() -> None:
     index = (STATIC_ROOT / "index.html").read_text(encoding="utf-8")
     stylesheet = (STATIC_ROOT / "styles.css").read_text(encoding="utf-8")
-    script = (STATIC_ROOT / "app.js").read_text(encoding="utf-8")
+    scripts = [
+        path.read_text(encoding="utf-8")
+        for path in sorted(STATIC_ROOT.glob("*.js"))
+    ]
+    script = "\n".join(scripts)
     combined = "\n".join((index, stylesheet, script))
 
     for external_marker in ("http://", "https://", "//cdn."):
@@ -65,7 +78,10 @@ def test_workbench_has_no_external_browser_runtime_or_dynamic_html_sink() -> Non
 
 
 def test_workbench_first_slice_uses_review_endpoints_only() -> None:
-    script = (STATIC_ROOT / "app.js").read_text(encoding="utf-8")
+    script = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in sorted(STATIC_ROOT.glob("*.js"))
+    )
 
     expected = {
         "/healthz",
