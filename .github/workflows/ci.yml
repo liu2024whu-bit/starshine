@@ -346,6 +346,102 @@ jobs:
             /policy changed/,
           );
           NODE
+      - name: Check projection-free result preview behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import assert from "node:assert/strict";
+          import fs from "node:fs";
+
+          const source = fs.readFileSync(
+            "src/starshine_server/static/preview.js",
+            "utf8",
+          );
+          const moduleUrl =
+            `data:text/javascript;base64,${Buffer.from(source).toString("base64")}`;
+          const { buildResultPreview } = await import(moduleUrl);
+
+          const result = {
+            type: "FeatureCollection",
+            features: [
+              {
+                type: "Feature",
+                geometry: { type: "Point", coordinates: [0, 0] },
+                properties: {},
+              },
+              {
+                type: "Feature",
+                geometry: {
+                  type: "LineString",
+                  coordinates: [[0, 0], [10, 5], [20, 0]],
+                },
+                properties: {},
+              },
+              {
+                type: "Feature",
+                geometry: {
+                  type: "Polygon",
+                  coordinates: [[[2, 1], [8, 1], [8, 4], [2, 1]]],
+                },
+                properties: {},
+              },
+              {
+                type: "Feature",
+                geometry: {
+                  type: "GeometryCollection",
+                  geometries: [
+                    { type: "MultiPoint", coordinates: [[3, 3], [7, 2]] },
+                    { type: "Point", coordinates: ["bad", 2] },
+                  ],
+                },
+                properties: {},
+              },
+            ],
+          };
+
+          const preview = buildResultPreview(result, {
+            width: 200,
+            height: 100,
+            padding: 10,
+          });
+
+          assert.deepEqual(preview.bounds, {
+            min_x: 0,
+            min_y: 0,
+            max_x: 20,
+            max_y: 5,
+          });
+          assert.equal(preview.primitive_count, 5);
+          assert.equal(preview.coordinate_count, 10);
+          assert.ok(
+            preview.primitives
+              .flatMap((primitive) => primitive.points)
+              .every(([x, y]) =>
+                Number.isFinite(x) &&
+                Number.isFinite(y) &&
+                x >= 0 && x <= 200 &&
+                y >= 0 && y <= 100
+              ),
+          );
+
+          const pointOnly = buildResultPreview({
+            features: [{ geometry: { type: "Point", coordinates: [4, 9] } }],
+          });
+          assert.equal(pointOnly.primitive_count, 1);
+          assert.ok(Number.isFinite(pointOnly.primitives[0].points[0][0]));
+          assert.ok(Number.isFinite(pointOnly.primitives[0].points[0][1]));
+
+          const malformed = buildResultPreview({
+            features: [
+              { geometry: { type: "Point", coordinates: [null, 2] } },
+              { geometry: { type: "LineString", coordinates: [[1, 2]] } },
+            ],
+          });
+          assert.equal(malformed.primitive_count, 0);
+          assert.equal(malformed.coordinate_count, 0);
+          assert.equal(malformed.bounds, null);
+          NODE
       - run: >-
           python -m pytest -q tests/test_server_api.py
           tests/test_server_execution.py tests/test_server_handoff.py
