@@ -1,8 +1,11 @@
+import { assertPreflightMatchesReview, parseNamedLayers } from "./assurance.js";
 import { initializeStepComposer } from "./composer.js";
 import { ENDPOINTS, requestJson } from "./api.js";
 import {
   initializeTabs,
   renderCatalog,
+  renderEvidence,
+  renderPreflight,
   renderReports,
   setRequestStatus,
   setReviewState,
@@ -10,7 +13,10 @@ import {
 
 const state = {
   catalog: null,
+  limits: null,
   reports: null,
+  reviewFresh: false,
+  preflight: null,
 };
 
 const elements = {
@@ -28,10 +34,15 @@ const elements = {
   composerOutput: document.querySelector("#composer-output"),
   composerStatus: document.querySelector("#composer-status"),
   composerAdd: document.querySelector("#composer-add"),
+  preflightLayers: document.querySelector("#preflight-layers"),
+  preflightButton: document.querySelector("#preflight-button"),
+  preflightStatus: document.querySelector("#preflight-status"),
+  preflightLimits: document.querySelector("#preflight-limits"),
   overview: document.querySelector("#overview-content"),
   contract: document.querySelector("#contract-content"),
   graph: document.querySelector("#graph-content"),
   explain: document.querySelector("#explain-content"),
+  preflight: document.querySelector("#preflight-content"),
   evidence: document.querySelector("#evidence-content"),
 };
 
@@ -48,6 +59,33 @@ function parseWorkflow() {
   return value;
 }
 
+function clearPreflight(message) {
+  state.preflight = null;
+  renderPreflight(elements.preflight, null);
+  elements.preflightStatus.textContent = message;
+}
+
+function markReviewStale(message) {
+  state.reviewFresh = false;
+  elements.preflightButton.disabled = true;
+  setReviewState(elements.reviewState, "Stale");
+  setRequestStatus(elements.requestStatus, message);
+  clearPreflight("Workflow review changed. Complete a fresh review before Preflight.");
+}
+
+function formatPreflightLimits(limits) {
+  if (!limits || typeof limits !== "object") {
+    return "Server inline Preflight limits are unavailable.";
+  }
+  return [
+    `${limits.max_request_bytes} request bytes`,
+    `${limits.max_layers} layers`,
+    `${limits.max_workflow_steps} Workflow steps`,
+    `${limits.max_features_per_layer} features/layer`,
+    `${limits.max_total_features} total features`,
+  ].join(" · ");
+}
+
 function appendWorkflowStep(step) {
   const workflow = parseWorkflow();
   if (!Array.isArray(workflow.steps)) {
@@ -55,12 +93,7 @@ function appendWorkflowStep(step) {
   }
   workflow.steps.push(step);
   elements.workflow.value = JSON.stringify(workflow, null, 2);
-  state.reports = null;
-  setReviewState(elements.reviewState, "Not reviewed");
-  setRequestStatus(
-    elements.requestStatus,
-    "Workflow changed. Run canonical review before treating it as valid.",
-  );
+  markReviewStale("Workflow changed. Run canonical review before treating it as valid.");
 }
 
 function parseLayerNames() {
@@ -84,11 +117,14 @@ function assertEvidenceChain(plan, contract, graph, explain) {
 
 async function loadServiceMetadata() {
   try {
-    const [health, catalog] = await Promise.all([
+    const [health, catalog, limits] = await Promise.all([
       requestJson(ENDPOINTS.health),
       requestJson(ENDPOINTS.operators),
+      requestJson(ENDPOINTS.limits),
     ]);
     state.catalog = catalog;
+    state.limits = limits;
+    elements.preflightLimits.textContent = formatPreflightLimits(limits.inline_preflight);
     renderCatalog(elements.operatorCatalog, elements.catalogStatus, catalog);
     initializeStepComposer({
       catalog,
@@ -135,7 +171,10 @@ async function reviewWorkflow() {
 
     assertEvidenceChain(plan, contract, graph, explain);
     state.reports = { validation, plan, contract, graph, explain };
+    state.reviewFresh = true;
     renderReports(elements, state.reports);
+    clearPreflight("Fresh review complete. Inline GeoJSON can now be checked.");
+    elements.preflightButton.disabled = false;
     setRequestStatus(elements.requestStatus, "Canonical review complete.");
     setReviewState(elements.reviewState, "Reviewed");
   } catch (error) {
@@ -146,6 +185,61 @@ async function reviewWorkflow() {
   }
 }
 
+async function runPreflight() {
+  if (!state.reviewFresh || !state.reports) {
+    setRequestStatus(
+      elements.preflightStatus,
+      "A fresh canonical Workflow review is required before Preflight.",
+      true,
+    );
+    return;
+  }
+
+  elements.preflightButton.disabled = true;
+  setRequestStatus(elements.preflightStatus, "Running canonical Preflight…");
+
+  try {
+    const layers = parseNamedLayers(elements.preflightLayers.value);
+    const workflow = parseWorkflow();
+    const report = await requestJson(ENDPOINTS.preflight, {
+      method: "POST",
+      body: { workflow, layers },
+    });
+
+    assertPreflightMatchesReview(state.reports, report);
+    state.preflight = report;
+    renderPreflight(elements.preflight, report);
+    renderEvidence(elements.evidence, { ...state.reports, preflight: report });
+    setRequestStatus(
+      elements.preflightStatus,
+      report.valid
+        ? "Canonical Preflight completed without errors."
+        : "Canonical Preflight completed with findings.",
+      !report.valid,
+    );
+  } catch (error) {
+    state.preflight = null;
+    renderPreflight(elements.preflight, null);
+    setRequestStatus(elements.preflightStatus, error.message, true);
+  } finally {
+    elements.preflightButton.disabled = !state.reviewFresh;
+  }
+}
+
+function onReviewedInputChanged() {
+  markReviewStale("Workflow or external layer names changed. Review evidence is now stale.");
+}
+
+function onPreflightDataChanged() {
+  if (state.preflight) {
+    clearPreflight("Inline layer data changed. Run Preflight again; Workflow review remains fresh.");
+  }
+}
+
 elements.reviewButton.addEventListener("click", reviewWorkflow);
+elements.preflightButton.addEventListener("click", runPreflight);
+elements.workflow.addEventListener("input", onReviewedInputChanged);
+elements.layerNames.addEventListener("input", onReviewedInputChanged);
+elements.preflightLayers.addEventListener("input", onPreflightDataChanged);
 initializeTabs();
 loadServiceMetadata();
