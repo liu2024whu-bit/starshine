@@ -226,14 +226,16 @@ label {
   padding: 12px 14px;
 }
 
-.composer-panel {
+.composer-panel,
+.assurance-panel {
   margin-top: 18px;
   border: 1px solid var(--line);
   border-radius: var(--radius-small);
   background: #fbfcfc;
 }
 
-.composer-panel summary {
+.composer-panel summary,
+.assurance-panel summary {
   padding: 13px 14px;
   cursor: pointer;
   color: var(--accent-strong);
@@ -241,7 +243,8 @@ label {
   font-weight: 800;
 }
 
-.composer-panel[open] summary {
+.composer-panel[open] summary,
+.assurance-panel[open] summary {
   border-bottom: 1px solid var(--line);
 }
 
@@ -263,7 +266,11 @@ label {
 .composer-panel > .composer-input,
 .composer-panel > .composer-select,
 .composer-panel > #composer-fields,
-.composer-panel > .composer-actions {
+.composer-panel > .composer-actions,
+.assurance-panel > label,
+.assurance-panel > .composer-meta,
+.assurance-panel > .inline-data-editor,
+.assurance-panel > .composer-actions {
   margin-left: 14px;
   margin-right: 14px;
 }
@@ -284,6 +291,20 @@ label {
 .composer-field input {
   min-height: 38px;
   padding: 8px 10px;
+}
+
+.inline-data-editor {
+  width: 100%;
+  min-height: 180px;
+  resize: vertical;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: #ffffff;
+  color: #19312a;
+  padding: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  line-height: 1.45;
 }
 
 .parameter-editor {
