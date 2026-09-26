@@ -7,7 +7,7 @@
         "driver": {
           "name": "Starshine Geo Workflow Preflight",
           "informationUri": "https://github.com/liu2024whu-bit/starshine",
-          "semanticVersion": "0.7.0.dev0",
+          "semanticVersion": "0.7.0",
           "rules": [
             {
               "id": "starshine.preflight.deferred_crs_equivalence",
