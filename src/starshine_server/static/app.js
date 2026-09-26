@@ -1,3 +1,4 @@
+import { appendCandidateStep, initializeStepBuilder } from "./authoring.js";
 import { ENDPOINTS, requestJson } from "./api.js";
 import {
   initializeTabs,
@@ -21,6 +22,15 @@ const elements = {
   serverVersion: document.querySelector("#server-version"),
   catalogStatus: document.querySelector("#catalog-status"),
   operatorCatalog: document.querySelector("#operator-catalog"),
+  builder: {
+    operator: document.querySelector("#builder-operator"),
+    summary: document.querySelector("#builder-summary"),
+    inputs: document.querySelector("#builder-inputs"),
+    parameters: document.querySelector("#builder-parameters"),
+    output: document.querySelector("#builder-output"),
+    insert: document.querySelector("#builder-insert"),
+    status: document.querySelector("#builder-status"),
+  },
   overview: document.querySelector("#overview-content"),
   contract: document.querySelector("#contract-content"),
   graph: document.querySelector("#graph-content"),
@@ -68,6 +78,15 @@ async function loadServiceMetadata() {
     ]);
     state.catalog = catalog;
     renderCatalog(elements.operatorCatalog, elements.catalogStatus, catalog);
+    initializeStepBuilder(catalog, elements.builder, (step) => {
+      const workflow = appendCandidateStep(parseWorkflow(), step);
+      elements.workflow.value = JSON.stringify(workflow, null, 2);
+      setRequestStatus(
+        elements.requestStatus,
+        "Candidate step inserted. Review the Workflow for canonical validation.",
+      );
+      setReviewState(elements.reviewState, "Not reviewed");
+    });
     const version = health.core_version || "unknown";
     elements.serverVersion.textContent = `Core ${version}`;
   } catch (error) {
