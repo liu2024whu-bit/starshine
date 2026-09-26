@@ -64,6 +64,21 @@ def main() -> int:
     assert limits.json()["inline_execution"]["mode"] == "isolated_subprocess"
     assert limits.json()["inline_execution"]["timeout_seconds"] == 10
 
+    workbench = client.get("/workbench/")
+    workbench.raise_for_status()
+    assert "Workflow review workbench" in workbench.text
+    assert 'src="./app.js"' in workbench.text
+
+    workbench_script = client.get("/workbench/app.js")
+    workbench_script.raise_for_status()
+    assert "/api/v1/workflows/contract" in workbench_script.text
+    assert "/api/v1/workflows/preflight" not in workbench_script.text
+    assert "/api/v1/workflows/execute" not in workbench_script.text
+
+    workbench_styles = client.get("/workbench/styles.css")
+    workbench_styles.raise_for_status()
+    assert ".workbench-grid" in workbench_styles.text
+
     workflow = {
         "version": 1,
         "steps": [
