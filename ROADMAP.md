@@ -150,7 +150,7 @@ HTTP handlers; it is to make the existing auditable core usable from a service a
 - [x] package a same-origin review-only Workbench and verify its assets from the exact Server wheel
 - [x] add catalog-driven step composition without duplicating parameter validation or Core defaults
 - [ ] build richer Workflow editing only where it can remain driven by canonical catalog/contracts
-- [ ] surface plan/graph/explain and Preflight findings before execution
+- [x] surface plan/graph/explain and review-gated inline Preflight findings before execution
 - [ ] add map preview without reproducing spatial-analysis semantics in JavaScript
 - [ ] make CRS assumptions and output provenance visible in the user flow
 
