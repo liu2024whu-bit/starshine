@@ -170,6 +170,28 @@ This keeps the browser useful while preserving one semantics owner:
 CI imports the composer's pure step-building function with a synthetic operator and verifies that the
 browser does not apply Core defaults or invent required values.
 
+## Review-gated inline Preflight
+
+The Workbench next exposes the Server's existing bounded inline GeoJSON Preflight, but only after the
+current data-free Workflow review is fresh. Manual edits to Workflow JSON or declared external layer
+names immediately mark review evidence stale, disable the Preflight action, and clear any old
+Preflight result. Catalog-composed steps use the same stale path.
+
+Inline feature data has a separate lifecycle: editing it clears only the previous Preflight result
+and does not invalidate the data-free Workflow review.
+
+The browser accepts one JSON object mapping logical layer names to candidate FeatureCollections. It
+parses only the JSON container. GeoJSON structure, geometry, CRS, field constraints, cross-layer
+relationships, and operator contracts remain entirely in canonical Core Preflight.
+
+The Workbench publishes the Server-provided inline limits for visibility but does not duplicate their
+enforcement. HTTP 413 and other Server capacity responses remain authoritative.
+
+A returned Preflight report is treated as current only when its workflow, plan, and contract digests
+match the fresh review already displayed by the Workbench. The browser then presents canonical layer
+summaries, findings, remaining execution-time checks, and Preflight evidence. It still contains no
+Workflow execution call.
+
 ## Next platform increments
 
 ### 0.8C — Web workbench
