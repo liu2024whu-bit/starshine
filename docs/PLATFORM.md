@@ -144,8 +144,35 @@ Browser rendering uses DOM element creation and `textContent` for report/user te
 boundary tests reject dynamic HTML/code sinks and external browser runtimes. The Workbench does not
 call Preflight or execution endpoints yet, does not persist state, and does not contain a GIS library.
 
-That boundary leaves the next 0.8C increments explicit: operator-assisted editing from canonical
-catalog metadata, bounded feature-data assurance, and only then a map/result surface.
+## Catalog-assisted Workflow drafting
+
+The next Workbench increment adds one draft-step helper without introducing a browser validation
+engine. Operator choices, named input roles, parameter descriptions, required/default metadata,
+parameter JSON Schema hints, output-CRS behavior, and input geometry/CRS contract hints all come from
+the canonical operator catalog returned by the Server.
+
+The browser does not copy Core defaults into untouched optional parameters. Leaving an optional field
+blank omits it from the draft step so `starshine_geo` remains responsible for default resolution.
+Required fields may also be left blank; the builder does not pretend that a draft is valid. After a
+step is inserted into the editable Workflow JSON, the normal Server review path remains the only
+authority that accepts or rejects it.
+
+Input controls suggest declared external layer names and outputs already present in the editable
+Workflow. Suggestions are convenience only; dependency validity, duplicate outputs, missing inputs,
+parameter rules, CRS validity, and every other Workflow semantic remain Core concerns.
+
+The transformation logic lives in a DOM-free `editor.js` module and is exercised directly in CI
+without a frontend package manager. It contains no operator-specific branches or names. Rendering
+continues to consume catalog metadata generically, while `app.js` only coordinates the draft and
+canonical review lifecycle.
+
+Any edit to Workflow JSON or external layer names invalidates the currently displayed review evidence
+until the Server review is run again. This prevents stale plan/contract/graph/explain output from being
+presented as evidence for a changed Workflow.
+
+That boundary leaves the next 0.8C increment explicit: bounded feature-data assurance through the
+existing Preflight contract. File upload, execution controls, and a map/result surface remain later
+decisions rather than being coupled to assisted editing.
 
 ## Next platform increments
 
