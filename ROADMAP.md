@@ -151,7 +151,8 @@ HTTP handlers; it is to make the existing auditable core usable from a service a
 - [x] build operator selection and Workflow drafting from the canonical catalog/contracts without client-side validation
 - [x] surface plan/graph/explain and review-bound inline GeoJSON Preflight findings before execution
 - [ ] add map preview without reproducing spatial-analysis semantics in JavaScript
-- [ ] make CRS assumptions and output provenance visible in the user flow
+- [x] make canonical CRS assumptions and pre-execution evidence visible in the user flow
+- [ ] surface result/manifest provenance only with a deliberately reviewed browser execution flow
 
 ### 0.8D / 0.9 — persistence and collaboration
 
