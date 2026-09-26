@@ -9,6 +9,7 @@ pytest.importorskip("httpx")
 
 from fastapi.testclient import TestClient
 
+import starshine_geo
 from starshine_server import create_app
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,6 +28,7 @@ def test_workbench_assets_are_served_from_the_server_package() -> None:
     script = client.get("/workbench/app.js")
     api_script = client.get("/workbench/api.js")
     render_script = client.get("/workbench/render.js")
+    editor_script = client.get("/workbench/editor.js")
 
     assert index.status_code == 200
     assert index.headers["content-type"].startswith("text/html")
@@ -43,6 +45,7 @@ def test_workbench_assets_are_served_from_the_server_package() -> None:
     assert script.status_code == 200
     assert "javascript" in script.headers["content-type"]
     assert 'from "./api.js"' in script.text
+    assert 'from "./editor.js"' in script.text
     assert 'from "./render.js"' in script.text
 
     assert api_script.status_code == 200
@@ -50,6 +53,13 @@ def test_workbench_assets_are_served_from_the_server_package() -> None:
 
     assert render_script.status_code == 200
     assert "textContent" in render_script.text
+    assert "operator.inputs" in render_script.text
+    assert "operator.parameters" in render_script.text
+    assert "input.contract" in render_script.text
+
+    assert editor_script.status_code == 200
+    assert "buildDraftStep" in editor_script.text
+    assert "appendDraftStep" in editor_script.text
 
 
 def test_workbench_has_no_external_browser_runtime_or_dynamic_html_sink() -> None:
@@ -99,3 +109,25 @@ def test_workbench_first_slice_uses_review_endpoints_only() -> None:
     assert "/api/v1/workflows/execute" not in script
     assert "starshine_geo" not in script
     assert "starshine_server" not in script
+
+
+def test_assisted_editor_does_not_hard_code_catalog_operator_names() -> None:
+    editor = (STATIC_ROOT / "editor.js").read_text(encoding="utf-8")
+    catalog = starshine_geo.operator_catalog()
+
+    for operator in catalog["operators"]:
+        name = operator["name"]
+        assert f'"{name}"' not in editor
+        assert f"'{name}'" not in editor
+
+
+def test_assisted_editor_keeps_core_defaults_and_validation_authoritative() -> None:
+    editor = (STATIC_ROOT / "editor.js").read_text(encoding="utf-8")
+    app = (STATIC_ROOT / "app.js").read_text(encoding="utf-8")
+
+    assert "parameter.default" not in editor
+    assert "decoded.present" in editor
+    assert "ENDPOINTS.validate" in app
+    assert "Server/Core have not validated it yet" in app
+    assert "/api/v1/workflows/preflight" not in app
+    assert "/api/v1/workflows/execute" not in app
