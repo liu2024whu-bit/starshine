@@ -225,6 +225,90 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+  offline-independent-reproduction-bundle:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+      - uses: actions/download-artifact@v8
+        with:
+          name: starshine-geo-dist
+          path: dist
+      - name: Build the offline dependency wheelhouse
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          mkdir offline-wheelhouse
+          python -m pip download --only-binary=:all: \
+            --dest offline-wheelhouse \
+            "pyproj>=3.6,<4" \
+            "shapely>=2.0,<3" \
+            "jsonschema>=4.23,<5"
+      - name: Build the offline independent reproduction bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          wheel="$(find dist -name '*.whl' -print -quit)"
+          test -n "$wheel"
+          python scripts/independent_reproduction.py bundle \
+            --wheel "$wheel" \
+            --revision "$GITHUB_SHA" \
+            --wheelhouse offline-wheelhouse \
+            --output independent-reproduction-offline-linux-py313.zip
+      - uses: actions/upload-artifact@v7
+        with:
+          name: starshine-independent-reproduction-offline-linux-py313
+          path: independent-reproduction-offline-linux-py313.zip
+          if-no-files-found: error
+          retention-days: 14
+
+  offline-independent-reproduction-bundle-smoke:
+    needs: offline-independent-reproduction-bundle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - uses: actions/download-artifact@v8
+        with:
+          name: starshine-independent-reproduction-offline-linux-py313
+          path: bundle-artifact
+      - name: Run the offline bundle without an index
+        shell: bash
+        env:
+          PIP_NO_INDEX: "1"
+          PIP_INDEX_URL: "https://invalid.invalid/simple"
+        run: |
+          set -euo pipefail
+          mkdir bundle
+          python -c "import pathlib, zipfile; p=next(pathlib.Path('bundle-artifact').glob('*.zip')); zipfile.ZipFile(p).extractall('bundle')"
+          python bundle/scripts/independent_reproduction.py run --output-dir bundle-evidence
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          evidence = json.loads(
+              Path("bundle-evidence/independent-reproduction-evidence.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          assert evidence["status"] == "ok"
+          assert evidence["installed_from_clean_venv"] is True
+          assert evidence["dependency_install_mode"] == "offline-wheelhouse"
+          PY
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: independent-reproduction-offline-bundle-smoke
+          path: bundle-evidence/
+          if-no-files-found: warn
+          retention-days: 14
+
   wheel-smoke:
     needs: build
     runs-on: ubuntu-latest
@@ -392,6 +476,8 @@ jobs:
       - source-reproduction
       - build
       - independent-reproduction-bundle-smoke
+      - offline-independent-reproduction-bundle
+      - offline-independent-reproduction-bundle-smoke
       - wheel-smoke
       - geopackage-wheel-smoke
       - cross-platform-reproduction
