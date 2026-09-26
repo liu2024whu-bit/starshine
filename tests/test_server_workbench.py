@@ -28,6 +28,11 @@ def test_workbench_assets_are_served_from_the_server_package() -> None:
     script = client.get("/workbench/app.js")
     api_script = client.get("/workbench/api.js")
     render_script = client.get("/workbench/render.js")
+    dom_script = client.get("/workbench/dom.js")
+    render_ui_script = client.get("/workbench/render_ui.js")
+    render_review_script = client.get("/workbench/render_review.js")
+    render_editor_script = client.get("/workbench/render_editor.js")
+    render_preflight_script = client.get("/workbench/render_preflight.js")
     editor_script = client.get("/workbench/editor.js")
     assurance_script = client.get("/workbench/assurance.js")
 
@@ -56,10 +61,29 @@ def test_workbench_assets_are_served_from_the_server_package() -> None:
     assert "/api/v1/workflows/preflight" in api_script.text
 
     assert render_script.status_code == 200
-    assert "textContent" in render_script.text
-    assert "operator.inputs" in render_script.text
-    assert "operator.parameters" in render_script.text
-    assert "input.contract" in render_script.text
+    assert 'from "./render_ui.js"' in render_script.text
+    assert 'from "./render_review.js"' in render_script.text
+    assert 'from "./render_editor.js"' in render_script.text
+    assert 'from "./render_preflight.js"' in render_script.text
+
+    assert dom_script.status_code == 200
+    assert "textContent" in dom_script.text
+    assert "innerHTML" not in dom_script.text
+
+    assert render_ui_script.status_code == 200
+    assert "initializeTabs" in render_ui_script.text
+
+    assert render_review_script.status_code == 200
+    assert "renderReports" in render_review_script.text
+
+    assert render_editor_script.status_code == 200
+    assert "operator.inputs" in render_editor_script.text
+    assert "operator.parameters" in render_editor_script.text
+    assert "input.contract" in render_editor_script.text
+
+    assert render_preflight_script.status_code == 200
+    assert "renderPreflightBindings" in render_preflight_script.text
+    assert "renderPreflightReport" in render_preflight_script.text
 
     assert editor_script.status_code == 200
     assert "buildDraftStep" in editor_script.text
@@ -164,3 +188,38 @@ def test_inline_preflight_browser_layer_has_no_gis_or_upload_semantics() -> None
 
     assert 'type="file"' not in index
     assert "multipart" not in lowered
+
+
+def test_workbench_presentation_modules_keep_one_way_dependencies() -> None:
+    facade = (STATIC_ROOT / "render.js").read_text(encoding="utf-8")
+    domain_paths = [
+        STATIC_ROOT / "render_ui.js",
+        STATIC_ROOT / "render_review.js",
+        STATIC_ROOT / "render_editor.js",
+        STATIC_ROOT / "render_preflight.js",
+    ]
+
+    assert len(facade.splitlines()) < 40
+    assert "document." not in facade
+    assert "fetch(" not in facade
+
+    for path in domain_paths:
+        source = path.read_text(encoding="utf-8")
+        for forbidden in (
+            './api.js',
+            './editor.js',
+            './assurance.js',
+            "fetch(",
+            "/api/v1/",
+        ):
+            assert forbidden not in source
+
+    dom = (STATIC_ROOT / "dom.js").read_text(encoding="utf-8")
+    for forbidden in (
+        './api.js',
+        './editor.js',
+        './assurance.js',
+        "fetch(",
+        "/api/v1/",
+    ):
+        assert forbidden not in dom

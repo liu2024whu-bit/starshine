@@ -1,0 +1,179 @@
+import {
+  appendList,
+  clearNode,
+  digestRow,
+  formatList,
+  summaryCard,
+  textElement,
+} from "./dom.js";
+
+export function renderCatalog(container, status, catalog) {
+  clearNode(container);
+  const operators = Array.isArray(catalog.operators) ? catalog.operators : [];
+  for (const operator of operators) {
+    const name = operator && typeof operator.name === "string" ? operator.name : "unnamed";
+    const chip = textElement("span", name, "operator-chip");
+    if (operator && typeof operator.summary === "string") {
+      chip.title = operator.summary;
+    }
+    container.appendChild(chip);
+  }
+  status.textContent = `${operators.length} canonical operators`;
+}
+
+function renderOverview(container, reports) {
+  clearNode(container);
+
+  const grid = document.createElement("div");
+  grid.className = "summary-grid";
+  grid.appendChild(summaryCard("Validation", reports.validation.valid ? "valid" : "invalid"));
+  grid.appendChild(summaryCard("Workflow steps", reports.plan.step_count));
+  grid.appendChild(
+    summaryCard("Required external layers", formatList(reports.plan.required_external_layers)),
+  );
+  grid.appendChild(summaryCard("Terminal layers", formatList(reports.plan.terminal_layers)));
+  container.appendChild(grid);
+
+  const digests = document.createElement("div");
+  digests.className = "digest-list";
+  digests.appendChild(digestRow("Workflow", reports.plan.workflow_digest));
+  digests.appendChild(digestRow("Plan", reports.plan.plan_digest));
+  digests.appendChild(digestRow("Contract", reports.contract.contract_digest));
+  digests.appendChild(digestRow("Graph", reports.graph.graph_digest));
+  digests.appendChild(digestRow("Explanation", reports.explain.explanation_digest));
+  container.appendChild(digests);
+}
+
+function renderContract(container, contract) {
+  clearNode(container);
+  const stack = document.createElement("div");
+  stack.className = "report-stack";
+
+  const layers = Array.isArray(contract.layers) ? contract.layers : [];
+  for (const layer of layers) {
+    const card = document.createElement("article");
+    card.className = "report-card";
+    card.appendChild(textElement("h3", layer.name || "Unnamed layer"));
+    card.appendChild(
+      textElement(
+        "p",
+        layer.unused
+          ? "Declared but unused by this workflow."
+          : `Used by ${layer.use_count ?? 0} workflow input(s).`,
+      ),
+    );
+
+    const uses = Array.isArray(layer.uses) ? layer.uses : [];
+    for (const use of uses) {
+      const geometry = formatList(use.geometry_types);
+      const crsMode = use.crs && typeof use.crs.mode === "string" ? use.crs.mode : "not reported";
+      card.appendChild(
+        textElement(
+          "p",
+          `Step ${use.step_index}: ${use.operation} / ${use.input_name} · geometry: ${geometry} · CRS: ${crsMode}`,
+        ),
+      );
+      const requiredFields = Array.isArray(use.required_fields)
+        ? use.required_fields.map((field) => field.name)
+        : [];
+      appendList(card, "Required fields", requiredFields);
+    }
+    stack.appendChild(card);
+  }
+
+  if (layers.length === 0) {
+    stack.appendChild(textElement("p", "No external layer contracts were reported.", "muted"));
+  }
+  container.appendChild(stack);
+}
+
+function renderGraph(container, graph) {
+  clearNode(container);
+
+  container.appendChild(textElement("h3", "Nodes"));
+  const nodes = document.createElement("div");
+  nodes.className = "node-grid";
+
+  for (const node of Array.isArray(graph.nodes) ? graph.nodes : []) {
+    const card = document.createElement("article");
+    card.className = "report-card";
+    card.appendChild(textElement("div", node.kind || "node", "node-kind"));
+    card.appendChild(textElement("h3", node.label || node.id || "Unnamed node"));
+    card.appendChild(textElement("p", node.id || "No node id"));
+    nodes.appendChild(card);
+  }
+  container.appendChild(nodes);
+
+  container.appendChild(textElement("h3", "Edges"));
+  const edges = document.createElement("div");
+  edges.className = "edge-list";
+  for (const edge of Array.isArray(graph.edges) ? graph.edges : []) {
+    const item = document.createElement("div");
+    item.className = "edge-item";
+    item.appendChild(textElement("span", edge.source || "?"));
+    item.appendChild(textElement("span", `→ ${edge.label || edge.kind || ""}`, "edge-arrow"));
+    item.appendChild(textElement("span", edge.target || "?"));
+    edges.appendChild(item);
+  }
+  container.appendChild(edges);
+}
+
+function renderExplanation(container, explanation) {
+  clearNode(container);
+  const stack = document.createElement("div");
+  stack.className = "report-stack";
+
+  for (const step of Array.isArray(explanation.steps) ? explanation.steps : []) {
+    const card = document.createElement("article");
+    card.className = "report-card";
+    card.appendChild(textElement("div", `Step ${step.index}`, "node-kind"));
+    card.appendChild(textElement("h3", step.operation || "Unnamed operation"));
+    card.appendChild(textElement("p", step.summary || "No summary reported."));
+    card.appendChild(textElement("p", `Output: ${step.output || "not reported"}`));
+    card.appendChild(
+      textElement("p", `Direct dependencies: ${formatList(step.dependencies)}`),
+    );
+
+    const parameterLines = Array.isArray(step.parameters)
+      ? step.parameters.map(
+          (item) => `${item.name} = ${JSON.stringify(item.value)} (${item.source})`,
+        )
+      : [];
+    appendList(card, "Resolved parameters", parameterLines);
+    stack.appendChild(card);
+  }
+  container.appendChild(stack);
+}
+
+function renderEvidence(container, reports) {
+  clearNode(container);
+  const pre = document.createElement("pre");
+  pre.className = "raw-block";
+  pre.textContent = JSON.stringify(reports, null, 2);
+  container.appendChild(pre);
+}
+
+export function renderReports(containers, reports) {
+  renderOverview(containers.overview, reports);
+  renderContract(containers.contract, reports.contract);
+  renderGraph(containers.graph, reports.graph);
+  renderExplanation(containers.explain, reports.explain);
+  renderEvidence(containers.evidence, reports);
+}
+
+export function resetReview(containers, message = "Workflow changes have not been reviewed yet.") {
+  const targets = [
+    containers.overview,
+    containers.contract,
+    containers.graph,
+    containers.explain,
+    containers.evidence,
+  ];
+  for (const target of targets) {
+    clearNode(target);
+    const placeholder = document.createElement("div");
+    placeholder.className = "empty-state";
+    placeholder.appendChild(textElement("p", message));
+    target.appendChild(placeholder);
+  }
+}
