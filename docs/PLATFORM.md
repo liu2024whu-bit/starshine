@@ -150,9 +150,11 @@ display schemas directly from `GET /api/v1/operators`. Parameter controls accept
 the browser parses JSON syntax only and does not interpret schema constraints, CRS rules, ranges,
 patterns, enums, or operator-specific semantics.
 
-Catalog-provided defaults may prefill controls. Required parameters with no catalog default remain
-blank rather than receiving invented values. Inserting a candidate step writes it back into the same
-visible Workflow JSON editor; the browser does not keep a parallel hidden Workflow model. The
+Catalog-provided defaults are shown as placeholders rather than written into controls. Leaving a
+defaulted parameter blank therefore omits it from the candidate step, allowing Core planning to retain
+`default` parameter provenance. Required parameters with no default remain blank rather than
+receiving invented values. Inserting a candidate step writes it back into the same visible Workflow
+JSON editor; the browser does not keep a parallel hidden Workflow model. The
 existing validate/review endpoints remain the authority on whether the edited Workflow is valid.
 
 The authoring code is a separate static module and contains no current operator names or API calls.
