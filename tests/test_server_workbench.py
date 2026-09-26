@@ -296,7 +296,7 @@ def test_crs_evidence_preflight_digest_uses_existing_preflight_lifecycle() -> No
     assert 'preflight ? preflight.preflight_digest : "not available"' in assumptions
     assert 'Preflight evidence: ${preflight ? "current" : "not available"}' in assumptions
     assert "state.preflight = null" in app
-    assert "renderCrsEvidence(elements.crsEvidence, state.reports, null)" in app
+    assert "renderCrsEvidence(elements.crsEvidence, state.reports, null, null)" in app
 
 
 def test_browser_execution_helper_has_no_gis_or_dom_semantics() -> None:
