@@ -150,7 +150,7 @@ HTTP handlers; it is to make the existing auditable core usable from a service a
 - [x] package a same-origin review-only Workbench and verify its assets from the exact Server wheel
 - [x] build operator selection and Workflow drafting from the canonical catalog/contracts without client-side validation
 - [x] surface plan/graph/explain and review-bound inline GeoJSON Preflight findings before execution
-- [ ] add map preview without reproducing spatial-analysis semantics in JavaScript
+- [x] add a projection-free canonical result preview without browser CRS or spatial-analysis semantics
 - [x] make canonical CRS assumptions and pre-execution evidence visible in the user flow
 - [x] surface canonical result/manifest provenance through a deliberately reviewed browser execution flow
 
