@@ -22,3 +22,7 @@ export {
   resetPreflightResult,
   resetPreflightWorkspace,
 } from "./render_preflight.js";
+
+export {
+  renderCrsEvidence,
+} from "./render_assumptions.js";
