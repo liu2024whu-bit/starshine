@@ -144,8 +144,23 @@ Browser rendering uses DOM element creation and `textContent` for report/user te
 boundary tests reject dynamic HTML/code sinks and external browser runtimes. The Workbench does not
 call Preflight or execution endpoints yet, does not persist state, and does not contain a GIS library.
 
-That boundary leaves the next 0.8C increments explicit: operator-assisted editing from canonical
-catalog metadata, bounded feature-data assurance, and only then a map/result surface.
+The next Workbench increment adds catalog-driven step authoring without a browser validation engine.
+The Step Builder reads operator names, input roles, parameter metadata, required/default flags, and
+display schemas directly from `GET /api/v1/operators`. Parameter controls accept raw JSON values;
+the browser parses JSON syntax only and does not interpret schema constraints, CRS rules, ranges,
+patterns, enums, or operator-specific semantics.
+
+Catalog-provided defaults may prefill controls. Required parameters with no catalog default remain
+blank rather than receiving invented values. Inserting a candidate step writes it back into the same
+visible Workflow JSON editor; the browser does not keep a parallel hidden Workflow model. The
+existing validate/review endpoints remain the authority on whether the edited Workflow is valid.
+
+The authoring code is a separate static module and contains no current operator names or API calls.
+CI executes its pure candidate-step functions with a synthetic catalog operator, while source tests
+prevent hard-coded operator branches or schema-validation keywords from entering that module.
+
+That boundary leaves the remaining 0.8C increments explicit: bounded feature-data assurance and only
+then a map/result surface.
 
 ## Next platform increments
 
