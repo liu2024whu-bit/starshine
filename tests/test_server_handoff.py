@@ -104,7 +104,7 @@ def test_reference_handoff_stops_before_execution_when_preflight_fails(tmp_path:
         )
 
     assert "/api/v1/workflows/execute" not in called_paths
-    assert not tmp_path.exists()
+    assert list(tmp_path.iterdir()) == []
 
 
 def test_reference_handoff_runs_against_a_real_uvicorn_process(tmp_path: Path) -> None:
