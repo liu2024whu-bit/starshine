@@ -666,9 +666,13 @@ export function renderPreflightReport(container, report) {
   container.appendChild(evidence);
 }
 
+export function resetPreflightResult(result, message = "No current Preflight evidence.") {
+  clearNode(result);
+  result.appendChild(preflightPlaceholder(message));
+}
+
 export function resetPreflightWorkspace(inputs, result, message) {
   clearNode(inputs);
   inputs.appendChild(preflightPlaceholder(message));
-  clearNode(result);
-  result.appendChild(preflightPlaceholder("No current Preflight evidence."));
+  resetPreflightResult(result);
 }
