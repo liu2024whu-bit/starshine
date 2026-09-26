@@ -147,6 +147,29 @@ call Preflight or execution endpoints yet, does not persist state, and does not 
 That boundary leaves the next 0.8C increments explicit: operator-assisted editing from canonical
 catalog metadata, bounded feature-data assurance, and only then a map/result surface.
 
+## Catalog-driven step composition
+
+The next Workbench slice reduces manual JSON entry without moving validation into the browser. The
+step composer reads operator names, input roles, parameter metadata, JSON Schema hints, defaults,
+output-CRS behavior, and determinism only from the canonical `/api/v1/operators` response.
+
+The browser uses those fields to scaffold one Workflow step. Parameter values are entered as JSON
+values; JavaScript only parses that JSON. It does not evaluate Starshine parameter validity, choose a
+CRS, infer layer dependencies, or materialize registry defaults. Blank optional values stay omitted,
+and even a blank required parameter stays omitted so canonical Workflow validation remains the place
+that reports the missing requirement.
+
+After a composed step is appended, the Workbench marks the prior review stale and requires the user
+to run the existing validate/plan/contract/graph/explain path again. External layer names are not
+auto-derived because an input can refer either to an external layer or to an earlier Workflow output.
+
+This keeps the browser useful while preserving one semantics owner:
+
+`catalog → structural editing → canonical validation/review`
+
+CI imports the composer's pure step-building function with a synthetic operator and verifies that the
+browser does not apply Core defaults or invent required values.
+
 ## Next platform increments
 
 ### 0.8C — Web workbench
