@@ -4,6 +4,8 @@ All notable public changes are documented here.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-09-27
+
 ### Added
 
 - a read-only `assess_geometry_quality()` API and `starshine quality` command with schema-checked JSON
@@ -78,6 +80,13 @@ All notable public changes are documented here.
   parallel Preflight/run scripts.
 - wheel and source-distribution inspection now derive the complete `starshine_geo` Python-module
   surface from the source tree instead of maintaining a second, drift-prone module checklist.
+- independent reproduction can now be packaged with a hash-verified dependency wheelhouse and
+  executed with package-index access disabled; CI retains the portable network-assisted handoff and
+  additionally proves one Linux x86_64 / CPython 3.13 offline handoff from the exact built wheel.
+- the 0.7 release gate now includes accepted clean-wheel reproduction from an environment outside
+  Starshine's maintained GitHub Actions execution, with dated evidence and artifact/report digests
+  retained in the public reproduction record.
+
 
 ## [0.4.0] - 2026-07-29
 
