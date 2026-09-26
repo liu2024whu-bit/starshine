@@ -197,6 +197,7 @@ def test_workbench_presentation_modules_keep_one_way_dependencies() -> None:
         STATIC_ROOT / "render_review.js",
         STATIC_ROOT / "render_editor.js",
         STATIC_ROOT / "render_preflight.js",
+        STATIC_ROOT / "render_assumptions.js",
     ]
 
     assert len(facade.splitlines()) < 40
@@ -223,3 +224,57 @@ def test_workbench_presentation_modules_keep_one_way_dependencies() -> None:
         "/api/v1/",
     ):
         assert forbidden not in dom
+
+
+def test_crs_evidence_view_uses_canonical_reports_without_crs_engine() -> None:
+    index = (STATIC_ROOT / "index.html").read_text(encoding="utf-8")
+    facade = (STATIC_ROOT / "render.js").read_text(encoding="utf-8")
+    assumptions = (STATIC_ROOT / "render_assumptions.js").read_text(encoding="utf-8")
+    app = (STATIC_ROOT / "app.js").read_text(encoding="utf-8")
+
+    assert 'id="crs-evidence-tab"' in index
+    assert 'id="crs-evidence-content"' in index
+    assert "renderCrsEvidence" in facade
+    assert "resetCrsEvidence" in facade
+
+    assert "input.source_kind" in assumptions
+    assert "parameter.source" in assumptions
+    assert "step.output_crs" in assumptions
+    assert "equivalent_to_layer" in assumptions
+    assert "workflow_digest" in assumptions
+    assert "operator_catalog_digest" in assumptions
+    assert "contract_digest" in assumptions
+    assert "graph_digest" in assumptions
+    assert "explanation_digest" in assumptions
+    assert "preflight.preflight_digest" in assumptions
+
+    for forbidden in (
+        "proj4",
+        "pyproj",
+        "from_epsg",
+        "to_epsg",
+        "lookupCrs",
+        "parseCrs",
+        "reproject(",
+        "/api/v1/",
+        "fetch(",
+        './api.js',
+        './editor.js',
+        './assurance.js',
+    ):
+        assert forbidden not in assumptions
+
+    assert "not a result manifest" in assumptions
+    assert "does not execute workflows" in assumptions
+    assert "renderCrsEvidence(elements.crsEvidence, state.reports, report)" in app
+    assert "resetCrsEvidence(elements.crsEvidence" in app
+
+
+def test_crs_evidence_preflight_digest_uses_existing_preflight_lifecycle() -> None:
+    assumptions = (STATIC_ROOT / "render_assumptions.js").read_text(encoding="utf-8")
+    app = (STATIC_ROOT / "app.js").read_text(encoding="utf-8")
+
+    assert 'preflight ? preflight.preflight_digest : "not available"' in assumptions
+    assert 'Preflight evidence: ${preflight ? "current" : "not available"}' in assumptions
+    assert "state.preflight = null" in app
+    assert "renderCrsEvidence(elements.crsEvidence, state.reports, null)" in app
