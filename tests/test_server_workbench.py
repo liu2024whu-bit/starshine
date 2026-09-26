@@ -86,6 +86,9 @@ def test_workbench_assets_are_served_from_the_server_package() -> None:
     assert "operator.inputs" in render_editor_script.text
     assert "operator.parameters" in render_editor_script.text
     assert "input.contract" in render_editor_script.text
+    assert "required_fields" in render_editor_script.text
+    assert "written_fields" in render_editor_script.text
+    assert "Unresolved catalog contract guidance only" in render_editor_script.text
 
     assert render_preflight_script.status_code == 200
     assert "renderPreflightBindings" in render_preflight_script.text
@@ -184,6 +187,9 @@ def test_assisted_editor_keeps_core_defaults_and_validation_authoritative() -> N
 
     assert "parameter.default" not in editor
     assert "decoded.present" in editor
+    assert "JSON.parse(raw)" in editor
+    assert "must be valid JSON" in editor
+    assert "return { present: true, value: raw }" not in editor
     assert "ENDPOINTS.validate" in app
     assert "A draft step was inserted. Run Review workflow for canonical validation." in app
     assert 'setReviewState(elements.reviewState, "Not reviewed")' in app
