@@ -152,13 +152,35 @@ reproduction harness, validates the reproduction report, and writes:
 - `evidence/reproduction-report.json`;
 - `evidence/independent-reproduction-evidence.json`.
 
-The evidence JSON records the exact public revision, wheel filename and SHA-256, package/Python
-versions, OS and architecture, Doctor status, report digest, output digest, and reproduced steps. It
-does not record the local home-directory or virtual-environment path.
+The evidence JSON records the exact public revision, wheel filename and SHA-256, dependency-install
+mode, package/Python versions, OS and architecture, Doctor status, report digest, output digest, and
+reproduced steps. It does not record the local home-directory or virtual-environment path.
 
-Starshine CI continuously checks that this portable bundle can be created and executed without a
-source checkout. That self-check proves the handoff tooling works; it does **not** count as the
-independent reproduction required by [issue #105](https://github.com/liu2024whu-bit/starshine/issues/105).
+The default bundle remains network-assisted so one compact ZIP can run across supported platforms.
+For restricted environments, the same bundler can embed a pre-resolved wheelhouse:
+
+```bash
+python scripts/independent_reproduction.py bundle \
+  --wheel "$wheel" \
+  --revision "$(git rev-parse HEAD)" \
+  --wheelhouse offline-wheelhouse \
+  --output independent-reproduction-offline.zip
+```
+
+Every dependency wheel is then included in `bundle-manifest.json` and covered by its SHA-256. The
+runner verifies that the extracted wheelhouse exactly matches the manifest, creates the same fresh
+virtual environment, and installs with `pip --no-index --find-links`; it does not upgrade pip or
+contact a package index. An unexpected or tampered dependency wheel makes bundle verification fail
+before installation.
+
+CI produces one concrete offline handoff named
+`starshine-independent-reproduction-offline-linux-py313` for Linux x86_64 with CPython 3.13 and
+smoke-tests it in a job with `PIP_NO_INDEX=1` and no Starshine source checkout. That artifact is
+platform-specific by design; the ordinary bundle remains the portable network-assisted handoff.
+
+Starshine CI continuously checks that both handoff modes can be created and executed without a source
+checkout. Those repository-owned self-checks prove the handoff tooling works; they do **not** count as
+the independent reproduction required by [issue #105](https://github.com/liu2024whu-bit/starshine/issues/105).
 
 ## 6. Optional GeoPackage backend
 
