@@ -152,7 +152,7 @@ HTTP handlers; it is to make the existing auditable core usable from a service a
 - [x] surface plan/graph/explain and review-bound inline GeoJSON Preflight findings before execution
 - [ ] add map preview without reproducing spatial-analysis semantics in JavaScript
 - [x] make canonical CRS assumptions and pre-execution evidence visible in the user flow
-- [ ] surface result/manifest provenance only with a deliberately reviewed browser execution flow
+- [x] surface canonical result/manifest provenance through a deliberately reviewed browser execution flow
 
 ### 0.8D / 0.9 — persistence and collaboration
 
