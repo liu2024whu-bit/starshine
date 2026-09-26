@@ -1,13 +1,30 @@
 import fs from "node:fs";
 
-const sourceUrl = new URL(
+const authoringUrl = new URL(
   "../src/starshine_server/static/authoring.js",
   import.meta.url,
 );
-const source = fs.readFileSync(sourceUrl, "utf8");
-const moduleUrl =
-  "data:text/javascript;base64," + Buffer.from(source, "utf8").toString("base64");
-const { appendCandidateStep, buildCandidateStep } = await import(moduleUrl);
+const guidanceUrl = new URL(
+  "../src/starshine_server/static/guidance.js",
+  import.meta.url,
+);
+
+const guidanceSource = fs.readFileSync(guidanceUrl, "utf8");
+const guidanceModuleUrl =
+  "data:text/javascript;base64," +
+  Buffer.from(guidanceSource, "utf8").toString("base64");
+
+const authoringSource = fs
+  .readFileSync(authoringUrl, "utf8")
+  .replace(
+    'from "./guidance.js"',
+    `from "${guidanceModuleUrl}"`,
+  );
+const authoringModuleUrl =
+  "data:text/javascript;base64," +
+  Buffer.from(authoringSource, "utf8").toString("base64");
+
+const { appendCandidateStep, buildCandidateStep } = await import(authoringModuleUrl);
 
 function assertEqual(actual, expected, message) {
   const actualJson = JSON.stringify(actual);
