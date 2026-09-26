@@ -134,15 +134,19 @@ jobs:
             ["roads", "mask", "buffered"],
           );
 
-          assert.deepEqual(decodeDraftValue("EPSG:4326"), {
+          assert.throws(
+            () => decodeDraftValue("EPSG:4326", "crs"),
+            /Parameter crs must be valid JSON/,
+          );
+          assert.deepEqual(decodeDraftValue('"EPSG:4326"', "crs"), {
             present: true,
             value: "EPSG:4326",
           });
-          assert.deepEqual(decodeDraftValue("null"), {
+          assert.deepEqual(decodeDraftValue("null", "nullable"), {
             present: true,
             value: null,
           });
-          assert.deepEqual(decodeDraftValue(""), {
+          assert.deepEqual(decodeDraftValue("", "optional"), {
             present: false,
             value: null,
           });
