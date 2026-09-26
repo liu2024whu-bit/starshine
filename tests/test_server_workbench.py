@@ -124,9 +124,12 @@ def test_workbench_has_no_external_browser_runtime_or_dynamic_html_sink() -> Non
     ]
     script = "\n".join(scripts)
     combined = f"{index}\n{stylesheet}\n{script}"
+    svg_namespace = '"http://www.w3.org/2000/svg"'
+    assert combined.count(svg_namespace) == 1
+    network_candidates = combined.replace(svg_namespace, '""')
 
     for external_marker in ("http://", "https://", "//cdn."):
-        assert external_marker not in combined
+        assert external_marker not in network_candidates
 
     for forbidden in (
         "innerHTML",
