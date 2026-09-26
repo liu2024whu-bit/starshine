@@ -79,6 +79,55 @@ jobs:
           for file in src/starshine_server/static/*.js; do
             node --input-type=module --check < "$file"
           done
+      - name: Verify catalog composer does not own Core defaults or validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { buildStepDraft } from "./src/starshine_server/static/composer.js";
+
+          const operator = {
+            name: "synthetic",
+            inputs: [{ name: "source" }],
+            parameters: [
+              { name: "required_value", required: true, schema: { type: "number" } },
+              { name: "core_default", required: false, default: 16, schema: { type: "integer" } },
+              { name: "explicit", required: false, schema: { type: "string" } },
+            ],
+          };
+
+          const step = buildStepDraft(
+            operator,
+            { source: "input-layer" },
+            {
+              required_value: "",
+              core_default: "",
+              explicit: '"browser only parses JSON"',
+            },
+            "output-layer",
+          );
+
+          if (step.operation !== "synthetic") throw new Error("operator name was not catalog driven");
+          if (step.inputs.source !== "input-layer") throw new Error("input role was not catalog driven");
+          if ("required_value" in step.parameters) throw new Error("browser guessed a required value");
+          if ("core_default" in step.parameters) throw new Error("browser materialized a Core default");
+          if (step.parameters.explicit !== "browser only parses JSON") {
+            throw new Error("explicit JSON parameter was not preserved");
+          }
+
+          let invalidJsonRejected = false;
+          try {
+            buildStepDraft(
+              operator,
+              { source: "input-layer" },
+              { explicit: "not-json" },
+              "output-layer",
+            );
+          } catch {
+            invalidJsonRejected = true;
+          }
+          if (!invalidJsonRejected) throw new Error("invalid JSON literal was accepted");
+          NODE
       - run: >-
           python -m pytest -q tests/test_server_api.py
           tests/test_server_execution.py tests/test_server_handoff.py
