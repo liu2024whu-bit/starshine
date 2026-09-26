@@ -47,6 +47,42 @@
           <span class="badge">JSON</span>
         </div>
 
+        <section class="step-builder" aria-labelledby="step-builder-heading">
+          <div class="builder-heading">
+            <div>
+              <p class="eyebrow">Catalog-assisted draft</p>
+              <h3 id="step-builder-heading">Add one Workflow step</h3>
+            </div>
+            <span class="badge">Server still validates</span>
+          </div>
+          <p class="muted">
+            Choose an operator from the canonical catalog. The builder only drafts JSON; it does not
+            certify inputs, parameters, CRS values, or output names.
+          </p>
+
+          <label for="builder-operator">Operator</label>
+          <select id="builder-operator" class="builder-select" disabled>
+            <option value="">Loading canonical catalog…</option>
+          </select>
+
+          <div id="step-builder-fields" class="step-builder-fields">
+            <p class="builder-empty">Choose an operator to see its canonical inputs and parameters.</p>
+          </div>
+
+          <div class="editor-actions">
+            <button id="add-step-button" class="secondary-button" type="button" disabled>
+              Insert draft step
+            </button>
+            <span id="builder-status" class="request-status" role="status" aria-live="polite">
+              Catalog metadata is loading.
+            </span>
+          </div>
+        </section>
+
+        <div class="editor-divider">
+          <span>Workflow JSON remains authoritative</span>
+        </div>
+
         <label for="workflow-editor">Workflow</label>
         <textarea id="workflow-editor" class="code-editor" spellcheck="false">{
   "version": 1,
