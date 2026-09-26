@@ -182,6 +182,24 @@ Starshine CI continuously checks that both handoff modes can be created and exec
 checkout. Those repository-owned self-checks prove the handoff tooling works; they do **not** count as
 the independent reproduction required by [issue #105](https://github.com/liu2024whu-bit/starshine/issues/105).
 
+### Accepted independent result — 2026-09-27
+
+An external Linux x86_64 / CPython 3.13.5 environment reproduced the exact CI-built
+`starshine_geo-0.7.0.dev0-py3-none-any.whl` for public revision
+`35d82b21e14b311fb3dc35ee78fb4c5795516afd` outside Starshine's maintained GitHub Actions
+execution environment. The runner created a fresh virtual environment, installed the bundled wheel
+non-editably from the hash-verified offline wheelhouse with package-index access disabled, confirmed
+the import originated from that clean environment, passed Doctor, completed the installed-core
+reproduction harness, and passed report validation.
+
+The reproduced wheel SHA-256 is
+`928958f42a07e9745113c308ac514db6198877d654fc76ed5a2f7e3fe7507d9d`; the validated reproduction
+report SHA-256 is
+`eab5e7e4f0322fc3ea797049c90111102e557cadbc8162c66e0982ef08a02d75`. The full environment,
+artifact, failure-history, report, and evidence hashes are retained in
+[issue #105](https://github.com/liu2024whu-bit/starshine/issues/105#issuecomment-5848894304) rather
+than duplicated into this guide.
+
 ## 6. Optional GeoPackage backend
 
 GeoPackage support is intentionally outside the base runtime:

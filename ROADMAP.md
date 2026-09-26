@@ -64,10 +64,10 @@ published. The current `main` branch builds `0.7.0.dev0`; the latest stable rele
 
 This phase consolidated the existing public surface instead of expanding it sideways. The internal
 architecture, documentation ownership, diagnostics, CLI boundaries, and release evidence work listed
-below is complete. One evidence task remains intentionally external: an independent operator or CI
-environment must reproduce the clean-wheel handoff before the corresponding note can be published.
+below is complete. Accepted external clean-wheel evidence was recorded on 2026-09-27 after an
+independent environment reproduced the exact reviewed wheel outside Starshine's maintained CI.
 
-- [ ] publish a dated independent-environment reproducibility note after issue #105 has accepted
+- [x] publish a dated independent-environment reproducibility note after issue #105 has accepted
   external clean-wheel evidence
 - [x] enforce documentation-index ownership, local-link validity, and documentation-tree containment
   in the existing public-repository audit
@@ -103,7 +103,7 @@ reproducible, and releasable before expanding the operator catalog again.
   operator or file-format path
 - [x] derive wheel and source-distribution package coverage from the actual `src/starshine_geo`
   source tree and verify the supported Python 3.10–3.14 matrix
-- [ ] obtain accepted independent clean-wheel evidence for issue #105 and record the dated result
+- [x] obtain accepted independent clean-wheel evidence for issue #105 and record the dated result
   without treating repository-owned CI as external validation
 - [ ] prepare a stable 0.7.0 release candidate only after the independent evidence prerequisite is
   satisfied and the release-readiness chain passes from a stable version commit
