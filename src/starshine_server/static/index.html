@@ -100,6 +100,31 @@
         <label for="layer-names">External layer names <span class="label-note">one per line</span></label>
         <textarea id="layer-names" class="layer-editor" spellcheck="false">source</textarea>
 
+        <details class="assurance-panel">
+          <summary>Check inline GeoJSON with canonical Preflight</summary>
+          <p class="composer-intro">
+            Preflight is available only after the current Workflow review is fresh. This browser
+            parses the JSON envelope only; Starshine Core checks GeoJSON, CRS, geometry, fields, and
+            operator contracts.
+          </p>
+          <p id="preflight-limits" class="composer-meta">Loading Server limits…</p>
+
+          <label for="preflight-layers">
+            Named inline layers
+            <span class="label-note">JSON object keyed by logical layer name</span>
+          </label>
+          <textarea id="preflight-layers" class="inline-data-editor" spellcheck="false">{}</textarea>
+
+          <div class="composer-actions">
+            <button id="preflight-button" class="secondary-button" type="button" disabled>
+              Run canonical Preflight
+            </button>
+            <span id="preflight-status" class="request-status" role="status" aria-live="polite">
+              Complete a fresh Workflow review first.
+            </span>
+          </div>
+        </details>
+
         <div class="editor-actions">
           <button id="review-button" class="primary-button" type="button">Review workflow</button>
           <span id="request-status" class="request-status" role="status" aria-live="polite">
@@ -141,6 +166,10 @@
             Explain
           </button>
           <button class="tab-button" type="button" role="tab" aria-selected="false"
+            aria-controls="preflight-panel" id="preflight-tab" data-panel-target="preflight-panel">
+            Preflight
+          </button>
+          <button class="tab-button" type="button" role="tab" aria-selected="false"
             aria-controls="evidence-panel" id="evidence-tab" data-panel-target="evidence-panel">
             Evidence
           </button>
@@ -167,6 +196,12 @@
         <section class="tab-panel" id="explain-panel" role="tabpanel" aria-labelledby="explain-tab" hidden>
           <div id="explain-content" class="empty-state">
             <p>Core-generated step explanations will appear here.</p>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="preflight-panel" role="tabpanel" aria-labelledby="preflight-tab" hidden>
+          <div id="preflight-content" class="empty-state">
+            <p>Run canonical Preflight after a fresh review to inspect loaded layer assurance.</p>
           </div>
         </section>
 
