@@ -211,6 +211,33 @@ File upload, execution controls, and a map/result surface remain later decisions
 Preflight proves the data-aware assurance flow without simultaneously introducing upload lifecycle,
 filename/content-type policy, temporary storage, or browser GIS dependencies.
 
+## Canonical CRS assumptions and pre-execution evidence
+
+The Workbench now has a dedicated `CRS & Evidence` presentation surface built on the split
+presentation boundary. `render_assumptions.js` depends only on shared DOM primitives and receives
+canonical report data from `app.js`; it does not fetch, validate, plan, or transform data.
+
+The view presents existing Core-owned information without reinterpretation:
+
+- external-layer CRS contract mode, parameter/value metadata, and equivalence targets from Contract;
+- canonical geometry and required-field preparation requirements;
+- Explain input provenance, including whether an input is external or produced by an earlier step;
+- resolved parameter values together with their canonical `provided/default` source;
+- per-step output layer, `output_crs` behavior, deterministic flag, and terminal status;
+- Workflow, Operator Catalog, Plan, Contract, Graph, Explanation, and current Preflight digests.
+
+Preflight evidence follows the existing Preflight lifecycle. If pasted inline data changes, the
+Preflight digest disappears from this view while the still-current data-free review remains. If the
+Workflow or declared external layers change, the complete CRS/evidence view is reset until canonical
+Review succeeds again.
+
+This is presentation, not a CRS engine. Browser code does not parse EPSG semantics, prove CRS
+equivalence, recommend projections, infer reprojection, or calculate output CRS.
+
+The view also states an important provenance boundary: these reports are **pre-execution evidence**,
+not result provenance. A result and reproducibility manifest do not exist in the browser flow until a
+separately reviewed execution UX is intentionally introduced.
+
 ## Next platform increments
 
 ### 0.8C — Web workbench
