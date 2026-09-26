@@ -141,8 +141,9 @@ The browser verifies that the reports share the same canonical plan/graph eviden
 not derive that chain itself.
 
 Browser rendering uses DOM element creation and `textContent` for report/user text. The source
-boundary tests reject dynamic HTML/code sinks and external browser runtimes. The Workbench still has
-no execution control, persistence, file upload, map, or browser GIS library.
+boundary tests reject dynamic HTML/code sinks and external browser runtimes. The Workbench now has an
+explicit bounded execution control, but still has no persistence, file upload, map, or browser GIS
+library.
 
 As the Workbench grew from review into drafting and Preflight, presentation was split before adding
 more UI. The dependency direction is:
@@ -207,9 +208,10 @@ The DOM-free `assurance.js` module owns only required-layer extraction, JSON par
 construction, and digest-chain comparison. CI deliberately feeds it arbitrary non-GeoJSON JSON to
 prove that it is not a client-side GIS validator.
 
-File upload, execution controls, and a map/result surface remain later decisions. Paste-first
-Preflight proves the data-aware assurance flow without simultaneously introducing upload lifecycle,
-filename/content-type policy, temporary storage, or browser GIS dependencies.
+File upload and a map surface remain later decisions. Paste-first Preflight proves the data-aware
+assurance flow without simultaneously introducing upload lifecycle, filename/content-type policy,
+temporary storage, or browser GIS dependencies. A passing current Preflight is now the mandatory
+browser prerequisite for the separately bounded execution flow described below.
 
 ## Canonical CRS assumptions and pre-execution evidence
 
@@ -234,9 +236,40 @@ Review succeeds again.
 This is presentation, not a CRS engine. Browser code does not parse EPSG semantics, prove CRS
 equivalence, recommend projections, infer reprojection, or calculate output CRS.
 
-The view also states an important provenance boundary: these reports are **pre-execution evidence**,
-not result provenance. A result and reproducibility manifest do not exist in the browser flow until a
-separately reviewed execution UX is intentionally introduced.
+Before execution, this view remains a pre-execution evidence chain. After an explicit bounded run,
+the view adds only the workflow and output-result digests already present in the Core-generated
+manifest; it does not synthesize a browser provenance model.
+
+## Review-bound browser execution and result provenance
+
+The Workbench can now call the already-existing bounded synchronous execution endpoint, but only
+after the current Workflow has successful Review evidence and the current inline layer data has a
+passing canonical Preflight. The exact Workflow + layer object envelope retained from that Preflight
+is reused for execution rather than reparsing the editor state.
+
+Output choices come only from the current canonical plan's `terminal_layers`. The browser therefore
+does not infer which intermediate/result layer should be executed. The Server remains authoritative
+and reruns its own canonical Preflight before starting the isolated worker.
+
+The browser checks transport/evidence continuity only:
+
+- execution reports `succeeded` for the output explicitly requested;
+- returned Preflight digest/plan/contract evidence matches the current passing Preflight;
+- returned execution policy matches the limits discovered from the Server;
+- a result object and Core-generated reproducibility manifest are present.
+
+It does **not** validate result geometry, recompute a digest, infer CRS, repair the result, or generate
+manifest fields. `execution.js` is DOM-free and contains only generic request/evidence mechanics;
+`render_execution.js` is presentation-only behind the existing render facade.
+
+Changing Workflow/layer-name text invalidates Review, Preflight, and result evidence. Changing pasted
+inline data invalidates Preflight and result evidence while retaining the still-current data-free
+Review. Starting a new Preflight also invalidates any previous execution evidence before the new
+report is known.
+
+A map is intentionally deferred. The raw result and canonical manifest are made auditable first so a
+later visual layer can consume established result evidence rather than becoming part of execution
+semantics.
 
 ## Next platform increments
 
