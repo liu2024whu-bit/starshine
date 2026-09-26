@@ -152,7 +152,8 @@ HTTP handlers; it is to make the existing auditable core usable from a service a
 - [ ] build richer Workflow editing only where it can remain driven by canonical catalog/contracts
 - [x] surface plan/graph/explain and review-gated inline Preflight findings before execution
 - [ ] add map preview without reproducing spatial-analysis semantics in JavaScript
-- [ ] make CRS assumptions and output provenance visible in the user flow
+- [x] make canonical CRS assumptions and pre-execution evidence visible in the user flow
+- [ ] surface result/manifest provenance only with a deliberately reviewed execution UX
 
 ### 0.8D / 0.9 — persistence and collaboration
 
