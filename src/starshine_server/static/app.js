@@ -3,6 +3,7 @@ import { initializeStepComposer } from "./composer.js";
 import { ENDPOINTS, requestJson } from "./api.js";
 import {
   initializeTabs,
+  renderAssumptions,
   renderCatalog,
   renderEvidence,
   renderPreflight,
@@ -42,6 +43,7 @@ const elements = {
   contract: document.querySelector("#contract-content"),
   graph: document.querySelector("#graph-content"),
   explain: document.querySelector("#explain-content"),
+  assumptions: document.querySelector("#assumptions-content"),
   preflight: document.querySelector("#preflight-content"),
   evidence: document.querySelector("#evidence-content"),
 };
@@ -59,9 +61,19 @@ function parseWorkflow() {
   return value;
 }
 
+function refreshAssumptions() {
+  renderAssumptions(
+    elements.assumptions,
+    state.reports,
+    state.preflight,
+    state.reviewFresh,
+  );
+}
+
 function clearPreflight(message) {
   state.preflight = null;
   renderPreflight(elements.preflight, null);
+  refreshAssumptions();
   elements.preflightStatus.textContent = message;
 }
 
@@ -209,6 +221,7 @@ async function runPreflight() {
     assertPreflightMatchesReview(state.reports, report);
     state.preflight = report;
     renderPreflight(elements.preflight, report);
+    refreshAssumptions();
     renderEvidence(elements.evidence, { ...state.reports, preflight: report });
     setRequestStatus(
       elements.preflightStatus,
