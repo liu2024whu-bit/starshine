@@ -192,6 +192,26 @@ match the fresh review already displayed by the Workbench. The browser then pres
 summaries, findings, remaining execution-time checks, and Preflight evidence. It still contains no
 Workflow execution call.
 
+## Visible assumptions and evidence
+
+The Workbench also presents the assumptions already carried by canonical plan/contract reports so a
+user does not have to inspect raw JSON to understand the reviewed Workflow. For each external layer it
+shows whether the layer is required/unused, canonical geometry types, the Core-reported CRS contract
+object, required fields, and written-field collision policy. For each planned step it shows the output
+layer and the canonical `output_crs` behavior.
+
+This is presentation, not a browser CRS engine. The Workbench does not parse CRS identifiers, look up
+EPSG records, recommend projections, infer reprojections, or convert contract modes into new client
+rules.
+
+The same view exposes the canonical evidence chain—Workflow, Operator Catalog, Plan, Contract, Graph,
+Explanation, and current Preflight digests—while using the existing review-freshness state. Data-free
+review evidence and data-aware Preflight evidence are labeled separately.
+
+This is intentionally **not execution provenance**. A planned output layer and output-CRS behavior do
+not prove a result exists. Result/manifest provenance remains deferred until a deliberate execution UX
+is introduced.
+
 ## Next platform increments
 
 ### 0.8C — Web workbench
