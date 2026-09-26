@@ -8,6 +8,7 @@ export const ENDPOINTS = Object.freeze({
   graph: "/api/v1/workflows/graph",
   explain: "/api/v1/workflows/explain",
   preflight: "/api/v1/workflows/preflight",
+  execute: "/api/v1/workflows/execute",
 });
 
 function apiErrorMessage(payload, status) {

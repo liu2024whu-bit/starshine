@@ -82,7 +82,7 @@ def main() -> int:
     assert "/api/v1/limits" in workbench_api.text
     assert "/api/v1/workflows/contract" in workbench_api.text
     assert "/api/v1/workflows/preflight" in workbench_api.text
-    assert "/api/v1/workflows/execute" not in workbench_api.text
+    assert "/api/v1/workflows/execute" in workbench_api.text
 
     workbench_render = client.get("/workbench/render.js")
     workbench_render.raise_for_status()
@@ -103,6 +103,7 @@ def main() -> int:
         ("render_editor.js", "renderStepBuilder"),
         ("render_preflight.js", "renderPreflightReport"),
         ("render_assumptions.js", "renderCrsEvidence"),
+        ("render_execution.js", "renderExecutionResult"),
     ):
         module = client.get(f"/workbench/{module_name}")
         module.raise_for_status()
@@ -123,6 +124,13 @@ def main() -> int:
     assert "buildPreflightRequest" in workbench_assurance.text
     assert "FeatureCollection" not in workbench_assurance.text
     assert "geometry" not in workbench_assurance.text.lower()
+
+    workbench_execution = client.get("/workbench/execution.js")
+    workbench_execution.raise_for_status()
+    assert "buildExecutionRequest" in workbench_execution.text
+    assert "assertExecutionEvidenceChain" in workbench_execution.text
+    assert "geometry" not in workbench_execution.text.lower()
+    assert "fetch(" not in workbench_execution.text
 
     workbench_styles = client.get("/workbench/styles.css")
     workbench_styles.raise_for_status()

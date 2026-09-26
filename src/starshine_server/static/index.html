@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
-  <meta name="description" content="Review Starshine workflows and run canonical bounded Preflight before execution.">
+  <meta name="description" content="Review, Preflight, and explicitly execute bounded Starshine workflows with canonical evidence.">
   <title>Starshine Workbench</title>
   <link rel="stylesheet" href="./styles.css">
 </head>
@@ -15,12 +15,12 @@
       <p class="eyebrow">Starshine Server</p>
       <h1>Workflow assurance workbench</h1>
       <p class="subtitle">
-        Review canonical workflow requirements, then check small inline GeoJSON inputs with the
-        existing bounded Preflight contract before any execution.
+        Review canonical workflow requirements, check small inline GeoJSON inputs with bounded
+        Preflight, then explicitly execute only the current passing evidence chain.
       </p>
     </div>
     <div class="header-badges" aria-label="Workbench status">
-      <span class="badge badge-safe">Review + Preflight</span>
+      <span class="badge badge-safe">Review + Preflight + bounded execution</span>
       <span class="badge" id="server-version">Core version pending</span>
     </div>
   </header>
@@ -114,8 +114,9 @@
 
         <aside class="boundary-note" aria-label="Workbench boundary">
           <strong>Feature data is sent only when you explicitly run Preflight.</strong>
-          Pasted GeoJSON stays in browser memory until then and is sent only to the existing bounded
-          Preflight endpoint. Execution, file upload, persistence, and maps remain outside this surface.
+          Pasted GeoJSON stays in browser memory. It is first sent to bounded Preflight and can be
+          executed only after that current Preflight passes. File upload, persistence, and maps remain
+          outside this surface.
         </aside>
       </section>
 
@@ -153,6 +154,10 @@
           <button class="tab-button" type="button" role="tab" aria-selected="false"
             aria-controls="preflight-panel" id="preflight-tab" data-panel-target="preflight-panel">
             Preflight
+          </button>
+          <button class="tab-button" type="button" role="tab" aria-selected="false"
+            aria-controls="execution-panel" id="execution-tab" data-panel-target="execution-panel">
+            Execute
           </button>
           <button class="tab-button" type="button" role="tab" aria-selected="false"
             aria-controls="evidence-panel" id="evidence-tab" data-panel-target="evidence-panel">
@@ -209,6 +214,30 @@
           </div>
         </section>
 
+        <section class="tab-panel" id="execution-panel" role="tabpanel"
+          aria-labelledby="execution-tab" hidden>
+          <aside class="boundary-note" aria-label="Execution boundary">
+            <strong>Execution is available only for the current passing Preflight.</strong>
+            The selected output must come from the canonical terminal outputs. Starshine Server reruns
+            canonical Preflight and executes in the existing isolated, time/memory/output-bounded worker.
+          </aside>
+          <label for="execution-output">Canonical terminal output</label>
+          <select id="execution-output" class="builder-select" disabled>
+            <option value="">Review and pass Preflight first</option>
+          </select>
+          <div class="editor-actions preflight-actions">
+            <button id="execution-button" class="primary-button" type="button" disabled>
+              Execute current evidence
+            </button>
+            <span id="execution-status" class="request-status" role="status" aria-live="polite">
+              Current passing Preflight required.
+            </span>
+          </div>
+          <div id="execution-result" class="empty-state preflight-result">
+            <p>No current execution evidence.</p>
+          </div>
+        </section>
+
         <section class="tab-panel" id="evidence-panel" role="tabpanel" aria-labelledby="evidence-tab" hidden>
           <div id="evidence-content" class="empty-state">
             <p>Machine-readable review evidence will appear here.</p>
@@ -220,7 +249,7 @@
 
   <footer class="site-footer">
     <span>Starshine Workbench</span>
-    <span>Browser code presents canonical review and Preflight reports; it does not implement GIS semantics.</span>
+    <span>Browser code orchestrates canonical Review, Preflight, and bounded execution evidence; it does not implement GIS semantics.</span>
   </footer>
 
   <script type="module" src="./app.js"></script>

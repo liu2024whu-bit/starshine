@@ -240,6 +240,112 @@ jobs:
             /does not match the current canonical review/,
           );
           NODE
+      - name: Check review-bound browser execution behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import assert from "node:assert/strict";
+          import fs from "node:fs";
+
+          const source = fs.readFileSync(
+            "src/starshine_server/static/execution.js",
+            "utf8",
+          );
+          const moduleUrl =
+            `data:text/javascript;base64,${Buffer.from(source).toString("base64")}`;
+          const {
+            assertExecutionEvidenceChain,
+            buildExecutionRequest,
+            terminalOutputNames,
+          } = await import(moduleUrl);
+
+          const review = {
+            plan: {
+              terminal_layers: ["result"],
+            },
+          };
+          assert.deepEqual(terminalOutputNames(review), ["result"]);
+
+          const preflightRequest = {
+            workflow: { version: 1, steps: [] },
+            layers: { source: { arbitrary: "server-owned semantics" } },
+          };
+          assert.deepEqual(
+            buildExecutionRequest(preflightRequest, "result", ["result"]),
+            {
+              workflow: preflightRequest.workflow,
+              layers: preflightRequest.layers,
+              output_layer: "result",
+            },
+          );
+          assert.throws(
+            () => buildExecutionRequest(preflightRequest, "intermediate", ["result"]),
+            /canonical terminal layers/,
+          );
+
+          const preflight = {
+            valid: true,
+            preflight_digest: "preflight-current",
+            plan_digest: "plan-current",
+            contract_digest: "contract-current",
+          };
+          const policy = {
+            mode: "isolated_subprocess",
+            timeout_seconds: 10,
+            memory_limit_bytes: 536870912,
+            max_response_bytes: 8388608,
+          };
+          const execution = {
+            status: "succeeded",
+            output_layer: "result",
+            result: { arbitrary: "result" },
+            manifest: { manifest_version: 1 },
+            preflight: { ...preflight },
+            execution_policy: {
+              max_response_bytes: 8388608,
+              memory_limit_bytes: 536870912,
+              timeout_seconds: 10,
+              mode: "isolated_subprocess",
+            },
+          };
+
+          assert.doesNotThrow(() =>
+            assertExecutionEvidenceChain(execution, preflight, "result", policy),
+          );
+          assert.throws(
+            () =>
+              assertExecutionEvidenceChain(
+                {
+                  ...execution,
+                  preflight: {
+                    ...preflight,
+                    preflight_digest: "stale",
+                  },
+                },
+                preflight,
+                "result",
+                policy,
+              ),
+            /stale or does not match/,
+          );
+          assert.throws(
+            () =>
+              assertExecutionEvidenceChain(
+                {
+                  ...execution,
+                  execution_policy: {
+                    ...execution.execution_policy,
+                    timeout_seconds: 11,
+                  },
+                },
+                preflight,
+                "result",
+                policy,
+              ),
+            /policy changed/,
+          );
+          NODE
       - run: >-
           python -m pytest -q tests/test_server_api.py
           tests/test_server_execution.py tests/test_server_handoff.py
