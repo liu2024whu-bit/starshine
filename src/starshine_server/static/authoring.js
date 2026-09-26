@@ -6,11 +6,11 @@ function requiredText(parameter) {
   return parameter.required ? "required" : "optional";
 }
 
-function initialParameterText(parameter) {
-  if (!hasOwn(parameter, "default")) {
-    return "";
+function parameterPlaceholder(parameter) {
+  if (hasOwn(parameter, "default")) {
+    return `Default from catalog: ${JSON.stringify(parameter.default)}`;
   }
-  return JSON.stringify(parameter.default);
+  return parameter.required ? "Enter a JSON value" : "Blank omits this parameter";
 }
 
 function parseParameterValue(parameter, rawValue) {
@@ -149,8 +149,8 @@ function renderParameterFields(container, operator) {
     control.type = "text";
     control.dataset.builderParameter = parameter.name;
     control.autocomplete = "off";
-    control.value = initialParameterText(parameter);
-    control.placeholder = parameter.required ? "Enter a JSON value" : "Blank omits this parameter";
+    control.value = "";
+    control.placeholder = parameterPlaceholder(parameter);
     group.appendChild(control);
 
     if (parameter.description) {
