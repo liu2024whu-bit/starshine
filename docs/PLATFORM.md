@@ -135,14 +135,14 @@ the same origin as the API. It has no Node build, CDN, third-party browser runti
 separate deployment process. The same HTML/CSS/JavaScript assets are required in both the wheel and
 source distribution and are exercised by the installed-wheel Server smoke.
 
-This first slice is deliberately data-free. A user can edit Workflow JSON and external layer names,
-inspect the canonical operator catalog, validate the Workflow, and review plan/contract/graph/explain
-reports. The browser verifies that the reports share the same canonical plan/graph evidence chain,
-but it does not derive that chain itself.
+The initial slice is data-free: a user can edit Workflow JSON and external layer names, inspect the
+canonical operator catalog, validate the Workflow, and review plan/contract/graph/explain reports.
+The browser verifies that the reports share the same canonical plan/graph evidence chain, but it does
+not derive that chain itself.
 
 Browser rendering uses DOM element creation and `textContent` for report/user text. The source
-boundary tests reject dynamic HTML/code sinks and external browser runtimes. The Workbench does not
-call Preflight or execution endpoints yet, does not persist state, and does not contain a GIS library.
+boundary tests reject dynamic HTML/code sinks and external browser runtimes. The Workbench still has
+no execution control, persistence, file upload, map, or browser GIS library.
 
 ## Catalog-assisted Workflow drafting
 
@@ -170,9 +170,35 @@ Any edit to Workflow JSON or external layer names invalidates the currently disp
 until the Server review is run again. This prevents stale plan/contract/graph/explain output from being
 presented as evidence for a changed Workflow.
 
-That boundary leaves the next 0.8C increment explicit: bounded feature-data assurance through the
-existing Preflight contract. File upload, execution controls, and a map/result surface remain later
-decisions rather than being coupled to assisted editing.
+## Review-bound inline GeoJSON Preflight
+
+The next Workbench slice reuses the existing bounded inline Preflight endpoint without opening a file
+upload boundary. A successful data-free review is required first. Its canonical
+`required_external_layers` list becomes the only source of data-slot names, while the already
+returned contract provides preparation hints for each slot.
+
+Users paste JSON into those named slots. The browser parses JSON syntax only. It does not check
+FeatureCollection structure, geometry type, CRS, required fields, or feature counts. Those checks,
+together with request/layer/feature limits, remain in Starshine Server and Core. The current
+`GET /api/v1/limits` values are shown as information but are not reimplemented as browser
+enforcement.
+
+The browser keeps pasted drafts in memory only. A Workflow or external-layer-name edit invalidates
+both the current review and any displayed Preflight evidence. Editing only pasted data invalidates
+Preflight while leaving the data-free review current.
+
+Before a Preflight report is displayed as current evidence, its `plan_digest` and
+`contract_digest` must match the current canonical review. The UI then renders Core-owned layer
+status, feature/CRS/geometry summaries, findings, remaining execution-time checks, and the Preflight
+digest.
+
+The DOM-free `assurance.js` module owns only required-layer extraction, JSON parsing, request
+construction, and digest-chain comparison. CI deliberately feeds it arbitrary non-GeoJSON JSON to
+prove that it is not a client-side GIS validator.
+
+File upload, execution controls, and a map/result surface remain later decisions. Paste-first
+Preflight proves the data-aware assurance flow without simultaneously introducing upload lifecycle,
+filename/content-type policy, temporary storage, or browser GIS dependencies.
 
 ## Next platform increments
 
