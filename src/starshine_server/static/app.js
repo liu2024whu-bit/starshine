@@ -423,13 +423,15 @@ async function runExecution() {
   }
 
   const outputLayer = elements.executionOutput.value;
+  const outputs = terminalOutputNames(state.reports);
   elements.executionButton.disabled = true;
+  elements.executionOutput.disabled = true;
   state.execution = null;
   resetExecutionResult(elements.executionResult, "Bounded execution is running…");
   setRequestStatus(elements.executionStatus, "Running bounded isolated execution…");
 
   try {
-    const request = buildExecutionRequest(state.preflightRequest, outputLayer);
+    const request = buildExecutionRequest(state.preflightRequest, outputLayer, outputs);
     const execution = await requestJson(ENDPOINTS.execute, {
       method: "POST",
       body: request,
@@ -453,11 +455,13 @@ async function runExecution() {
     renderCrsEvidence(elements.crsEvidence, state.reports, state.preflight, null);
     setRequestStatus(elements.executionStatus, error.message, true);
   } finally {
-    elements.executionButton.disabled =
-      !state.preflight ||
-      state.preflight.valid !== true ||
-      !state.preflightRequest ||
-      terminalOutputNames(state.reports).length === 0;
+    const eligible =
+      state.preflight &&
+      state.preflight.valid === true &&
+      state.preflightRequest &&
+      terminalOutputNames(state.reports).length > 0;
+    elements.executionButton.disabled = !eligible;
+    elements.executionOutput.disabled = !eligible;
   }
 }
 
