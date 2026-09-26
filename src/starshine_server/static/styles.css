@@ -31,12 +31,16 @@ body {
 }
 
 button,
-textarea {
+textarea,
+input,
+select {
   font: inherit;
 }
 
 button:focus-visible,
-textarea:focus-visible {
+textarea:focus-visible,
+input:focus-visible,
+select:focus-visible {
   outline: 3px solid rgba(18, 107, 87, 0.24);
   outline-offset: 2px;
 }
@@ -201,6 +205,109 @@ label {
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 500;
+}
+
+.step-builder {
+  margin: 4px 0 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+  background: var(--panel-soft);
+}
+
+.step-builder > summary {
+  cursor: pointer;
+  padding: 13px 14px;
+  color: var(--accent-strong);
+  font-weight: 800;
+}
+
+.step-builder[open] > summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.step-builder-body {
+  padding: 14px;
+}
+
+.builder-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.builder-columns h3 {
+  margin: 0 0 8px;
+  font-size: 0.86rem;
+}
+
+.builder-field {
+  margin-bottom: 12px;
+}
+
+.builder-field label {
+  margin-top: 0;
+}
+
+.builder-control {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--text);
+}
+
+.builder-json-control {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+}
+
+.builder-help {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.builder-schema {
+  display: block;
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.builder-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 14px;
+}
+
+.secondary-button {
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-small);
+  background: #ffffff;
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.secondary-button:hover {
+  background: var(--accent-soft);
+}
+
+.builder-boundary {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.5;
 }
 
 .code-editor,
@@ -492,7 +599,8 @@ label {
     padding: 18px;
   }
 
-  .summary-grid {
+  .summary-grid,
+  .builder-columns {
     grid-template-columns: 1fr;
   }
 
