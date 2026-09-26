@@ -68,6 +68,7 @@ def main() -> int:
     workbench.raise_for_status()
     assert "Workflow review workbench" in workbench.text
     assert 'src="./app.js"' in workbench.text
+    assert 'id="assumptions-tab"' in workbench.text
 
     workbench_script = client.get("/workbench/app.js")
     workbench_script.raise_for_status()
@@ -86,6 +87,9 @@ def main() -> int:
     workbench_render.raise_for_status()
     assert "textContent" in workbench_render.text
     assert "innerHTML" not in workbench_render.text
+    assert "renderAssumptions" in workbench_render.text
+    assert "step.output_crs" in workbench_render.text
+    assert "not execution provenance" in workbench_render.text
 
     workbench_composer = client.get("/workbench/composer.js")
     workbench_composer.raise_for_status()
