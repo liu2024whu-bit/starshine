@@ -60,7 +60,7 @@ def test_workbench_has_no_external_browser_runtime_or_dynamic_html_sink() -> Non
         for path in sorted(STATIC_ROOT.glob("*.js"))
     ]
     script = "\n".join(scripts)
-    combined = "\n".join((index, stylesheet, script))
+    combined = f"{index}\n{stylesheet}\n{script}"
 
     for external_marker in ("http://", "https://", "//cdn."):
         assert external_marker not in combined
