@@ -31,6 +31,8 @@ def test_workbench_assets_are_served_from_the_server_package() -> None:
     assert "Workflow review workbench" in index.text
     assert 'href="./styles.css"' in index.text
     assert 'src="./app.js"' in index.text
+    assert "Content-Security-Policy" in index.text
+    assert "connect-src 'self'" in index.text
 
     assert stylesheet.status_code == 200
     assert stylesheet.headers["content-type"].startswith("text/css")
