@@ -53,17 +53,28 @@ def _zip_info(name: str) -> zipfile.ZipInfo:
     return info
 
 
-def _instructions(*, revision: str, wheel_name: str) -> str:
+def _instructions(
+    *,
+    revision: str,
+    wheel_name: str,
+    dependency_mode: str,
+) -> str:
+    dependency_requirement = (
+        "- no network access is required; dependency wheels are bundled and hash-verified"
+        if dependency_mode == "offline-wheelhouse"
+        else "- network access is required for Starshine runtime dependencies and jsonschema"
+    )
     return f"""# Starshine independent reproduction bundle
 
 Source revision: {revision}
 Wheel: {wheel_name}
+Dependency install mode: {dependency_mode}
 
 This bundle is designed to be copied to a machine or CI project outside the Starshine repository.
 
 Requirements:
 - Python 3.10 or newer
-- network access for Starshine runtime dependencies and jsonschema
+{dependency_requirement}
 - no Starshine source checkout on PYTHONPATH
 
 Run:
@@ -87,6 +98,7 @@ def build_bundle(
     revision: str,
     output: Path,
     root: Path = ROOT,
+    wheelhouse: Path | None = None,
 ) -> dict[str, Any]:
     wheel = wheel.resolve()
     if not wheel.is_file() or wheel.suffix != ".whl":
@@ -104,9 +116,29 @@ def build_bundle(
 
     wheel_member = f"artifacts/{wheel.name}"
     members[wheel_member] = wheel.read_bytes()
+
+    wheelhouse_members: list[str] = []
+    if wheelhouse is not None:
+        wheelhouse = wheelhouse.resolve()
+        if not wheelhouse.is_dir():
+            raise RuntimeError(f"wheelhouse does not exist: {wheelhouse}")
+        dependency_wheels = sorted(
+            path for path in wheelhouse.iterdir() if path.is_file() and path.suffix == ".whl"
+        )
+        if not dependency_wheels:
+            raise RuntimeError("wheelhouse must contain at least one dependency wheel")
+        for dependency_wheel in dependency_wheels:
+            if dependency_wheel.name == wheel.name:
+                raise RuntimeError("wheelhouse must not duplicate the Starshine wheel")
+            member = f"wheelhouse/{dependency_wheel.name}"
+            members[member] = dependency_wheel.read_bytes()
+            wheelhouse_members.append(member)
+
+    dependency_mode = "offline-wheelhouse" if wheelhouse_members else "network"
     members["INSTRUCTIONS.md"] = _instructions(
         revision=revision,
         wheel_name=wheel.name,
+        dependency_mode=dependency_mode,
     ).encode("utf-8")
 
     file_hashes = {name: _sha256_bytes(data) for name, data in sorted(members.items())}
@@ -119,8 +151,15 @@ def build_bundle(
             "path": wheel_member,
             "sha256": file_hashes[wheel_member],
         },
+        "dependency_install": {
+            "mode": dependency_mode,
+        },
         "files": file_hashes,
     }
+    if wheelhouse_members:
+        manifest["wheelhouse"] = {
+            "files": wheelhouse_members,
+        }
     members[_MANIFEST_NAME] = (
         json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     ).encode("utf-8")
@@ -181,6 +220,43 @@ def verify_bundle(root: Path) -> dict[str, Any]:
         raise RuntimeError("bundle wheel filename does not match manifest")
     if manifest.get("starshine_version") != _wheel_version(wheel_path):
         raise RuntimeError("bundle Starshine version does not match wheel metadata")
+
+    dependency_install = manifest.get("dependency_install", {"mode": "network"})
+    if not isinstance(dependency_install, dict):
+        raise TypeError("bundle dependency-install metadata must be an object")
+    dependency_mode = dependency_install.get("mode", "network")
+    if dependency_mode not in {"network", "offline-wheelhouse"}:
+        raise RuntimeError("bundle dependency-install mode is not supported")
+
+    wheelhouse = manifest.get("wheelhouse")
+    if dependency_mode == "offline-wheelhouse":
+        if not isinstance(wheelhouse, dict):
+            raise TypeError("offline bundle is missing wheelhouse metadata")
+        declared = wheelhouse.get("files")
+        if not isinstance(declared, list) or not declared:
+            raise RuntimeError("offline bundle wheelhouse must declare dependency wheels")
+        declared_members: set[str] = set()
+        for relative in declared:
+            if not isinstance(relative, str) or not relative.startswith("wheelhouse/"):
+                raise RuntimeError("offline wheelhouse member path is invalid")
+            path = (root / relative).resolve()
+            if not path.is_relative_to(root.resolve()):
+                raise RuntimeError("offline wheelhouse member escapes bundle root")
+            if path.suffix != ".whl" or not path.is_file():
+                raise RuntimeError(f"offline wheelhouse member is invalid: {relative}")
+            if relative not in files:
+                raise RuntimeError(f"offline wheelhouse member is not hash-declared: {relative}")
+            declared_members.add(relative)
+        actual_members = {
+            f"wheelhouse/{path.name}"
+            for path in (root / "wheelhouse").glob("*.whl")
+            if path.is_file()
+        }
+        if actual_members != declared_members:
+            raise RuntimeError("offline wheelhouse contents do not match the manifest")
+    elif wheelhouse is not None:
+        raise RuntimeError("network bundle must not declare a wheelhouse")
+
     return manifest
 
 
@@ -237,8 +313,29 @@ def run_bundle(*, output_dir: Path) -> dict[str, Any]:
         python = _venv_python(environment)
         starshine = _venv_starshine(environment)
 
-        _run([str(python), "-m", "pip", "install", "--upgrade", "pip"])
-        _run([str(python), "-m", "pip", "install", str(wheel_path), "jsonschema>=4.23,<5"])
+        dependency_install = manifest.get("dependency_install", {"mode": "network"})
+        dependency_mode = dependency_install.get("mode", "network")
+        if dependency_mode == "offline-wheelhouse":
+            install_env = os.environ.copy()
+            install_env["PIP_NO_INDEX"] = "1"
+            install_env["PIP_DISABLE_PIP_VERSION_CHECK"] = "1"
+            _run(
+                [
+                    str(python),
+                    "-m",
+                    "pip",
+                    "install",
+                    "--no-index",
+                    "--find-links",
+                    str(root / "wheelhouse"),
+                    str(wheel_path),
+                    "jsonschema>=4.23,<5",
+                ],
+                env=install_env,
+            )
+        else:
+            _run([str(python), "-m", "pip", "install", "--upgrade", "pip"])
+            _run([str(python), "-m", "pip", "install", str(wheel_path), "jsonschema>=4.23,<5"])
 
         package_location = _run(
             [
@@ -290,6 +387,7 @@ def run_bundle(*, output_dir: Path) -> dict[str, Any]:
             "starshine_version_output": version_result,
             "wheel_filename": manifest["wheel"]["filename"],
             "wheel_sha256": manifest["wheel"]["sha256"],
+            "dependency_install_mode": dependency_mode,
             "python": {
                 "implementation": platform.python_implementation(),
                 "version": platform.python_version(),
@@ -324,6 +422,12 @@ def main(argv: list[str] | None = None) -> int:
     bundle.add_argument("--wheel", type=Path, required=True)
     bundle.add_argument("--revision", required=True)
     bundle.add_argument("--output", type=Path, required=True)
+    bundle.add_argument(
+        "--wheelhouse",
+        type=Path,
+        default=None,
+        help="optional directory of dependency wheels for a hash-verified offline bundle",
+    )
 
     run = subparsers.add_parser("run", help="execute an extracted bundle in a clean virtualenv")
     run.add_argument(
@@ -339,6 +443,7 @@ def main(argv: list[str] | None = None) -> int:
             wheel=args.wheel,
             revision=args.revision,
             output=args.output,
+            wheelhouse=args.wheelhouse,
         )
         print(
             f"{args.output} ({manifest['starshine_version']} @ "
