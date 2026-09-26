@@ -196,7 +196,91 @@ function renderExplanation(container, explanation) {
   container.appendChild(stack);
 }
 
-function renderEvidence(container, reports) {
+export function renderPreflight(container, report) {
+  clearNode(container);
+
+  if (!report) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.appendChild(
+      textElement("p", "Run canonical Preflight after a fresh review to inspect loaded layer assurance."),
+    );
+    container.appendChild(empty);
+    return;
+  }
+
+  const summary = document.createElement("div");
+  summary.className = "summary-grid";
+  summary.appendChild(summaryCard("Status", report.valid ? "passed" : "failed"));
+  summary.appendChild(summaryCard("Checked layers", report.checked_layer_count ?? 0));
+  summary.appendChild(summaryCard("Errors", report.error_count ?? 0));
+  summary.appendChild(summaryCard("Warnings", report.warning_count ?? 0));
+  container.appendChild(summary);
+
+  const layerStack = document.createElement("div");
+  layerStack.className = "report-stack";
+  layerStack.appendChild(textElement("h3", "Layer assurance"));
+  for (const layer of Array.isArray(report.layers) ? report.layers : []) {
+    const card = document.createElement("article");
+    card.className = "report-card";
+    card.appendChild(textElement("div", layer.status || "unknown", "node-kind"));
+    card.appendChild(textElement("h3", layer.name || "Unnamed layer"));
+    card.appendChild(
+      textElement(
+        "p",
+        `Features: ${layer.feature_count ?? "not checked"} · CRS: ${layer.declared_crs ?? "not declared"} · errors: ${layer.error_count ?? 0} · warnings: ${layer.warning_count ?? 0}`,
+      ),
+    );
+    const geometry = layer.geometry_counts && typeof layer.geometry_counts === "object"
+      ? Object.entries(layer.geometry_counts).map(([name, count]) => `${name}: ${count}`)
+      : [];
+    appendList(card, "Geometry counts", geometry);
+    layerStack.appendChild(card);
+  }
+  container.appendChild(layerStack);
+
+  const findingStack = document.createElement("div");
+  findingStack.className = "report-stack";
+  findingStack.appendChild(textElement("h3", "Findings"));
+  const findings = Array.isArray(report.findings) ? report.findings : [];
+  if (!findings.length) {
+    findingStack.appendChild(textElement("p", "No Preflight findings were reported.", "muted"));
+  }
+  for (const finding of findings) {
+    const card = document.createElement("article");
+    card.className = "report-card";
+    card.appendChild(textElement("div", finding.severity || "finding", "node-kind"));
+    card.appendChild(textElement("h3", finding.code || "Finding"));
+    card.appendChild(textElement("p", finding.message || "No message reported."));
+    card.appendChild(
+      textElement(
+        "p",
+        `Layer: ${finding.layer || "not reported"} · occurrences: ${finding.occurrence_count ?? 1}`,
+      ),
+    );
+    if (Array.isArray(finding.feature_indexes) && finding.feature_indexes.length) {
+      appendList(card, "Sample feature indexes", finding.feature_indexes);
+    }
+    findingStack.appendChild(card);
+  }
+  container.appendChild(findingStack);
+
+  const remaining = document.createElement("article");
+  remaining.className = "report-card";
+  remaining.appendChild(textElement("h3", "Remaining execution-time checks"));
+  appendList(remaining, "Not proven by Preflight", report.remaining_checks || []);
+  container.appendChild(remaining);
+
+  const digests = document.createElement("div");
+  digests.className = "digest-list";
+  digests.appendChild(digestRow("Workflow", report.workflow_digest));
+  digests.appendChild(digestRow("Plan", report.plan_digest));
+  digests.appendChild(digestRow("Contract", report.contract_digest));
+  digests.appendChild(digestRow("Preflight", report.preflight_digest));
+  container.appendChild(digests);
+}
+
+export function renderEvidence(container, reports) {
   clearNode(container);
   const pre = document.createElement("pre");
   pre.className = "raw-block";
