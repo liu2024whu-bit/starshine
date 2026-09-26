@@ -109,3 +109,5 @@
 /tests/test_server_workbench.py @liu2024whu-bit
 
 /tests/workbench_authoring.mjs @liu2024whu-bit
+
+/tests/workbench_guidance.mjs @liu2024whu-bit
