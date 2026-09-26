@@ -47,6 +47,45 @@
           <span class="badge">JSON</span>
         </div>
 
+        <details class="step-builder">
+          <summary>Add a step from the canonical catalog</summary>
+          <div class="step-builder-body">
+            <label for="builder-operator">Operator</label>
+            <select id="builder-operator" class="builder-control">
+              <option value="">Choose an operator</option>
+            </select>
+            <p id="builder-summary" class="builder-help">
+              Choose an operator from the canonical catalog.
+            </p>
+
+            <div class="builder-columns">
+              <section aria-labelledby="builder-inputs-heading">
+                <h3 id="builder-inputs-heading">Inputs</h3>
+                <div id="builder-inputs"></div>
+              </section>
+              <section aria-labelledby="builder-parameters-heading">
+                <h3 id="builder-parameters-heading">Parameters</h3>
+                <div id="builder-parameters"></div>
+              </section>
+            </div>
+
+            <label for="builder-output">Output layer name</label>
+            <input id="builder-output" class="builder-control" type="text" autocomplete="off">
+
+            <div class="builder-actions">
+              <button id="builder-insert" class="secondary-button" type="button">Insert candidate step</button>
+              <span id="builder-status" class="request-status" role="status" aria-live="polite">
+                Builder fields come directly from the current catalog.
+              </span>
+            </div>
+
+            <p class="builder-boundary">
+              The builder does not validate parameter schemas or CRS rules. It only parses entered
+              parameter text as JSON and inserts a candidate step; Server validation remains authoritative.
+            </p>
+          </div>
+        </details>
+
         <label for="workflow-editor">Workflow</label>
         <textarea id="workflow-editor" class="code-editor" spellcheck="false">{
   "version": 1,
