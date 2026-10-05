@@ -68,6 +68,7 @@ def main() -> int:
     workbench.raise_for_status()
     assert "Workflow assurance workbench" in workbench.text
     assert 'src="./app.js"' in workbench.text
+    assert 'id="crs-evidence-tab"' in workbench.text
 
     workbench_script = client.get("/workbench/app.js")
     workbench_script.raise_for_status()
@@ -89,6 +90,7 @@ def main() -> int:
     assert 'from "./render_review.js"' in workbench_render.text
     assert 'from "./render_editor.js"' in workbench_render.text
     assert 'from "./render_preflight.js"' in workbench_render.text
+    assert 'from "./render_assumptions.js"' in workbench_render.text
 
     workbench_dom = client.get("/workbench/dom.js")
     workbench_dom.raise_for_status()
@@ -100,6 +102,7 @@ def main() -> int:
         ("render_review.js", "renderReports"),
         ("render_editor.js", "renderStepBuilder"),
         ("render_preflight.js", "renderPreflightReport"),
+        ("render_assumptions.js", "renderCrsEvidence"),
     ):
         module = client.get(f"/workbench/{module_name}")
         module.raise_for_status()

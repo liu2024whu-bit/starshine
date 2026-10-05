@@ -14,10 +14,12 @@ import {
   initializeTabs,
   populateOperatorSelect,
   renderCatalog,
+  renderCrsEvidence,
   renderPreflightBindings,
   renderPreflightReport,
   renderReports,
   renderStepBuilder,
+  resetCrsEvidence,
   resetPreflightResult,
   resetPreflightWorkspace,
   resetReview,
@@ -51,6 +53,7 @@ const elements = {
   contract: document.querySelector("#contract-content"),
   graph: document.querySelector("#graph-content"),
   explain: document.querySelector("#explain-content"),
+  crsEvidence: document.querySelector("#crs-evidence-content"),
   evidence: document.querySelector("#evidence-content"),
   preflightInputs: document.querySelector("#preflight-inputs"),
   preflightButton: document.querySelector("#preflight-button"),
@@ -145,6 +148,7 @@ function disablePreflightUntilReview(message) {
 function preparePreflightForCurrentReview() {
   const names = requiredLayerNames(state.reports);
   state.preflight = null;
+  renderCrsEvidence(elements.crsEvidence, state.reports, null);
   renderPreflightBindings(
     elements.preflightInputs,
     names,
@@ -165,6 +169,7 @@ function preparePreflightForCurrentReview() {
 function invalidateReview(message = "Workflow changes have not been reviewed yet.") {
   state.reports = null;
   resetReview(elements, message);
+  resetCrsEvidence(elements.crsEvidence, message);
   setReviewState(elements.reviewState, "Not reviewed");
   setRequestStatus(elements.requestStatus, message);
   disablePreflightUntilReview("Review the current Workflow before running Preflight.");
@@ -257,6 +262,7 @@ async function reviewWorkflow() {
   } catch (error) {
     state.reports = null;
     resetReview(elements, "Review failed; no canonical evidence is current.");
+    resetCrsEvidence(elements.crsEvidence, "Review failed; no canonical CRS/evidence view is current.");
     disablePreflightUntilReview("Fix and review the Workflow before running Preflight.");
     setRequestStatus(elements.requestStatus, error.message, true);
     setReviewState(elements.reviewState, "Review failed", true);
@@ -273,6 +279,9 @@ function recordPreflightDraft(event) {
   const hadCurrentPreflight = state.preflight !== null;
   state.layerDrafts[control.dataset.preflightLayer] = control.value;
   state.preflight = null;
+  if (state.reports) {
+    renderCrsEvidence(elements.crsEvidence, state.reports, null);
+  }
   resetPreflightResult(
     elements.preflightResult,
     hadCurrentPreflight
@@ -309,6 +318,7 @@ async function runPreflight() {
     assertPreflightEvidenceChain(report, state.reports);
     state.preflight = report;
     renderPreflightReport(elements.preflightResult, report);
+    renderCrsEvidence(elements.crsEvidence, state.reports, report);
     setRequestStatus(
       elements.preflightStatus,
       report.valid
@@ -318,6 +328,9 @@ async function runPreflight() {
     );
   } catch (error) {
     state.preflight = null;
+    if (state.reports) {
+      renderCrsEvidence(elements.crsEvidence, state.reports, null);
+    }
     resetPreflightResult(elements.preflightResult, "Preflight did not produce current evidence.");
     setRequestStatus(elements.preflightStatus, error.message, true);
   } finally {

@@ -146,6 +146,11 @@
             Explain
           </button>
           <button class="tab-button" type="button" role="tab" aria-selected="false"
+            aria-controls="crs-evidence-panel" id="crs-evidence-tab"
+            data-panel-target="crs-evidence-panel">
+            CRS &amp; Evidence
+          </button>
+          <button class="tab-button" type="button" role="tab" aria-selected="false"
             aria-controls="preflight-panel" id="preflight-tab" data-panel-target="preflight-panel">
             Preflight
           </button>
@@ -176,6 +181,13 @@
         <section class="tab-panel" id="explain-panel" role="tabpanel" aria-labelledby="explain-tab" hidden>
           <div id="explain-content" class="empty-state">
             <p>Core-generated step explanations will appear here.</p>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="crs-evidence-panel" role="tabpanel"
+          aria-labelledby="crs-evidence-tab" hidden>
+          <div id="crs-evidence-content" class="empty-state">
+            <p>Review the current Workflow to see canonical CRS assumptions and evidence.</p>
           </div>
         </section>
 
