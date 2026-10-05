@@ -24,13 +24,14 @@ def _project_version() -> str:
 
 
 def test_release_artifact_package_surface_is_derived_from_source_tree(tmp_path):
-    source_root = tmp_path / "src" / "starshine_geo"
-    nested = source_root / "nested"
+    source_root = tmp_path / "src"
+    package_root = source_root / "starshine_geo"
+    nested = package_root / "nested"
     nested.mkdir(parents=True)
-    (source_root / "__init__.py").write_text("", encoding="utf-8")
-    (source_root / "workflow.py").write_text("", encoding="utf-8")
+    (package_root / "__init__.py").write_text("", encoding="utf-8")
+    (package_root / "workflow.py").write_text("", encoding="utf-8")
     (nested / "helper.py").write_text("", encoding="utf-8")
-    (source_root / "README.txt").write_text("not a module", encoding="utf-8")
+    (package_root / "README.txt").write_text("not a module", encoding="utf-8")
 
     assert _package_python_suffixes(source_root) == (
         "starshine_geo/__init__.py",
@@ -40,7 +41,7 @@ def test_release_artifact_package_surface_is_derived_from_source_tree(tmp_path):
 
 
 def test_release_artifact_package_surface_covers_current_core_modules():
-    suffixes = set(_package_python_suffixes(ROOT / "src" / "starshine_geo"))
+    suffixes = set(_package_python_suffixes(ROOT / "src"))
 
     assert {
         "starshine_geo/geojson.py",
@@ -48,10 +49,12 @@ def test_release_artifact_package_surface_covers_current_core_modules():
         "starshine_geo/manifest.py",
         "starshine_geo/geopackage.py",
         "starshine_geo/io.py",
+        "starshine_server/__init__.py",
+        "starshine_server/app.py",
     } <= suffixes
 
 
-def test_release_version_matches_stable_metadata():
+def test_development_version_preserves_latest_stable_metadata():
     project_version = _project_version()
     citation = (ROOT / "CITATION.cff").read_text(encoding="utf-8")
     changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
@@ -60,8 +63,8 @@ def test_release_version_matches_stable_metadata():
     assert citation_match is not None
     assert version("starshine-geo") == project_version
     assert starshine_geo.__version__ == project_version
-    assert project_version == "0.7.0"
-    assert citation_match.group(1) == project_version
+    assert project_version == "0.8.0.dev0"
+    assert citation_match.group(1) == "0.7.0"
     assert "## [Unreleased]" in changelog
     assert "## [0.7.0] - 2026-09-27" in changelog
 
@@ -146,17 +149,18 @@ def test_top_level_api_exports_public_operator_surfaces():
     assert "SARIF_SCHEMA_URI" in starshine_geo.__all__
 
 
-def test_release_readiness_check_matches_stable_metadata():
+def test_release_readiness_check_distinguishes_development_from_stable_metadata():
     expected = {
-        "version": "0.7.0",
-        "mode": "release",
+        "version": "0.8.0.dev0",
+        "mode": "development",
         "release_version": "0.7.0",
         "release_date": "2026-09-27",
         "release_notes": "docs/releases/0.7.0.md",
     }
 
     assert check_release_readiness(ROOT) == expected
-    assert check_release_readiness(ROOT, require_release=True) == expected
+    with pytest.raises(RuntimeError, match="development snapshot"):
+        check_release_readiness(ROOT, require_release=True)
 
 
 def test_release_readiness_stable_mode_remains_executable(tmp_path):

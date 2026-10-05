@@ -89,3 +89,10 @@
 /examples/intersection.workflow.json @liu2024whu-bit
 /scripts/reproduce_installed_core.py @liu2024whu-bit
 /scripts/independent_reproduction.py @liu2024whu-bit
+
+# Post-0.7 platform adapter remains release/security sensitive.
+/src/starshine_server/ @liu2024whu-bit
+/tests/test_server_api.py @liu2024whu-bit
+/tests/test_server_architecture.py @liu2024whu-bit
+/scripts/smoke_installed_server.py @liu2024whu-bit
+/docs/PLATFORM.md @liu2024whu-bit

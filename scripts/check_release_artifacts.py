@@ -21,7 +21,7 @@ _FORBIDDEN_MEMBER_PARTS = {
     "ocr",
     "runtime_outputs",
 }
-_PACKAGE_SOURCE_ROOT = Path("src/starshine_geo")
+_PACKAGE_SOURCE_ROOT = Path("src")
 
 
 def _project_version() -> str:
@@ -61,13 +61,13 @@ def _package_python_suffixes(source_root: Path = _PACKAGE_SOURCE_ROOT) -> tuple[
         raise RuntimeError(f"package source directory does not exist: {source_root}")
     suffixes = tuple(
         sorted(
-            path.relative_to(source_root.parent).as_posix()
+            path.relative_to(source_root).as_posix()
             for path in source_root.rglob("*.py")
             if path.is_file()
         )
     )
     if not suffixes:
-        raise RuntimeError(f"package source directory contains no Python modules: {source_root}")
+        raise RuntimeError(f"source directory contains no Python modules: {source_root}")
     return suffixes
 
 
@@ -123,6 +123,7 @@ def _check_sdist(path: Path, version: str, release_version: str) -> None:
                 "/docs/GEOMETRY_QUALITY.md",
                 "/docs/INSPECTION.md",
                 "/docs/REPRODUCING.md",
+                "/docs/PLATFORM.md",
                 "/docs/VECTOR_QUALITY_GATE.md",
                 "/docs/GEOMETRY_METRICS.md",
                 "/docs/WORKFLOW_CONTRACTS.md",
@@ -181,6 +182,7 @@ def _check_sdist(path: Path, version: str, release_version: str) -> None:
                 "/scripts/smoke_installed_preflight_sarif.py",
                 "/scripts/smoke_installed_geometry_quality.py",
                 "/scripts/smoke_installed_geopackage.py",
+                "/scripts/smoke_installed_server.py",
                 "/scripts/reproduce_installed_core.py",
                 "/scripts/independent_reproduction.py",
                 "/scripts/refresh_public_evidence.py",
