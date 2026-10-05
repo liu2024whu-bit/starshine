@@ -58,7 +58,7 @@ def test_release_artifact_package_surface_covers_current_core_modules():
     } <= suffixes
 
 
-def test_development_version_is_distinct_from_latest_release_metadata():
+def test_development_version_preserves_latest_stable_metadata():
     project_version = _project_version()
     citation = (ROOT / "CITATION.cff").read_text(encoding="utf-8")
     changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
@@ -67,11 +67,10 @@ def test_development_version_is_distinct_from_latest_release_metadata():
     assert citation_match is not None
     assert version("starshine-geo") == project_version
     assert starshine_geo.__version__ == project_version
-    assert project_version == "0.7.0.dev0"
-    assert citation_match.group(1) == "0.4.0"
-    assert project_version != citation_match.group(1)
+    assert project_version == "0.8.0.dev0"
+    assert citation_match.group(1) == "0.7.0"
     assert "## [Unreleased]" in changelog
-    assert "## [0.4.0] - 2026-07-29" in changelog
+    assert "## [0.7.0] - 2026-09-27" in changelog
 
 
 def test_manifest_uses_installed_package_version_by_default():
@@ -158,16 +157,16 @@ def test_top_level_api_exports_public_operator_surfaces():
     assert "SARIF_SCHEMA_URI" in starshine_geo.__all__
 
 
-def test_release_readiness_check_matches_development_and_stable_metadata():
-    summary = check_release_readiness(ROOT)
-    assert summary == {
-        "version": "0.7.0.dev0",
+def test_release_readiness_check_distinguishes_development_from_stable_metadata():
+    expected = {
+        "version": "0.8.0.dev0",
         "mode": "development",
-        "release_version": "0.4.0",
-        "release_date": "2026-07-29",
-        "release_notes": "docs/releases/0.4.0.md",
+        "release_version": "0.7.0",
+        "release_date": "2026-09-27",
+        "release_notes": "docs/releases/0.7.0.md",
     }
 
+    assert check_release_readiness(ROOT) == expected
     with pytest.raises(RuntimeError, match="development snapshot"):
         check_release_readiness(ROOT, require_release=True)
 
