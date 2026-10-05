@@ -34,22 +34,36 @@ function appendInputContractHints(container, input) {
     return;
   }
 
-  const row = document.createElement("div");
-  row.className = "field-meta";
-
-  const geometryTypes = Array.isArray(contract.geometry_types) ? contract.geometry_types : [];
-  row.appendChild(
-    metaChip(geometryTypes.length ? `geometry: ${geometryTypes.join(" / ")}` : "geometry: any validated type"),
+  container.appendChild(
+    helperText(
+      "Unresolved catalog contract guidance only; insert and Review the step to resolve parameter-driven requirements.",
+    ),
   );
 
-  if (contract.crs && typeof contract.crs.mode === "string") {
-    row.appendChild(metaChip(`CRS: ${contract.crs.mode}`));
-    if (typeof contract.crs.equivalent_to_input === "string") {
-      row.appendChild(metaChip(`CRS = ${contract.crs.equivalent_to_input}`));
-    }
-  }
+  const geometryTypes = Array.isArray(contract.geometry_types) ? contract.geometry_types : [];
+  const geometryRow = document.createElement("div");
+  geometryRow.className = "field-meta";
+  geometryRow.appendChild(
+    metaChip(geometryTypes.length ? `geometry: ${geometryTypes.join(" / ")}` : "geometry: none declared"),
+  );
+  container.appendChild(geometryRow);
 
-  container.appendChild(row);
+  const details = [
+    ["CRS contract", contract.crs ?? {}],
+    [
+      "Required field declarations",
+      Array.isArray(contract.required_fields) ? contract.required_fields : [],
+    ],
+    [
+      "Written field declarations",
+      Array.isArray(contract.written_fields) ? contract.written_fields : [],
+    ],
+  ];
+  for (const [label, value] of details) {
+    container.appendChild(
+      textElement("code", `${label}: ${JSON.stringify(value)}`, "schema-hint"),
+    );
+  }
 
   for (const note of Array.isArray(contract.notes) ? contract.notes : []) {
     container.appendChild(helperText(note));
@@ -145,8 +159,8 @@ export function renderStepBuilder(container, operator, layerNames) {
     control.dataset.stepParameter = parameter.name;
     control.autocomplete = "off";
     control.placeholder = parameter.required
-      ? "Enter a draft value; Server validates it"
-      : "Leave blank to let Core resolve the default/optional value";
+      ? "Enter valid JSON; strings need quotes"
+      : "Leave blank, or enter valid JSON; Core resolves omitted defaults";
     field.appendChild(control);
 
     field.appendChild(helperText(parameter.description || "No parameter description reported."));

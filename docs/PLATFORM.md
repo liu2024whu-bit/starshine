@@ -160,8 +160,15 @@ without introducing a frontend framework or build step.
 
 The next Workbench increment adds one draft-step helper without introducing a browser validation
 engine. Operator choices, named input roles, parameter descriptions, required/default metadata,
-parameter JSON Schema hints, output-CRS behavior, and input geometry/CRS contract hints all come from
-the canonical operator catalog returned by the Server.
+parameter JSON Schema hints, output-CRS behavior, and input contracts all come from the canonical
+operator catalog returned by the Server. For each selected input, the existing editor renderer shows
+the unresolved geometry types, full CRS contract object, required-field declarations, written-field
+declarations, and catalog notes. It does not resolve parameter-driven field names or decide whether a
+real layer is compatible.
+
+Non-empty parameter controls accept JSON syntax only; JSON strings therefore need quotes. This is a
+syntax boundary, not a second schema validator: the browser does not interpret ranges, enums,
+patterns, CRS rules, field requirements, or operator-specific constraints.
 
 The browser does not copy Core defaults into untouched optional parameters. Leaving an optional field
 blank omits it from the draft step so `starshine_geo` remains responsible for default resolution.
@@ -174,9 +181,10 @@ Workflow. Suggestions are convenience only; dependency validity, duplicate outpu
 parameter rules, CRS validity, and every other Workflow semantic remain Core concerns.
 
 The transformation logic lives in a DOM-free `editor.js` module and is exercised directly in CI
-without a frontend package manager. It contains no operator-specific branches or names. Rendering
-continues to consume catalog metadata generically, while `app.js` only coordinates the draft and
-canonical review lifecycle.
+without a frontend package manager. It contains no operator-specific branches or names. The existing
+`render_editor.js` remains the single catalog-guidance presentation owner; no parallel authoring or
+guidance module is introduced. Rendering consumes catalog metadata generically, while `app.js` only
+coordinates the draft and canonical review lifecycle.
 
 Any edit to Workflow JSON or external layer names invalidates the currently displayed review evidence
 until the Server review is run again. This prevents stale plan/contract/graph/explain output from being
