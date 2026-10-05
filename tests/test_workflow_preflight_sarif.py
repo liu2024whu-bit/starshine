@@ -241,7 +241,7 @@ def test_preflight_cli_writes_repository_relative_sarif_and_keeps_exit_codes(
     )
     captured = capsys.readouterr()
     assert result == 1
-    assert captured.out.strip() == "reports/preflight.sarif"
+    assert Path(captured.out.strip()).as_posix() == "reports/preflight.sarif"
     assert captured.err == ""
     sarif = json.loads(output_path.read_text(encoding="utf-8"))
     assert sarif["runs"][0]["results"][0]["locations"][0]["physicalLocation"][
