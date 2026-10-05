@@ -104,6 +104,7 @@ def main() -> int:
         ("render_preflight.js", "renderPreflightReport"),
         ("render_assumptions.js", "renderCrsEvidence"),
         ("render_execution.js", "renderExecutionResult"),
+        ("render_preview.js", "renderResultPreview"),
     ):
         module = client.get(f"/workbench/{module_name}")
         module.raise_for_status()
@@ -131,6 +132,13 @@ def main() -> int:
     assert "assertExecutionEvidenceChain" in workbench_execution.text
     assert "geometry" not in workbench_execution.text.lower()
     assert "fetch(" not in workbench_execution.text
+
+    workbench_preview = client.get("/workbench/preview.js")
+    workbench_preview.raise_for_status()
+    assert "buildResultPreview" in workbench_preview.text
+    assert "fetch(" not in workbench_preview.text
+    assert "EPSG" not in workbench_preview.text
+    assert "proj4" not in workbench_preview.text.lower()
 
     workbench_styles = client.get("/workbench/styles.css")
     workbench_styles.raise_for_status()

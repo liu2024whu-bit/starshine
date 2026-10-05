@@ -37,6 +37,8 @@ def test_workbench_assets_are_served_from_the_server_package() -> None:
     assurance_script = client.get("/workbench/assurance.js")
     execution_script = client.get("/workbench/execution.js")
     render_execution_script = client.get("/workbench/render_execution.js")
+    preview_script = client.get("/workbench/preview.js")
+    render_preview_script = client.get("/workbench/render_preview.js")
 
     assert index.status_code == 200
     assert index.headers["content-type"].startswith("text/html")
@@ -106,6 +108,12 @@ def test_workbench_assets_are_served_from_the_server_package() -> None:
     assert "renderExecutionControls" in render_execution_script.text
     assert "renderExecutionResult" in render_execution_script.text
 
+    assert preview_script.status_code == 200
+    assert "buildResultPreview" in preview_script.text
+
+    assert render_preview_script.status_code == 200
+    assert "renderResultPreview" in render_preview_script.text
+
 
 def test_workbench_has_no_external_browser_runtime_or_dynamic_html_sink() -> None:
     index = (STATIC_ROOT / "index.html").read_text(encoding="utf-8")
@@ -116,9 +124,12 @@ def test_workbench_has_no_external_browser_runtime_or_dynamic_html_sink() -> Non
     ]
     script = "\n".join(scripts)
     combined = f"{index}\n{stylesheet}\n{script}"
+    svg_namespace = '"http://www.w3.org/2000/svg"'
+    assert combined.count(svg_namespace) == 1
+    network_candidates = combined.replace(svg_namespace, '""')
 
     for external_marker in ("http://", "https://", "//cdn."):
-        assert external_marker not in combined
+        assert external_marker not in network_candidates
 
     for forbidden in (
         "innerHTML",
@@ -213,6 +224,7 @@ def test_workbench_presentation_modules_keep_one_way_dependencies() -> None:
         STATIC_ROOT / "render_preflight.js",
         STATIC_ROOT / "render_assumptions.js",
         STATIC_ROOT / "render_execution.js",
+        STATIC_ROOT / "render_preview.js",
     ]
 
     assert len(facade.splitlines()) < 40
@@ -342,3 +354,42 @@ def test_browser_execution_is_bound_to_current_passing_preflight() -> None:
     assert "execution.output_layer !== expectedOutputLayer" in execution
     assert "returnedPreflight.preflight_digest !== currentPreflight.preflight_digest" in execution
     assert "sameJson(execution.execution_policy, executionPolicy)" in execution
+
+
+def test_result_preview_is_projection_free_presentation_only() -> None:
+    index = (STATIC_ROOT / "index.html").read_text(encoding="utf-8")
+    preview = (STATIC_ROOT / "preview.js").read_text(encoding="utf-8")
+    renderer = (STATIC_ROOT / "render_preview.js").read_text(encoding="utf-8")
+    app = (STATIC_ROOT / "app.js").read_text(encoding="utf-8")
+
+    assert 'id="preview-tab"' in index
+    assert 'id="result-preview"' in index
+    assert "buildResultPreview(execution.result)" in app
+    assert "resetResultPreview(elements.resultPreview" in app
+
+    lowered = preview.lower()
+    for forbidden in (
+        "epsg",
+        "proj4",
+        "pyproj",
+        "reproject",
+        "transformcrs",
+        "distance",
+        "area",
+        "intersect",
+        "contains",
+        "validity",
+        "repair",
+        "fetch(",
+        "/api/v1/",
+        './api.js',
+        './assurance.js',
+        './execution.js',
+    ):
+        assert forbidden not in lowered
+
+    assert "createElementNS" in renderer
+    assert "not projection-aware" in renderer
+    assert "does not parse CRS" in renderer
+    for forbidden in ("fetch(", "/api/v1/", './api.js', './execution.js'):
+        assert forbidden not in renderer

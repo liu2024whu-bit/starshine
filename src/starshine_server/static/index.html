@@ -160,6 +160,10 @@
             Execute
           </button>
           <button class="tab-button" type="button" role="tab" aria-selected="false"
+            aria-controls="preview-panel" id="preview-tab" data-panel-target="preview-panel">
+            Preview
+          </button>
+          <button class="tab-button" type="button" role="tab" aria-selected="false"
             aria-controls="evidence-panel" id="evidence-tab" data-panel-target="evidence-panel">
             Evidence
           </button>
@@ -235,6 +239,13 @@
           </div>
           <div id="execution-result" class="empty-state preflight-result">
             <p>No current execution evidence.</p>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="preview-panel" role="tabpanel"
+          aria-labelledby="preview-tab" hidden>
+          <div id="result-preview" class="empty-state">
+            <p>Execute a current passing evidence chain to preview its canonical result.</p>
           </div>
         </section>
 

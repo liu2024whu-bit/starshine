@@ -716,3 +716,47 @@ label {
     flex-direction: column;
   }
 }
+
+
+.result-preview-frame {
+  margin-top: 14px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+  background:
+    linear-gradient(to right, rgba(23, 32, 29, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(23, 32, 29, 0.045) 1px, transparent 1px),
+    #fbfcfc;
+  background-size: 24px 24px;
+}
+
+.result-preview-svg {
+  display: block;
+  width: 100%;
+  min-height: 300px;
+  max-height: 560px;
+}
+
+.preview-point {
+  fill: var(--accent);
+  stroke: #ffffff;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.preview-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.preview-ring {
+  fill: rgba(18, 107, 87, 0.12);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}

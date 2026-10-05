@@ -1,4 +1,5 @@
 import { ENDPOINTS, requestJson } from "./api.js";
+import { buildResultPreview } from "./preview.js";
 import {
   assertPreflightEvidenceChain,
   buildPreflightRequest,
@@ -25,11 +26,13 @@ import {
   renderPreflightBindings,
   renderPreflightReport,
   renderReports,
+  renderResultPreview,
   renderStepBuilder,
   resetCrsEvidence,
   resetExecutionResult,
   resetPreflightResult,
   resetPreflightWorkspace,
+  resetResultPreview,
   resetReview,
   setRequestStatus,
   setReviewState,
@@ -73,6 +76,7 @@ const elements = {
   executionButton: document.querySelector("#execution-button"),
   executionStatus: document.querySelector("#execution-status"),
   executionResult: document.querySelector("#execution-result"),
+  resultPreview: document.querySelector("#result-preview"),
 };
 
 function parseWorkflow() {
@@ -162,6 +166,7 @@ function resetExecution(message = "Current passing Preflight required before exe
     false,
   );
   resetExecutionResult(elements.executionResult, message);
+  resetResultPreview(elements.resultPreview, message);
   setRequestStatus(elements.executionStatus, message);
   if (state.reports) {
     renderCrsEvidence(elements.crsEvidence, state.reports, state.preflight, null);
@@ -444,6 +449,7 @@ async function runExecution() {
     );
     state.execution = execution;
     renderExecutionResult(elements.executionResult, execution);
+    renderResultPreview(elements.resultPreview, buildResultPreview(execution.result));
     renderCrsEvidence(elements.crsEvidence, state.reports, state.preflight, execution);
     setRequestStatus(
       elements.executionStatus,
@@ -452,6 +458,7 @@ async function runExecution() {
   } catch (error) {
     state.execution = null;
     resetExecutionResult(elements.executionResult, "Execution did not produce current result evidence.");
+    resetResultPreview(elements.resultPreview, "Execution did not produce a current result preview.");
     renderCrsEvidence(elements.crsEvidence, state.reports, state.preflight, null);
     setRequestStatus(elements.executionStatus, error.message, true);
   } finally {

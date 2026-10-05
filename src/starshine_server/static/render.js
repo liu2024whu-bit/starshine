@@ -33,3 +33,5 @@ export {
   renderExecutionResult,
   resetExecutionResult,
 } from "./render_execution.js";
+
+export { renderResultPreview, resetResultPreview } from "./render_preview.js";
