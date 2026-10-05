@@ -85,8 +85,27 @@ def main() -> int:
 
     workbench_render = client.get("/workbench/render.js")
     workbench_render.raise_for_status()
-    assert "textContent" in workbench_render.text
-    assert "innerHTML" not in workbench_render.text
+    assert 'from "./render_ui.js"' in workbench_render.text
+    assert 'from "./render_review.js"' in workbench_render.text
+    assert 'from "./render_editor.js"' in workbench_render.text
+    assert 'from "./render_preflight.js"' in workbench_render.text
+
+    workbench_dom = client.get("/workbench/dom.js")
+    workbench_dom.raise_for_status()
+    assert "textContent" in workbench_dom.text
+    assert "innerHTML" not in workbench_dom.text
+
+    for module_name, marker in (
+        ("render_ui.js", "initializeTabs"),
+        ("render_review.js", "renderReports"),
+        ("render_editor.js", "renderStepBuilder"),
+        ("render_preflight.js", "renderPreflightReport"),
+    ):
+        module = client.get(f"/workbench/{module_name}")
+        module.raise_for_status()
+        assert marker in module.text
+        assert "/api/v1/" not in module.text
+        assert "fetch(" not in module.text
 
     workbench_editor = client.get("/workbench/editor.js")
     workbench_editor.raise_for_status()

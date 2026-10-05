@@ -144,6 +144,17 @@ Browser rendering uses DOM element creation and `textContent` for report/user te
 boundary tests reject dynamic HTML/code sinks and external browser runtimes. The Workbench still has
 no execution control, persistence, file upload, map, or browser GIS library.
 
+As the Workbench grew from review into drafting and Preflight, presentation was split before adding
+more UI. The dependency direction is:
+
+`app.js → render.js facade → render_ui / render_review / render_editor / render_preflight → dom.js`
+
+The facade keeps one stable presentation import for orchestration. Domain render modules receive data
+and create DOM only; tests prohibit them from importing transport, draft-transformation, or assurance
+modules and from containing API paths or network calls. Shared DOM primitives remain isolated in
+`dom.js`. This keeps future CRS/provenance or map presentation from accumulating in one renderer
+without introducing a frontend framework or build step.
+
 ## Catalog-assisted Workflow drafting
 
 The next Workbench increment adds one draft-step helper without introducing a browser validation
