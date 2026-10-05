@@ -1,5 +1,10 @@
 import { ENDPOINTS, requestJson } from "./api.js";
 import {
+  assertPreflightEvidenceChain,
+  buildPreflightRequest,
+  requiredLayerNames,
+} from "./assurance.js";
+import {
   appendDraftStep,
   buildDraftStep,
   findCatalogOperator,
@@ -9,8 +14,12 @@ import {
   initializeTabs,
   populateOperatorSelect,
   renderCatalog,
+  renderPreflightBindings,
+  renderPreflightReport,
   renderReports,
   renderStepBuilder,
+  resetPreflightResult,
+  resetPreflightWorkspace,
   resetReview,
   setRequestStatus,
   setReviewState,
@@ -19,7 +28,10 @@ import {
 
 const state = {
   catalog: null,
+  limits: null,
   reports: null,
+  preflight: null,
+  layerDrafts: {},
 };
 
 const elements = {
@@ -40,6 +52,10 @@ const elements = {
   graph: document.querySelector("#graph-content"),
   explain: document.querySelector("#explain-content"),
   evidence: document.querySelector("#evidence-content"),
+  preflightInputs: document.querySelector("#preflight-inputs"),
+  preflightButton: document.querySelector("#preflight-button"),
+  preflightStatus: document.querySelector("#preflight-status"),
+  preflightResult: document.querySelector("#preflight-result"),
 };
 
 function parseWorkflow() {
@@ -72,7 +88,7 @@ function currentLayerSuggestions() {
   return layerSuggestions(workflow, parseLayerNames());
 }
 
-function assertEvidenceChain(plan, contract, graph, explain) {
+function assertReviewEvidenceChain(plan, contract, graph, explain) {
   const planDigest = plan.plan_digest;
   if (
     contract.plan_digest !== planDigest ||
@@ -119,11 +135,39 @@ function collectDraftValues() {
   };
 }
 
+function disablePreflightUntilReview(message) {
+  state.preflight = null;
+  elements.preflightButton.disabled = true;
+  resetPreflightWorkspace(elements.preflightInputs, elements.preflightResult, message);
+  setRequestStatus(elements.preflightStatus, message);
+}
+
+function preparePreflightForCurrentReview() {
+  const names = requiredLayerNames(state.reports);
+  state.preflight = null;
+  renderPreflightBindings(
+    elements.preflightInputs,
+    names,
+    state.reports.contract,
+    state.layerDrafts,
+    state.limits && state.limits.inline_preflight,
+  );
+  resetPreflightResult(elements.preflightResult);
+  elements.preflightButton.disabled = names.length === 0;
+  setRequestStatus(
+    elements.preflightStatus,
+    names.length
+      ? "Paste JSON for one or more required layers, then run canonical Preflight."
+      : "The current canonical plan has no required external layers to Preflight.",
+  );
+}
+
 function invalidateReview(message = "Workflow changes have not been reviewed yet.") {
   state.reports = null;
   resetReview(elements, message);
   setReviewState(elements.reviewState, "Not reviewed");
   setRequestStatus(elements.requestStatus, message);
+  disablePreflightUntilReview("Review the current Workflow before running Preflight.");
   updateLayerSuggestions(elements.builderFields, currentLayerSuggestions());
 }
 
@@ -145,13 +189,7 @@ function insertDraftStep() {
     const updated = appendDraftStep(workflow, step);
     elements.workflow.value = JSON.stringify(updated, null, 2);
 
-    state.reports = null;
-    resetReview(elements, "A draft step was inserted. Run Review workflow for canonical validation.");
-    setReviewState(elements.reviewState, "Not reviewed");
-    setRequestStatus(
-      elements.requestStatus,
-      "Draft step inserted; Server/Core have not validated it yet.",
-    );
+    invalidateReview("A draft step was inserted. Run Review workflow for canonical validation.");
     renderSelectedOperator();
     setRequestStatus(
       elements.builderStatus,
@@ -164,11 +202,13 @@ function insertDraftStep() {
 
 async function loadServiceMetadata() {
   try {
-    const [health, catalog] = await Promise.all([
+    const [health, catalog, limits] = await Promise.all([
       requestJson(ENDPOINTS.health),
       requestJson(ENDPOINTS.operators),
+      requestJson(ENDPOINTS.limits),
     ]);
     state.catalog = catalog;
+    state.limits = limits;
     renderCatalog(elements.operatorCatalog, elements.catalogStatus, catalog);
     populateOperatorSelect(elements.builderOperator, catalog);
     setRequestStatus(elements.builderStatus, "Choose a canonical operator to draft one step.");
@@ -178,6 +218,7 @@ async function loadServiceMetadata() {
     elements.catalogStatus.textContent = "Catalog unavailable";
     setRequestStatus(elements.requestStatus, error.message, true);
     setRequestStatus(elements.builderStatus, "Catalog unavailable; assisted editing is disabled.", true);
+    setRequestStatus(elements.preflightStatus, "Server metadata is unavailable.", true);
     setReviewState(elements.reviewState, "Server unavailable", true);
   }
 }
@@ -206,19 +247,81 @@ async function reviewWorkflow() {
       requestJson(ENDPOINTS.explain, { method: "POST", body: request }),
     ]);
 
-    assertEvidenceChain(plan, contract, graph, explain);
+    assertReviewEvidenceChain(plan, contract, graph, explain);
     state.reports = { validation, plan, contract, graph, explain };
     renderReports(elements, state.reports);
+    preparePreflightForCurrentReview();
     setRequestStatus(elements.requestStatus, "Canonical review complete.");
     setReviewState(elements.reviewState, "Reviewed");
     updateLayerSuggestions(elements.builderFields, currentLayerSuggestions());
   } catch (error) {
     state.reports = null;
     resetReview(elements, "Review failed; no canonical evidence is current.");
+    disablePreflightUntilReview("Fix and review the Workflow before running Preflight.");
     setRequestStatus(elements.requestStatus, error.message, true);
     setReviewState(elements.reviewState, "Review failed", true);
   } finally {
     elements.reviewButton.disabled = false;
+  }
+}
+
+function recordPreflightDraft(event) {
+  const control = event.target;
+  if (!control || !control.dataset || !control.dataset.preflightLayer) {
+    return;
+  }
+  const hadCurrentPreflight = state.preflight !== null;
+  state.layerDrafts[control.dataset.preflightLayer] = control.value;
+  state.preflight = null;
+  resetPreflightResult(
+    elements.preflightResult,
+    hadCurrentPreflight
+      ? "Inline data changed. Run Preflight again for current evidence."
+      : "Inline data is ready for canonical Preflight.",
+  );
+  setRequestStatus(
+    elements.preflightStatus,
+    hadCurrentPreflight
+      ? "Inline data changed; Preflight evidence is stale."
+      : "Inline data changed; run canonical Preflight when ready.",
+  );
+}
+
+async function runPreflight() {
+  if (!state.reports) {
+    setRequestStatus(elements.preflightStatus, "Review the current Workflow before Preflight.", true);
+    return;
+  }
+
+  elements.preflightButton.disabled = true;
+  setRequestStatus(elements.preflightStatus, "Running canonical Preflight…");
+
+  try {
+    const request = buildPreflightRequest(
+      parseWorkflow(),
+      state.reports,
+      state.layerDrafts,
+    );
+    const report = await requestJson(ENDPOINTS.preflight, {
+      method: "POST",
+      body: request,
+    });
+    assertPreflightEvidenceChain(report, state.reports);
+    state.preflight = report;
+    renderPreflightReport(elements.preflightResult, report);
+    setRequestStatus(
+      elements.preflightStatus,
+      report.valid
+        ? "Canonical Preflight passed for the supplied inline layers."
+        : "Canonical Preflight completed with findings.",
+      !report.valid,
+    );
+  } catch (error) {
+    state.preflight = null;
+    resetPreflightResult(elements.preflightResult, "Preflight did not produce current evidence.");
+    setRequestStatus(elements.preflightStatus, error.message, true);
+  } finally {
+    elements.preflightButton.disabled = requiredLayerNames(state.reports).length === 0;
   }
 }
 
@@ -227,6 +330,8 @@ elements.builderOperator.addEventListener("change", renderSelectedOperator);
 elements.addStepButton.addEventListener("click", insertDraftStep);
 elements.workflow.addEventListener("input", () => invalidateReview());
 elements.layerNames.addEventListener("input", () => invalidateReview());
+elements.preflightInputs.addEventListener("input", recordPreflightDraft);
+elements.preflightButton.addEventListener("click", runPreflight);
 
 initializeTabs();
 loadServiceMetadata();

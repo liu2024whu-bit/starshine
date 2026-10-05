@@ -66,19 +66,21 @@ def main() -> int:
 
     workbench = client.get("/workbench/")
     workbench.raise_for_status()
-    assert "Workflow review workbench" in workbench.text
+    assert "Workflow assurance workbench" in workbench.text
     assert 'src="./app.js"' in workbench.text
 
     workbench_script = client.get("/workbench/app.js")
     workbench_script.raise_for_status()
     assert 'from "./api.js"' in workbench_script.text
+    assert 'from "./assurance.js"' in workbench_script.text
     assert 'from "./editor.js"' in workbench_script.text
     assert 'from "./render.js"' in workbench_script.text
 
     workbench_api = client.get("/workbench/api.js")
     workbench_api.raise_for_status()
+    assert "/api/v1/limits" in workbench_api.text
     assert "/api/v1/workflows/contract" in workbench_api.text
-    assert "/api/v1/workflows/preflight" not in workbench_api.text
+    assert "/api/v1/workflows/preflight" in workbench_api.text
     assert "/api/v1/workflows/execute" not in workbench_api.text
 
     workbench_render = client.get("/workbench/render.js")
@@ -92,6 +94,13 @@ def main() -> int:
     assert "appendDraftStep" in workbench_editor.text
     for operator in catalog["operators"]:
         assert f'"{operator["name"]}"' not in workbench_editor.text
+
+    workbench_assurance = client.get("/workbench/assurance.js")
+    workbench_assurance.raise_for_status()
+    assert "required_external_layers" in workbench_assurance.text
+    assert "buildPreflightRequest" in workbench_assurance.text
+    assert "FeatureCollection" not in workbench_assurance.text
+    assert "geometry" not in workbench_assurance.text.lower()
 
     workbench_styles = client.get("/workbench/styles.css")
     workbench_styles.raise_for_status()

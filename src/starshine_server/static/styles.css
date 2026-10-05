@@ -43,6 +43,60 @@ textarea:focus-visible {
 
 .site-header,
 .page-shell,
+
+
+.preflight-actions {
+  margin: 16px 0;
+}
+
+.preflight-binding-stack,
+.preflight-report-stack {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.preflight-limit-card,
+.preflight-binding {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+  background: #fbfcfc;
+}
+
+.preflight-binding h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+
+.preflight-layer-editor {
+  width: 100%;
+  min-height: 180px;
+  resize: vertical;
+  padding: 12px 13px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--panel);
+  color: #19312a;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.preflight-layer-editor:focus-visible {
+  outline: 3px solid rgba(18, 107, 87, 0.24);
+  outline-offset: 2px;
+}
+
+.preflight-result {
+  min-height: 320px;
+}
+
+#preflight-result > h3 {
+  margin: 22px 0 10px;
+  font-size: 0.98rem;
+}
+
 .site-footer {
   width: min(1440px, calc(100% - 40px));
   margin-inline: auto;
