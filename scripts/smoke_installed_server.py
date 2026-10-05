@@ -86,6 +86,33 @@ def main() -> int:
     assert plan.json()["required_external_layers"] == ["mask", "source"]
     assert plan.json()["terminal_layers"] == ["clipped"]
 
+    contract = client.post("/api/v1/workflows/contract", json=review_request)
+    contract.raise_for_status()
+    assert contract.json() == starshine_geo.build_workflow_contract(
+        workflow,
+        ["source", "mask"],
+    )
+
+    graph = client.post("/api/v1/workflows/graph", json=review_request)
+    graph.raise_for_status()
+    assert graph.json() == starshine_geo.build_workflow_graph(
+        workflow,
+        ["source", "mask"],
+    )
+
+    explanation = client.post("/api/v1/workflows/explain", json=review_request)
+    explanation.raise_for_status()
+    assert explanation.json() == starshine_geo.explain_workflow(
+        workflow,
+        ["source", "mask"],
+    )
+
+    plan_digest = plan.json()["plan_digest"]
+    assert contract.json()["plan_digest"] == plan_digest
+    assert graph.json()["plan_digest"] == plan_digest
+    assert explanation.json()["plan_digest"] == plan_digest
+    assert explanation.json()["graph_digest"] == graph.json()["graph_digest"]
+
     layers = {"source": _point_layer(), "mask": _mask_layer()}
     preflight = client.post(
         "/api/v1/workflows/preflight",

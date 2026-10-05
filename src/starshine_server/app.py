@@ -138,6 +138,18 @@ def create_app() -> FastAPI:
     def plan(request: WorkflowRequest) -> dict[str, Any]:
         return starshine_geo.plan_workflow(request.workflow, request.layer_names)
 
+    @app.post("/api/v1/workflows/contract")
+    def contract(request: WorkflowRequest) -> dict[str, Any]:
+        return starshine_geo.build_workflow_contract(request.workflow, request.layer_names)
+
+    @app.post("/api/v1/workflows/graph")
+    def graph(request: WorkflowRequest) -> dict[str, Any]:
+        return starshine_geo.build_workflow_graph(request.workflow, request.layer_names)
+
+    @app.post("/api/v1/workflows/explain")
+    def explain(request: WorkflowRequest) -> dict[str, Any]:
+        return starshine_geo.explain_workflow(request.workflow, request.layer_names)
+
     @app.post("/api/v1/workflows/preflight")
     def preflight(request: InlinePreflightRequest) -> dict[str, Any]:
         enforce_inline_preflight_limits(request.workflow, request.layers)
