@@ -72,6 +72,7 @@ def main() -> int:
     workbench_script = client.get("/workbench/app.js")
     workbench_script.raise_for_status()
     assert 'from "./api.js"' in workbench_script.text
+    assert 'from "./editor.js"' in workbench_script.text
     assert 'from "./render.js"' in workbench_script.text
 
     workbench_api = client.get("/workbench/api.js")
@@ -84,6 +85,13 @@ def main() -> int:
     workbench_render.raise_for_status()
     assert "textContent" in workbench_render.text
     assert "innerHTML" not in workbench_render.text
+
+    workbench_editor = client.get("/workbench/editor.js")
+    workbench_editor.raise_for_status()
+    assert "buildDraftStep" in workbench_editor.text
+    assert "appendDraftStep" in workbench_editor.text
+    for operator in catalog["operators"]:
+        assert f'"{operator["name"]}"' not in workbench_editor.text
 
     workbench_styles = client.get("/workbench/styles.css")
     workbench_styles.raise_for_status()
