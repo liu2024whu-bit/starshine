@@ -8,6 +8,7 @@ instead of creating another page.
 
 | Need | Document | Scope |
 | --- | --- | --- |
+| Understand why Starshine exists | [PRODUCT.md](PRODUCT.md) | Target problems, users, non-goals, and feature decision filter |
 | Understand the codebase | [ARCHITECTURE.md](ARCHITECTURE.md) | Module boundaries, dependency direction, invariants |
 | Install and verify a clean environment | [REPRODUCING.md](REPRODUCING.md) | End-to-end installation and reproduction |
 | Understand reproducibility evidence | [REPRODUCIBILITY.md](REPRODUCIBILITY.md) | Run manifests and provenance boundaries |
@@ -55,6 +56,7 @@ The workflow documents form one progression:
 
 ## Maintenance references
 
+- [PRODUCT.md](PRODUCT.md) is the authority for product direction and the new-work decision filter.
 - [ARCHITECTURE.md](ARCHITECTURE.md) is the authority for dependency boundaries.
 - [BENCHMARKS.md](BENCHMARKS.md) is the authority for performance-evidence interpretation.
 - [RELEASE_PROCESS.md](RELEASE_PROCESS.md) is the authority for distribution verification.

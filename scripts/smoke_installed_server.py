@@ -6,6 +6,43 @@ import starshine_geo
 from starshine_server import create_app
 
 
+def _point_layer() -> dict:
+    return {
+        "type": "FeatureCollection",
+        "starshine:crs": "EPSG:4326",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {"id": 1},
+                "geometry": {"type": "Point", "coordinates": [0.0, 0.0]},
+            }
+        ],
+    }
+
+
+def _mask_layer() -> dict:
+    return {
+        "type": "FeatureCollection",
+        "starshine:crs": "EPSG:4326",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {"id": "mask"},
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": [[
+                        [-1.0, -1.0],
+                        [1.0, -1.0],
+                        [1.0, 1.0],
+                        [-1.0, 1.0],
+                        [-1.0, -1.0],
+                    ]],
+                },
+            }
+        ],
+    }
+
+
 def main() -> int:
     client = TestClient(create_app())
 
@@ -20,6 +57,11 @@ def main() -> int:
     catalog = operators.json()
     assert catalog == starshine_geo.operator_catalog()
 
+    limits = client.get("/api/v1/limits")
+    limits.raise_for_status()
+    assert limits.json()["workflow_execution_enabled"] is False
+    assert limits.json()["inline_preflight"]["max_layers"] == 8
+
     workflow = {
         "version": 1,
         "steps": [
@@ -31,19 +73,28 @@ def main() -> int:
             }
         ],
     }
-    request = {"workflow": workflow, "layer_names": ["source", "mask"]}
+    review_request = {"workflow": workflow, "layer_names": ["source", "mask"]}
 
-    validation = client.post("/api/v1/workflows/validate", json=request)
+    validation = client.post("/api/v1/workflows/validate", json=review_request)
     validation.raise_for_status()
     assert validation.json() == {"valid": True, "workflow_version": 1}
 
-    plan = client.post("/api/v1/workflows/plan", json=request)
+    plan = client.post("/api/v1/workflows/plan", json=review_request)
     plan.raise_for_status()
     assert plan.json()["required_external_layers"] == ["mask", "source"]
     assert plan.json()["terminal_layers"] == ["clipped"]
 
+    layers = {"source": _point_layer(), "mask": _mask_layer()}
+    preflight = client.post(
+        "/api/v1/workflows/preflight",
+        json={"workflow": workflow, "layers": layers},
+    )
+    preflight.raise_for_status()
+    assert preflight.json() == starshine_geo.preflight_workflow_inputs(workflow, layers)
+    assert preflight.json()["valid"] is True
+
     print(
-        "Installed Starshine Server smoke passed for "
+        "Installed Starshine Server assurance smoke passed for "
         f"Starshine Geo {starshine_geo.__version__}."
     )
     return 0

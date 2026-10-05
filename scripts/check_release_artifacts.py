@@ -124,6 +124,7 @@ def _check_sdist(path: Path, version: str, release_version: str) -> None:
                 "/docs/INSPECTION.md",
                 "/docs/REPRODUCING.md",
                 "/docs/PLATFORM.md",
+                "/docs/PRODUCT.md",
                 "/docs/VECTOR_QUALITY_GATE.md",
                 "/docs/GEOMETRY_METRICS.md",
                 "/docs/WORKFLOW_CONTRACTS.md",

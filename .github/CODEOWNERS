@@ -96,3 +96,7 @@
 /tests/test_server_architecture.py @liu2024whu-bit
 /scripts/smoke_installed_server.py @liu2024whu-bit
 /docs/PLATFORM.md @liu2024whu-bit
+
+/docs/PRODUCT.md @liu2024whu-bit
+/src/starshine_server/limits.py @liu2024whu-bit
+/src/starshine_server/models.py @liu2024whu-bit
