@@ -186,3 +186,37 @@ After the release commit is on `main` and CI is green:
 
 A release must never be created from an unreviewed local directory or from files copied out of a
 private repository.
+
+### Promote the verified artifact with GitHub CLI
+
+An existing authenticated GitHub CLI session can complete publication when a connector does not
+expose tag or Release creation. Use the existing login; never copy tokens into repository files.
+
+Replace `RUN_ID` and `vX.Y.Z` below with the successful release-commit CI run and intended tag. First
+confirm that the run's `head_sha`, the checked-out release commit, and the dereferenced annotated tag
+all match. Create the annotated tag using Git or GitHub's Git data API; a branch with a tag-like name
+does not satisfy this requirement. Keep package-index publication separate.
+
+```bash
+gh run download RUN_ID --repo liu2024whu-bit/starshine \
+  --name starshine-geo-dist --dir verified-dist
+python scripts/check_release_readiness.py --require-release
+python scripts/check_release_artifacts.py verified-dist
+gh release create vX.Y.Z --repo liu2024whu-bit/starshine --verify-tag --draft \
+  --title "Starshine Geo X.Y.Z" --notes-file docs/releases/X.Y.Z.md \
+  verified-dist/*.whl verified-dist/*.tar.gz
+```
+
+Record the workflow run, artifact ID, ZIP digest, and individual archive SHA-256 values before upload.
+After upload, compare GitHub's asset `digest` values with those same local archive hashes. Draft
+releases are available through the release collection or release ID; the tag lookup endpoint may
+return 404 until publication. Publish only after both assets and the tag target have been verified:
+
+```bash
+gh release edit vX.Y.Z --repo liu2024whu-bit/starshine \
+  --draft=false --prerelease=false --latest
+```
+
+Record the public Release URL, annotated tag object, target commit, asset IDs, and matching hashes in
+the release issue. A failed download or digest mismatch must stop promotion; it must never trigger a
+replacement build or overwrite an existing published tag or asset.

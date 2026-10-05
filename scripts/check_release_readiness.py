@@ -132,7 +132,7 @@ def check(root: Path = ROOT, *, require_release: bool = False) -> dict[str, Any]
         "mode": mode,
         "release_version": release_version,
         "release_date": release_date,
-        "release_notes": str(notes_path.relative_to(root)),
+        "release_notes": notes_path.relative_to(root).as_posix(),
     }
 
 
