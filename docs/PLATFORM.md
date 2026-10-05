@@ -85,6 +85,29 @@ shell fragment, or plugin identifier is accepted by this execution surface.
 This is intentionally synchronous. A queue is not added until measured workloads demonstrate that
 the bounded 10-second service is insufficient.
 
+## Reference handoff before Web UI
+
+`examples/server_handoff.py` is the single user-facing reference for the current HTTP product spine.
+It deliberately uses only the Python standard library and the public HTTP API; it does not import
+`starshine_geo` or `starshine_server`, and it is not a second CLI or SDK.
+
+The example reuses the existing tracked synthetic zone/site workflow and performs the sequence:
+
+`health + limits → validate → plan → Preflight → execute → result + manifest`
+
+Before execution it requires a valid Preflight report. After execution it requires the returned
+Preflight report to match the one already reviewed and requires the execution policy to match the
+limits discovered before the run. It then writes only a compact evidence set: health, limits,
+validation, plan, Preflight, result, manifest, and a deterministic handoff summary.
+
+Focused Server CI starts a real local Uvicorn process and runs this client over HTTP. The existing
+`scripts/smoke_installed_server.py` remains the sole owner of exact-wheel Server evidence; the
+reference client does not create another release-validation path.
+
+This reference path is intentionally completed before a browser workbench. It gives Web work a
+measured interaction sequence to simplify rather than encouraging the browser to invent parallel GIS
+semantics.
+
 ## Next platform increments
 
 ### 0.8C — Web workbench

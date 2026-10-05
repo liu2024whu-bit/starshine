@@ -100,6 +100,23 @@ The reproduction harness exercises the installed CLI and public API across docto
 planning, contracts, Preflight, execution, inspection, geometry quality, the operator catalog, and
 manifest generation.
 
+For the optional Server path, start the bounded API in one terminal:
+
+```bash
+python -m pip install -e ".[server]"
+python -m uvicorn starshine_server:create_app --factory --host 127.0.0.1 --port 8000
+```
+
+Then run the standard-library reference handoff in another terminal:
+
+```bash
+python examples/server_handoff.py --output-dir server-handoff-output
+```
+
+The example uses the tracked synthetic zone/site workflow and writes validation, plan, Preflight,
+result, manifest, limits, health, and a compact handoff summary without importing Starshine Python
+APIs in the client. See [PLATFORM.md](docs/PLATFORM.md) for the service boundary.
+
 ## Documentation
 
 Use the [documentation index](docs/README.md) as the ownership map. The most common entry points are:
