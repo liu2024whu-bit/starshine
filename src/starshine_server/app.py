@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 import starshine_geo
 
@@ -162,6 +164,13 @@ def create_app() -> FastAPI:
             request.layers,
             output_layer=request.output_layer,
         )
+
+    workbench_directory = Path(__file__).with_name("static")
+    app.mount(
+        "/workbench",
+        StaticFiles(directory=workbench_directory, html=True),
+        name="workbench",
+    )
 
     return app
 

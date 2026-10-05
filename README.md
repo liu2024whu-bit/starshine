@@ -107,6 +107,10 @@ python -m pip install -e ".[server]"
 python -m uvicorn starshine_server:create_app --factory --host 127.0.0.1 --port 8000
 ```
 
+Open `http://127.0.0.1:8000/workbench/` for the packaged review-only Workbench. It edits Workflow
+JSON and external layer names, then presents the canonical catalog, plan, contract, graph, and
+explanation returned by the Server; it does not upload or execute feature data.
+
 Then run the standard-library reference handoff in another terminal:
 
 ```bash
