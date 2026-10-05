@@ -139,13 +139,14 @@ function renderStepAssumptions(container, explanation) {
   container.appendChild(stack);
 }
 
-function renderEvidenceChain(container, reports, preflight) {
+function renderEvidenceChain(container, reports, preflight, execution) {
   container.appendChild(textElement("h3", "Pre-execution evidence chain"));
 
   const status = document.createElement("div");
   status.className = "field-meta";
   status.appendChild(metaChip("data-free review: current"));
   status.appendChild(metaChip(`Preflight evidence: ${preflight ? "current" : "not available"}`));
+  status.appendChild(metaChip(`result manifest: ${execution ? "current" : "not available"}`));
   container.appendChild(status);
 
   const digests = document.createElement("div");
@@ -158,6 +159,20 @@ function renderEvidenceChain(container, reports, preflight) {
   digests.appendChild(digestRow("Explanation", reports.explain.explanation_digest));
   digests.appendChild(
     digestRow("Preflight", preflight ? preflight.preflight_digest : "not available"),
+  );
+  digests.appendChild(
+    digestRow(
+      "Manifest workflow",
+      execution && execution.manifest ? execution.manifest.workflow_digest : "not available",
+    ),
+  );
+  digests.appendChild(
+    digestRow(
+      "Result layer",
+      execution && execution.manifest && execution.manifest.output_layer
+        ? execution.manifest.output_layer.digest
+        : "not available",
+    ),
   );
   container.appendChild(digests);
 }
@@ -173,7 +188,7 @@ export function resetCrsEvidence(
   container.appendChild(placeholder);
 }
 
-export function renderCrsEvidence(container, reports, preflight = null) {
+export function renderCrsEvidence(container, reports, preflight = null, execution = null) {
   clearNode(container);
 
   const notice = document.createElement("aside");
@@ -181,18 +196,22 @@ export function renderCrsEvidence(container, reports, preflight = null) {
   notice.appendChild(
     textElement(
       "strong",
-      "These are canonical pre-execution assumptions and evidence, not a result manifest.",
+      execution
+        ? "Canonical pre-execution evidence and post-execution Core manifest evidence are current."
+        : "These are canonical pre-execution assumptions and evidence; no result manifest is current.",
     ),
   );
   notice.appendChild(
     textElement(
       "span",
-      "Actual supplied-layer CRS is shown after Preflight. Post-execution result provenance requires the Core manifest and is not available in the current browser flow because the Workbench does not execute workflows.",
+      execution
+        ? "Actual supplied-layer CRS comes from Preflight. Result provenance below comes only from the Core-generated manifest; the browser does not infer or recompute it."
+        : "Actual supplied-layer CRS is shown after Preflight. Result provenance appears only after an explicit bounded execution returns the Core manifest.",
     ),
   );
   container.appendChild(notice);
 
   renderExternalLayerAssumptions(container, reports.contract);
   renderStepAssumptions(container, reports.explain);
-  renderEvidenceChain(container, reports, preflight);
+  renderEvidenceChain(container, reports, preflight, execution);
 }

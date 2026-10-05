@@ -27,3 +27,9 @@ export {
   renderCrsEvidence,
   resetCrsEvidence,
 } from "./render_assumptions.js";
+
+export {
+  renderExecutionControls,
+  renderExecutionResult,
+  resetExecutionResult,
+} from "./render_execution.js";

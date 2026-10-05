@@ -108,8 +108,10 @@ python -m uvicorn starshine_server:create_app --factory --host 127.0.0.1 --port 
 ```
 
 Open `http://127.0.0.1:8000/workbench/` for the packaged assurance Workbench. It supports
-catalog-assisted Workflow drafting, canonical plan/contract/graph/explain review, and bounded inline
-GeoJSON Preflight. It does not provide file upload, workflow execution, persistence, or a map.
+catalog-assisted Workflow drafting, canonical plan/contract/graph/explain review, bounded inline
+GeoJSON Preflight, and explicit execution of the current passing Preflight through the existing
+isolated Server boundary. Canonical result + manifest evidence is shown after execution. It still
+does not provide file upload, persistence, or a map.
 
 Then run the standard-library reference handoff in another terminal:
 
