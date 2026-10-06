@@ -49,7 +49,7 @@ assurance—before introducing execution lifecycle infrastructure.
 - invalid data remains a normal Preflight report with `valid: false` when the Core can diagnose it;
 - structurally invalid Workflows retain the stable Workflow diagnostic response;
 - Server capacity limits return HTTP 413 before spatial execution;
-- workflow execution remains explicitly disabled.
+- workflow execution remains explicitly disabled in the assurance-only increment.
 
 Current inline Preflight limits are intentionally small: a 2 MiB request body, at most 8 named
 layers, 16 Workflow steps, 2,000 features per layer, and 5,000 features in total. These are service
@@ -57,15 +57,35 @@ boundaries, not claims about Core algorithm capacity.
 
 See [PRODUCT.md](PRODUCT.md) for why assurance precedes upload/job infrastructure.
 
+## Bounded synchronous execution
+
+The next increment enables **small inline GeoJSON execution** only after canonical Preflight passes:
+
+- `POST /api/v1/workflows/execute` requires an explicit Workflow-produced output layer;
+- the HTTP process never calls `run_workflow()` directly;
+- the Server serializes the reviewed request into a private temporary workspace and marks the request
+  artifact read-only before execution;
+- the only child command is the fixed `python -I -m starshine_server.worker` entrypoint with
+  Server-created request/response paths and `shell=False`;
+- the child environment drops common credential-bearing variables;
+- a cross-platform supervisor enforces 10 seconds wall time and 512 MiB resident memory across the
+  worker process tree;
+- the serialized HTTP result is capped at 8 MiB;
+- timeout or memory failure kills the worker tree;
+- failed Preflight returns before a child is started;
+- a successful response returns the selected GeoJSON result, the canonical Core manifest, the
+  canonical Preflight report, and the static execution policy.
+
+The execution endpoint reuses the same 2 MiB request, 8-layer, 16-step, 2,000-features-per-layer and
+5,000-total-features limits as inline Preflight. These values are service policy, not Core capacity.
+
+The temporary workspace is deleted after every request. No client filesystem path, URL, module name,
+shell fragment, or plugin identifier is accepted by this execution surface.
+
+This is intentionally synchronous. A queue is not added until measured workloads demonstrate that
+the bounded 10-second service is insufficient.
+
 ## Next platform increments
-
-### 0.8B — bounded execution
-
-Execution is the next separate capability. Before enabling it, Starshine still needs an explicit
-per-job workspace, immutable inputs, output limits, and a credible execution-time/isolation boundary.
-GeoJSON should remain the first execution format; explicit GeoPackage layers can follow. Every
-execution path must run the existing Preflight and Workflow engine and return result + manifest
-evidence.
 
 ### 0.8C — Web workbench
 

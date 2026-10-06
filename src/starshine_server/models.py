@@ -23,4 +23,10 @@ class InlinePreflightRequest(BaseModel):
     layers: dict[str, dict[str, Any]] = Field(min_length=1)
 
 
-__all__ = ["InlinePreflightRequest", "WorkflowRequest"]
+class InlineExecutionRequest(InlinePreflightRequest):
+    """Bounded execution request with one explicit produced output layer."""
+
+    output_layer: str = Field(min_length=1, max_length=128)
+
+
+__all__ = ["InlineExecutionRequest", "InlinePreflightRequest", "WorkflowRequest"]
