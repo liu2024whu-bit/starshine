@@ -93,11 +93,30 @@ def test_valid_json_values_and_bytes_survive_transport(content_type, monkeypatch
     monkeypatch.setattr(starshine_geo, "preflight_workflow_inputs", preflight)
     headers = {"content-type": content_type} if content_type else {}
     body = json.dumps(payload, ensure_ascii=False).encode()
+    if content_type is None:
+        # Newer FastAPI requires a JSON media type. The middleware must not
+        # silently add one or change the framework's content-negotiation policy.
+        baseline_app = create_app()
+        baseline_app.user_middleware = [
+            middleware for middleware in baseline_app.user_middleware
+            if middleware.cls is not RequestBodyLimitMiddleware
+        ]
+        expected = TestClient(baseline_app).post(
+            "/api/v1/workflows/preflight", content=iter([body[:25], body[25:]]),
+        )
+        expected_calls = received.copy()
+        received.clear()
+
     response = TestClient(create_app()).post(
         "/api/v1/workflows/preflight", content=iter([body[:25], body[25:]]), headers=headers,
     )
-    assert response.status_code == 200
-    assert received == [payload]
+    if content_type is None:
+        assert response.status_code == expected.status_code
+        assert response.json() == expected.json()
+        assert received == expected_calls
+    else:
+        assert response.status_code == 200
+        assert received == [payload]
 
 
 def test_regular_json_syntax_errors_keep_framework_diagnostics():
