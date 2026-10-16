@@ -52,6 +52,22 @@ def main() -> int:
     assert payload["status"] == "ok"
     assert payload["core_version"] == starshine_geo.__version__
 
+    # Exercise the installed middleware, not only source-checkout boundary tests.
+    oversized = client.post(
+        "/api/v1/workflows/preflight",
+        content=iter([b"x" * (2 * 1024 * 1024), b"x"]),
+        headers={"content-type": "application/json"},
+    )
+    assert oversized.status_code == 413
+    assert oversized.json()["code"] == "request_body_too_large"
+    invalid_number = client.post(
+        "/api/v1/workflows/preflight",
+        content=b'{"workflow":NaN}',
+        headers={"content-type": "application/json"},
+    )
+    assert invalid_number.status_code == 400
+    assert invalid_number.json()["error"] == "invalid_json"
+
     operators = client.get("/api/v1/operators")
     operators.raise_for_status()
     catalog = operators.json()

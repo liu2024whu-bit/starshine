@@ -71,6 +71,7 @@ def test_limits_endpoint_makes_the_inline_boundary_client_visible() -> None:
     assert response.json() == {
         "inline_preflight": {
             "max_request_bytes": 2 * 1024 * 1024,
+            "max_json_depth": 64,
             "max_layers": 8,
             "max_layer_name_chars": 128,
             "max_workflow_steps": 16,

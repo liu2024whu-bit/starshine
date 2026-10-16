@@ -55,6 +55,23 @@ Current inline Preflight limits are intentionally small: a 2 MiB request body, a
 layers, 16 Workflow steps, 2,000 features per layer, and 5,000 features in total. These are service
 boundaries, not claims about Core algorithm capacity.
 
+The byte limit counts actual received bytes, including chunked requests without `Content-Length`
+and requests whose declared length understates their body. The middleware buffers no more than the
+limit before invoking the framework; it rejects an oversized stream immediately without draining
+its remaining body or calling Core. A client disconnect before the body completes aborts processing.
+
+JSON transport additionally permits at most 64 nested object/array levels (the root is level 1),
+published as `max_json_depth`. Non-finite numeric values (including floating-point overflow),
+unpaired Unicode surrogates, and decoder representation failures return a bounded HTTP 400
+`invalid_json` response without reflecting supplied data. Decoded JSON that exceeds the depth limit
+returns HTTP 413; nesting that exhausts the decoder first returns HTTP 400. Ordinary malformed JSON
+retains the framework's HTTP 422 syntax diagnostics. This is transport validation only: geometry,
+CRS, field contracts and Workflow meaning remain Core responsibilities.
+
+These are per-request boundaries, not a deployment-wide concurrency or slow-client limit. Keep the
+unauthenticated development server on loopback; an external deployment still needs explicit access,
+connection/time and concurrency controls before being opened to other users.
+
 See [PRODUCT.md](PRODUCT.md) for why assurance precedes upload/job infrastructure.
 
 ## Next platform increments
