@@ -130,14 +130,17 @@ HTTP handlers; it is to make the existing auditable core usable from a service a
 - [x] preserve Core Workflow diagnostics at the HTTP boundary
 - [x] enforce Core/Server dependency direction with architecture tests
 - [x] verify the server from source and from the exact built wheel
-- [ ] merge the foundation only after 0.7.0 has been tagged and its release evidence accepted
+- [x] merge the foundation after 0.7.0 publication and accepted release evidence (PR #127)
 
-### 0.8B — bounded execution service
+### 0.8B — data-aware assurance, then bounded execution
 
-- [ ] define hard request, feature-count, output-size, and execution-time limits
-- [ ] add isolated per-job workspaces and immutable uploaded inputs
-- [ ] accept GeoJSON first, then explicit GeoPackage layers
-- [ ] require the existing Preflight path before execution
+- [x] codify the product goal: assurance and reproducibility rather than operator or infrastructure count
+- [x] expose bounded inline GeoJSON Preflight through the canonical Core report
+- [x] publish request/layer/step/feature limits and keep workflow execution explicitly disabled
+- [ ] define output-size and credible execution-time/isolation limits before enabling execution
+- [ ] add isolated per-job workspaces and immutable execution inputs
+- [ ] accept GeoJSON execution first, then explicit GeoPackage layers
+- [ ] require the existing Preflight path before every execution
 - [ ] return selected result + manifest evidence without exposing server filesystem paths
 - [ ] add a job abstraction only when measured runtime requires asynchronous execution
 
