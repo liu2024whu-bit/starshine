@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import subprocess
+import sys
+from unittest.mock import patch
+
+import psutil
 from fastapi.testclient import TestClient
 
 import starshine_geo
 from starshine_server import create_app
+from starshine_server.execution import ExecutionBoundaryError, _supervise_process
 
 
 def _point_layer() -> dict:
@@ -51,6 +57,53 @@ def main() -> int:
     payload = health.json()
     assert payload["status"] == "ok"
     assert payload["core_version"] == starshine_geo.__version__
+
+    # Exercise the installed middleware, not only source-checkout boundary tests.
+    oversized = client.post(
+        "/api/v1/workflows/preflight",
+        content=iter([b"x" * (2 * 1024 * 1024), b"x"]),
+        headers={"content-type": "application/json"},
+    )
+    assert oversized.status_code == 413
+    assert oversized.json()["code"] == "request_body_too_large"
+    invalid_number = client.post(
+        "/api/v1/workflows/preflight",
+        content=b'{"workflow":NaN}',
+        headers={"content-type": "application/json"},
+    )
+    assert invalid_number.status_code == 400
+    assert invalid_number.json()["error"] == "invalid_json"
+
+    execution_invalid_number = client.post(
+        "/api/v1/workflows/execute",
+        content=b'{"workflow":NaN}',
+        headers={"content-type": "application/json"},
+    )
+    assert execution_invalid_number.status_code == 400
+    assert execution_invalid_number.json()["error"] == "invalid_json"
+
+    # Prove the installed supervisor also stops on unavailable monitoring.
+    child = subprocess.Popen(
+        [sys.executable, "-c", "import time; time.sleep(10)"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    try:
+        with patch(
+            "starshine_server.execution._process_tree_rss",
+            side_effect=psutil.AccessDenied(pid=child.pid),
+        ):
+            try:
+                _supervise_process(child, timeout_seconds=2, memory_limit_bytes=512 * 1024 * 1024)
+            except ExecutionBoundaryError as exc:
+                assert exc.code == "worker_supervision_failed"
+            else:
+                raise AssertionError("monitoring failure must stop execution")
+        assert child.returncode is not None
+    finally:
+        if child.poll() is None:
+            child.kill()
+        child.wait(timeout=2)
 
     operators = client.get("/api/v1/operators")
     operators.raise_for_status()

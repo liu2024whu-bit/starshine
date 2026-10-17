@@ -24,7 +24,6 @@ from .limits import (
 )
 
 _POLL_SECONDS = 0.02
-_MAX_INTERNAL_ERROR_BYTES = 8 * 1024
 _SENSITIVE_ENV_PARTS = (
     "API_KEY",
     "CREDENTIAL",
@@ -88,31 +87,81 @@ def _safe_worker_environment() -> dict[str, str]:
 
 
 def _process_tree_rss(process: psutil.Process) -> int:
-    """Return resident bytes for the worker and any descendants that still exist."""
-    processes = [process]
-    with suppress(psutil.Error):
-        processes.extend(process.children(recursive=True))
-
-    total = 0
-    for item in processes:
-        with suppress(psutil.Error):
-            total += item.memory_info().rss
+    """Count live resident bytes; inability to inspect a live process is not zero."""
+    total = process.memory_info().rss
+    for descendant in process.children(recursive=True):
+        try:
+            total += descendant.memory_info().rss
+        except psutil.NoSuchProcess:
+            # A descendant can exit between enumeration and measurement.
+            continue
     return total
 
 
-def _terminate_process_tree(process: psutil.Process) -> None:
-    """Kill descendants before the worker so an execution boundary cannot leave children behind."""
-    descendants: list[psutil.Process] = []
-    with suppress(psutil.Error):
-        descendants = process.children(recursive=True)
+def _cleanup_error() -> ExecutionBoundaryError:
+    return ExecutionBoundaryError(
+        code="worker_cleanup_failed",
+        message="The service could not confirm execution worker cleanup.",
+        status_code=500,
+    )
 
-    for child in reversed(descendants):
-        with suppress(psutil.Error):
-            child.kill()
-    with suppress(psutil.Error):
-        process.kill()
-    with suppress(psutil.Error):
-        psutil.wait_procs([*descendants, process], timeout=2)
+
+def _terminate_process_tree(process: psutil.Process) -> None:
+    """Attempt all known kills and report incomplete cleanup instead of hiding it."""
+    descendants: list[psutil.Process] = []
+    failed = False
+    try:
+        descendants = process.children(recursive=True)
+    except psutil.NoSuchProcess:
+        return
+    except psutil.Error:
+        failed = True
+
+    for item in [*reversed(descendants), process]:
+        try:
+            item.kill()
+        except psutil.NoSuchProcess:
+            continue
+        except psutil.Error:
+            failed = True
+    try:
+        _, alive = psutil.wait_procs([*descendants, process], timeout=2)
+        failed = failed or bool(alive)
+    except psutil.Error:
+        failed = True
+    if failed:
+        raise _cleanup_error()
+
+
+def _cleanup_worker(
+    child: subprocess.Popen[bytes], process: psutil.Process | None = None,
+) -> None:
+    """Always fall back to the owned Popen handle and reap, even if Psutil fails."""
+    failed = False
+    try:
+        if process is None:
+            try:
+                process = psutil.Process(child.pid)
+            except psutil.NoSuchProcess:
+                pass
+        if process is not None:
+            _terminate_process_tree(process)
+    except (psutil.Error, ExecutionBoundaryError):
+        failed = True
+    finally:
+        # A process-tree inspection error must not skip direct-child cleanup.
+        try:
+            if child.poll() is None:
+                child.kill()
+        except OSError:
+            failed = True
+        finally:
+            try:
+                child.wait(timeout=2)
+            except (OSError, subprocess.TimeoutExpired):
+                failed = True
+    if failed:
+        raise _cleanup_error()
 
 
 def _supervise_process(
@@ -121,58 +170,51 @@ def _supervise_process(
     timeout_seconds: float,
     memory_limit_bytes: int,
 ) -> None:
-    """Wait for a child while enforcing wall-clock and resident-memory boundaries."""
+    """Enforce limits and fail closed when live-process monitoring is unavailable."""
     started = time.monotonic()
-    if child.poll() is not None:
-        return
-
+    process: psutil.Process | None = None
     try:
-        process = psutil.Process(child.pid)
-    except psutil.NoSuchProcess:
         if child.poll() is not None:
             return
-        raise ExecutionBoundaryError(
-            code="worker_supervision_failed",
-            message="The execution worker could not be supervised safely.",
-            status_code=500,
-        ) from None
+        process = psutil.Process(child.pid)
+        while child.poll() is None:
+            elapsed = time.monotonic() - started
+            if elapsed > timeout_seconds:
+                raise ExecutionBoundaryError(
+                    code="execution_timeout",
+                    message="Workflow execution exceeded the service wall-clock limit.",
+                    status_code=504,
+                    limit=int(timeout_seconds),
+                    actual=int(elapsed),
+                )
+
+            resident_bytes = _process_tree_rss(process)
+            if resident_bytes > memory_limit_bytes:
+                raise ExecutionBoundaryError(
+                    code="execution_memory_limit",
+                    message="Workflow execution exceeded the service resident-memory limit.",
+                    status_code=422,
+                    limit=memory_limit_bytes,
+                    actual=resident_bytes,
+                )
+            time.sleep(_POLL_SECONDS)
+    except psutil.NoSuchProcess:
+        # Exiting between poll and inspection is normal only if Popen confirms it.
+        if child.poll() is None:
+            raise ExecutionBoundaryError(
+                code="worker_supervision_failed",
+                message="The execution worker could not be supervised safely.",
+                status_code=500,
+            ) from None
     except psutil.Error as exc:
-        with suppress(Exception):
-            child.kill()
         raise ExecutionBoundaryError(
             code="worker_supervision_failed",
             message="The execution worker could not be supervised safely.",
             status_code=500,
         ) from exc
-
-    while child.poll() is None:
-        elapsed = time.monotonic() - started
-        if elapsed > timeout_seconds:
-            _terminate_process_tree(process)
-            with suppress(Exception):
-                child.wait(timeout=2)
-            raise ExecutionBoundaryError(
-                code="execution_timeout",
-                message="Workflow execution exceeded the service wall-clock limit.",
-                status_code=504,
-                limit=int(timeout_seconds),
-                actual=int(elapsed),
-            )
-
-        resident_bytes = _process_tree_rss(process)
-        if resident_bytes > memory_limit_bytes:
-            _terminate_process_tree(process)
-            with suppress(Exception):
-                child.wait(timeout=2)
-            raise ExecutionBoundaryError(
-                code="execution_memory_limit",
-                message="Workflow execution exceeded the service resident-memory limit.",
-                status_code=422,
-                limit=memory_limit_bytes,
-                actual=resident_bytes,
-            )
-
-        time.sleep(_POLL_SECONDS)
+    finally:
+        if child.poll() is None:
+            _cleanup_worker(child, process)
 
 
 def _write_worker_request(path: Path, payload: dict[str, Any]) -> None:
@@ -228,7 +270,6 @@ def _run_worker(payload: dict[str, Any]) -> dict[str, Any]:
         workspace = Path(directory)
         request_path = workspace / "request.json"
         response_path = workspace / "response.json"
-        stderr_path = workspace / "worker.stderr"
         _write_worker_request(request_path, payload)
 
         command = [
@@ -242,39 +283,37 @@ def _run_worker(payload: dict[str, Any]) -> dict[str, Any]:
             str(response_path),
         ]
 
+        child: subprocess.Popen[bytes] | None = None
         try:
-            with stderr_path.open("wb") as stderr_stream:
-                child = subprocess.Popen(
-                    command,
-                    cwd=workspace,
-                    stdin=subprocess.DEVNULL,
-                    stdout=subprocess.DEVNULL,
-                    stderr=stderr_stream,
-                    env=_safe_worker_environment(),
-                    shell=False,
-                )
-                _supervise_process(
-                    child,
-                    timeout_seconds=MAX_EXECUTION_SECONDS,
-                    memory_limit_bytes=MAX_EXECUTION_MEMORY_BYTES,
-                )
-                return_code = child.wait(timeout=2)
+            child = subprocess.Popen(
+                command,
+                cwd=workspace,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                # Do not retain unbounded or unsanitized worker diagnostics.
+                stderr=subprocess.DEVNULL,
+                env=_safe_worker_environment(),
+                shell=False,
+            )
+            _supervise_process(
+                child,
+                timeout_seconds=MAX_EXECUTION_SECONDS,
+                memory_limit_bytes=MAX_EXECUTION_MEMORY_BYTES,
+            )
+            return_code = child.wait(timeout=2)
         finally:
-            with suppress(OSError):
-                request_path.chmod(stat.S_IWUSR | stat.S_IRUSR)
+            try:
+                if child is not None and child.poll() is None:
+                    # Also owns cleanup if supervision itself exits unexpectedly.
+                    _cleanup_worker(child)
+            finally:
+                with suppress(OSError):
+                    request_path.chmod(stat.S_IWUSR | stat.S_IRUSR)
 
         if return_code != 0:
-            diagnostic = ""
-            with suppress(OSError):
-                diagnostic = stderr_path.read_text(encoding="utf-8", errors="replace")
-            diagnostic = diagnostic[:_MAX_INTERNAL_ERROR_BYTES]
             raise ExecutionBoundaryError(
                 code="worker_failed",
-                message=(
-                    "The isolated execution worker failed."
-                    if not diagnostic
-                    else "The isolated execution worker failed; details are retained internally."
-                ),
+                message="The isolated execution worker failed.",
                 status_code=500,
             )
 

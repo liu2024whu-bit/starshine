@@ -55,6 +55,23 @@ Current inline Preflight limits are intentionally small: a 2 MiB request body, a
 layers, 16 Workflow steps, 2,000 features per layer, and 5,000 features in total. These are service
 boundaries, not claims about Core algorithm capacity.
 
+The byte limit counts actual received bytes, including chunked requests without `Content-Length`
+and requests whose declared length understates their body. The middleware buffers no more than the
+limit before invoking the framework; it rejects an oversized stream immediately without draining
+its remaining body or calling Core. A client disconnect before the body completes aborts processing.
+
+JSON transport additionally permits at most 64 nested object/array levels (the root is level 1),
+published as `max_json_depth`. Non-finite numeric values (including floating-point overflow),
+unpaired Unicode surrogates, and decoder representation failures return a bounded HTTP 400
+`invalid_json` response without reflecting supplied data. Decoded JSON that exceeds the depth limit
+returns HTTP 413; nesting that exhausts the decoder first returns HTTP 400. Ordinary malformed JSON
+retains the framework's HTTP 422 syntax diagnostics. This is transport validation only: geometry,
+CRS, field contracts and Workflow meaning remain Core responsibilities.
+
+These are per-request boundaries, not a deployment-wide concurrency or slow-client limit. Keep the
+unauthenticated development server on loopback; an external deployment still needs explicit access,
+connection/time and concurrency controls before being opened to other users.
+
 See [PRODUCT.md](PRODUCT.md) for why assurance precedes upload/job infrastructure.
 
 ## Bounded synchronous execution
@@ -71,7 +88,10 @@ The next increment enables **small inline GeoJSON execution** only after canonic
 - a cross-platform supervisor enforces 10 seconds wall time and 512 MiB resident memory across the
   worker process tree;
 - the serialized HTTP result is capped at 8 MiB;
-- timeout or memory failure kills the worker tree;
+- timeout, memory-limit, monitoring failure, or an unexpected supervision exit triggers bounded
+  process-tree termination plus a direct-child kill/wait fallback;
+- an unavailable live-process memory reading is an error, never a zero-memory measurement;
+- incomplete cleanup returns a service failure rather than reporting a successful execution;
 - failed Preflight returns before a child is started;
 - a successful response returns the selected GeoJSON result, the canonical Core manifest, the
   canonical Preflight report, and the static execution policy.
@@ -79,7 +99,14 @@ The next increment enables **small inline GeoJSON execution** only after canonic
 The execution endpoint reuses the same 2 MiB request, 8-layer, 16-step, 2,000-features-per-layer and
 5,000-total-features limits as inline Preflight. These values are service policy, not Core capacity.
 
-The temporary workspace is deleted after every request. No client filesystem path, URL, module name,
+Worker stdout and stderr are discarded. The service returns a stable worker-failure code without
+reading, persisting, or echoing unsanitized diagnostics; it does not claim those details are retained.
+The temporary workspace is deleted after each completed cleanup. If the operating system denies
+termination or a process cannot be reaped within the cleanup timeout, the service reports
+`worker_cleanup_failed`; it cannot promise operating-system containment or successful cleanup in
+that case. A supervised process tree is not an OS sandbox or a global concurrency control.
+
+No client filesystem path, URL, module name,
 shell fragment, or plugin identifier is accepted by this execution surface.
 
 This is intentionally synchronous. A queue is not added until measured workloads demonstrate that

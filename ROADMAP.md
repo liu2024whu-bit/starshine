@@ -130,7 +130,7 @@ HTTP handlers; it is to make the existing auditable core usable from a service a
 - [x] preserve Core Workflow diagnostics at the HTTP boundary
 - [x] enforce Core/Server dependency direction with architecture tests
 - [x] verify the server from source and from the exact built wheel
-- [ ] merge the foundation only after 0.7.0 has been tagged and its release evidence accepted
+- [x] merge the foundation after 0.7.0 publication and accepted release evidence (PR #127)
 
 ### 0.8B — data-aware assurance, then bounded execution
 
