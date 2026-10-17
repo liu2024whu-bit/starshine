@@ -112,6 +112,45 @@ shell fragment, or plugin identifier is accepted by this execution surface.
 This is intentionally synchronous. A queue is not added until measured workloads demonstrate that
 the bounded 10-second service is insufficient.
 
+## Reference handoff before Web UI
+
+`examples/server_handoff.py` is the single user-facing reference for the current HTTP product spine.
+It deliberately uses only the Python standard library and the public HTTP API; it does not import
+`starshine_geo` or `starshine_server`, and it is not a second CLI or SDK.
+
+The example reuses the existing tracked synthetic zone/site workflow and performs the sequence:
+
+`health + limits → validate → plan → Preflight → execute → result + manifest`
+
+Before execution it requires a valid Preflight report with the same workflow and plan digests as
+the reviewed plan. After execution it compares the returned Preflight and execution policy with the
+already-reviewed reports, and checks manifest workflow/version/output identifiers. These are
+cross-report continuity checks, not a second GIS validator or independent verification of the
+server's cryptographic claims. The fixed example writes health, limits, validation, plan, Preflight,
+result, manifest and a deterministic handoff summary.
+
+The client reads at most 8 MiB plus one overflow-detection byte per response, rejects unsupported
+JSON representations, and closes HTTP error bodies without reading or echoing raw diagnostics.
+`--timeout` must be finite and positive; it is a blocking-I/O timeout, not a whole-workflow deadline.
+Expected failures produce a concise stderr message and a nonzero exit code rather than a traceback.
+
+Choose a new output directory per attempt. Existing paths are refused before HTTP work and checked
+again with exclusive directory creation before writing, so two runs cannot silently overwrite each
+other's evidence. `handoff.json` is written last, only after every other file succeeds. A disk/write
+failure may leave an incomplete directory without that completion marker; preserve it for inspection
+or choose another destination, but do not present it as a successful run. This is not a transactional
+database or a durable-storage guarantee.
+
+Focused Server CI starts a real local Uvicorn process and runs the client over HTTP. The existing
+`scripts/smoke_installed_server.py` owns the reusable socket/teardown harness, used both by source
+tests and by exact-wheel smoke jobs. The smoke artifact includes the same fixed client/workflow/
+synthetic inputs, so installed-wheel jobs exercise the client against the installed Server without a
+repository checkout. No additional smoke script or generic SDK is introduced.
+
+This reference path is intentionally completed before a browser workbench. It gives Web work a
+measured interaction sequence to simplify rather than encouraging the browser to invent parallel GIS
+semantics.
+
 ## Next platform increments
 
 ### 0.8C — Web workbench
