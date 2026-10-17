@@ -156,7 +156,7 @@ def test_mismatched_preflight_cannot_execute(tmp_path, handoff_responses, field)
 
 @pytest.mark.parametrize("field", ["workflow_digest", "starshine_version", "output_layer"])
 def test_mismatched_manifest_is_not_published(tmp_path, handoff_responses, field):
-    client, reports, calls, request = handoff_responses
+    client, reports, _calls, request = handoff_responses
     reports["/api/v1/workflows/execute"]["manifest"][field] = "another-run"
     with pytest.raises(client.HandoffError, match="manifest"):
         client.run_handoff("http://unused.invalid", tmp_path / "run", request_json=request)
@@ -165,7 +165,7 @@ def test_mismatched_manifest_is_not_published(tmp_path, handoff_responses, field
 
 @pytest.mark.parametrize("existing", ["file", "empty-directory", "previous-run"])
 def test_existing_destination_is_preserved_before_http(tmp_path, handoff_responses, existing):
-    client, reports, calls, request = handoff_responses
+    client, _reports, calls, request = handoff_responses
     output = tmp_path / "run"
     if existing == "file":
         output.write_text("do not replace", encoding="utf-8")
@@ -185,7 +185,7 @@ def test_existing_destination_is_preserved_before_http(tmp_path, handoff_respons
 
 
 def test_write_failure_never_publishes_success_marker(tmp_path, handoff_responses, monkeypatch):
-    client, reports, calls, request = handoff_responses
+    client, _reports, _calls, request = handoff_responses
     original = client._write_json
 
     def fail(path, value):
@@ -200,7 +200,7 @@ def test_write_failure_never_publishes_success_marker(tmp_path, handoff_response
 
 
 def test_new_destination_collision_during_http_does_not_overwrite(tmp_path, handoff_responses):
-    client, reports, calls, request = handoff_responses
+    client, _reports, _calls, request = handoff_responses
     output = tmp_path / "run"
 
     def concurrent(base, path, **kwargs):
@@ -266,7 +266,7 @@ def test_invalid_response_is_not_evidence(monkeypatch, body):
 
 @pytest.mark.parametrize("timeout", [0, -1, float("inf"), float("nan")])
 def test_invalid_timeout_stops_before_http(tmp_path, handoff_responses, timeout):
-    client, reports, calls, request = handoff_responses
+    client, _reports, calls, request = handoff_responses
     with pytest.raises(client.HandoffError, match="timeout"):
         client.run_handoff("http://unused.invalid", tmp_path / "run", timeout=timeout,
                            request_json=request)
