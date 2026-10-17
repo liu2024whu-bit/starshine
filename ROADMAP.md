@@ -7,8 +7,10 @@ surface can absorb them.
 Roadmap headings describe development phases, not proof that every matching package version was
 published. The current platform development line builds `0.8.0.dev0`; the latest stable release is
 [`0.7.0`](https://github.com/liu2024whu-bit/starshine/releases/tag/v0.7.0), published from the verified
-core commit without rebuilding its CI artifacts. Platform implementations remain on the stacked draft
-PR line until their reviews and synchronization evidence are complete.
+core commit without rebuilding its CI artifacts. This revision includes the optional API foundation,
+Preflight, bounded execution and reference HTTP handoff. Browser implementations remain on the
+stacked PR line pending their own integration and rendered acceptance; the source in this revision
+is not a claim that the entire 0.8 platform is released.
 
 ## 0.1 — Public core
 
@@ -94,7 +96,7 @@ distribution/reproduction coverage.
 
 ## 0.7 — Stabilize the bounded analysis core
 
-The current 0.7 development line is a stabilization phase, not a mandate to add more overlay
+The completed 0.7 line was a stabilization phase, not a mandate to add more overlay
 operations. The priority is to prove that the bounded analysis core is understandable, installable,
 reproducible, and releasable before expanding the operator catalog again.
 
@@ -130,7 +132,7 @@ HTTP handlers; it is to make the existing auditable core usable from a service a
 - [x] preserve Core Workflow diagnostics at the HTTP boundary
 - [x] enforce Core/Server dependency direction with architecture tests
 - [x] verify the server from source and from the exact built wheel
-- [ ] merge the foundation only after 0.7.0 has been tagged and its release evidence accepted
+- [x] merge the foundation after 0.7.0 publication and accepted release evidence (PR #127)
 
 ### 0.8B — data-aware assurance, then bounded execution
 

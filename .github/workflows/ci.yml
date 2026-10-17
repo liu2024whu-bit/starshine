@@ -69,12 +69,11 @@ jobs:
           -e ".[dev,server,server-test]"
       - run: >-
           ruff check src/starshine_server examples/server_handoff.py
-          tests/test_server_api.py tests/test_server_execution.py
+          tests/test_server_api.py tests/test_server_transport.py tests/test_server_execution.py
           tests/test_server_handoff.py tests/test_server_architecture.py
       - run: >-
-          python -m pytest -q tests/test_server_api.py
-          tests/test_server_execution.py tests/test_server_handoff.py
-          tests/test_server_architecture.py
+          python -m pytest -q tests/test_server_api.py tests/test_server_transport.py
+          tests/test_server_execution.py tests/test_server_handoff.py tests/test_server_architecture.py
 
   geopackage:
     runs-on: ubuntu-latest
@@ -223,6 +222,10 @@ jobs:
             scripts/smoke_installed_geopackage.py
             scripts/smoke_installed_server.py
             scripts/reproduce_installed_core.py
+            examples/server_handoff.py
+            examples/workflow.json
+            examples/data/sites.geojson
+            examples/data/zones.geojson
           if-no-files-found: error
           retention-days: 14
 
@@ -580,4 +583,3 @@ jobs:
 
           print("All required CI jobs succeeded.")
           PY
-

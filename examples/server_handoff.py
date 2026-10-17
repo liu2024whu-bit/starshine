@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
+import sys
 from collections.abc import Callable
+from http.client import HTTPException
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -15,6 +18,8 @@ _LAYER_PATHS = {
     "zones": _ROOT / "data" / "zones.geojson",
 }
 _OUTPUT_LAYER = "zone_summary"
+# Local transport cap, independent of remote claims; not a GIS validation rule.
+_MAX_RESPONSE_BYTES = 8 * 1024 * 1024
 
 
 class HandoffError(RuntimeError):
@@ -22,17 +27,19 @@ class HandoffError(RuntimeError):
 
 
 def _read_json(path: Path) -> dict[str, Any]:
-    value = json.loads(path.read_text(encoding="utf-8"))
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise HandoffError(f"Could not read the fixed example {path.name}.") from exc
     if not isinstance(value, dict):
         raise HandoffError(f"Expected a JSON object in {path.name}.")
     return value
 
 
 def _write_json(path: Path, value: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.tmp")
     temporary.write_text(
-        json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True, allow_nan=False) + "\n",
         encoding="utf-8",
     )
     temporary.replace(path)
@@ -59,21 +66,24 @@ def _request_json(
         ).encode("utf-8")
         headers["content-type"] = "application/json"
 
-    request = Request(url, data=body, headers=headers, method=method)
     try:
+        request = Request(url, data=body, headers=headers, method=method)
         with urlopen(request, timeout=timeout) as response:
-            raw = response.read()
+            raw = response.read(_MAX_RESPONSE_BYTES + 1)
     except HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="replace")[:1000]
-        raise HandoffError(
-            f"{method} {path} failed with HTTP {exc.code}: {detail}"
-        ) from None
-    except URLError as exc:
-        raise HandoffError(f"{method} {path} could not reach the Starshine Server.") from exc
+        # Proxy/server diagnostics can contain private values. Do not read or echo them.
+        exc.close()
+        raise HandoffError(f"{method} {path} failed with HTTP {exc.code}.") from None
+    except (URLError, OSError, HTTPException, ValueError) as exc:
+        raise HandoffError(f"{method} {path} could not complete the HTTP request.") from exc
 
+    if len(raw) > _MAX_RESPONSE_BYTES:
+        raise HandoffError(f"{method} {path} exceeded the client response byte limit.")
     try:
         value = json.loads(raw.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        # Reject non-finite values and unpaired surrogates before writing evidence.
+        json.dumps(value, allow_nan=False, ensure_ascii=False).encode("utf-8")
+    except (ValueError, RecursionError) as exc:
         raise HandoffError(f"{method} {path} returned invalid JSON.") from exc
     if not isinstance(value, dict):
         raise HandoffError(f"{method} {path} returned a non-object JSON response.")
@@ -91,11 +101,18 @@ def run_handoff(
     request_json: _RequestJson = _request_json,
 ) -> dict[str, Any]:
     """Run the fixed synthetic reference handoff through the public HTTP API."""
+    if not math.isfinite(timeout) or timeout <= 0:
+        raise HandoffError("HTTP timeout must be finite and greater than zero.")
+    if output_dir.exists() or output_dir.is_symlink():
+        raise HandoffError("Choose a new output directory; existing evidence is never overwritten.")
     workflow = _read_json(_WORKFLOW_PATH)
     layers = {name: _read_json(path) for name, path in _LAYER_PATHS.items()}
     layer_names = sorted(layers)
 
     health = request_json(base_url, "/healthz", timeout=timeout)
+    if (health.get("status") != "ok" or health.get("api_version") != 1
+            or not isinstance(health.get("core_version"), str) or not health["core_version"]):
+        raise HandoffError("The connected service did not report a supported healthy API.")
     limits = request_json(base_url, "/api/v1/limits", timeout=timeout)
     if limits.get("workflow_execution_enabled") is not True:
         raise HandoffError("The connected Starshine Server has workflow execution disabled.")
@@ -139,6 +156,11 @@ def run_handoff(
     if preflight.get("valid") is not True:
         raise HandoffError("Preflight failed; the reference handoff will not execute the workflow.")
 
+    for key in ("plan_digest", "workflow_digest"):
+        if (not isinstance(plan.get(key), str) or not plan[key]
+                or preflight.get(key) != plan[key]):
+            raise HandoffError("Preflight evidence does not match the reviewed plan.")
+
     execution = request_json(
         base_url,
         "/api/v1/workflows/execute",
@@ -164,6 +186,15 @@ def run_handoff(
     if not isinstance(result, dict) or not isinstance(manifest, dict):
         raise HandoffError("Workflow execution omitted the result or reproducibility manifest.")
 
+    manifest_output = manifest.get("output_layer")
+    if (manifest.get("workflow_digest") != plan["workflow_digest"]
+            or manifest.get("starshine_version") != health["core_version"]
+            or not isinstance(manifest_output, dict)
+            or manifest_output.get("name") != _OUTPUT_LAYER
+            or not isinstance(manifest_output.get("digest"), str)
+            or not manifest_output["digest"]):
+        raise HandoffError("The result manifest does not match the reviewed workflow and service.")
+
     artifacts = {
         "health": "health.json",
         "limits": "limits.json",
@@ -173,15 +204,6 @@ def run_handoff(
         "result": "result.geojson",
         "manifest": "manifest.json",
     }
-    output_dir.mkdir(parents=True, exist_ok=True)
-    _write_json(output_dir / artifacts["health"], health)
-    _write_json(output_dir / artifacts["limits"], limits)
-    _write_json(output_dir / artifacts["validation"], validation)
-    _write_json(output_dir / artifacts["plan"], plan)
-    _write_json(output_dir / artifacts["preflight"], preflight)
-    _write_json(output_dir / artifacts["result"], result)
-    _write_json(output_dir / artifacts["manifest"], manifest)
-
     summary = {
         "handoff_version": 1,
         "status": "succeeded",
@@ -196,7 +218,22 @@ def run_handoff(
         "execution_policy": execution_policy,
         "artifacts": artifacts,
     }
-    _write_json(output_dir / "handoff.json", summary)
+    # Reserve exclusively after HTTP validation too: another run may have created it meanwhile.
+    try:
+        output_dir.mkdir(parents=True, exist_ok=False)
+    except FileExistsError as exc:
+        raise HandoffError("Choose a new output directory; existing evidence is never overwritten.") from exc
+    except OSError as exc:
+        raise HandoffError("Could not create the handoff output directory.") from exc
+
+    reports = (health, limits, validation, plan, preflight, result, manifest)
+    try:
+        for filename, report in zip(artifacts.values(), reports):
+            _write_json(output_dir / filename, report)
+        # This completion marker is written only after every evidence file succeeds.
+        _write_json(output_dir / "handoff.json", summary)
+    except (OSError, ValueError) as exc:
+        raise HandoffError("Could not write handoff evidence; the directory is incomplete.") from exc
     return summary
 
 
@@ -215,7 +252,7 @@ def _parser() -> argparse.ArgumentParser:
         "--output-dir",
         type=Path,
         required=True,
-        help="Directory that will receive the handoff evidence files.",
+        help="New directory for evidence; existing paths are never overwritten.",
     )
     parser.add_argument(
         "--timeout",
@@ -228,11 +265,11 @@ def _parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
-    summary = run_handoff(
-        args.base_url,
-        args.output_dir,
-        timeout=args.timeout,
-    )
+    try:
+        summary = run_handoff(args.base_url, args.output_dir, timeout=args.timeout)
+    except HandoffError as exc:
+        print(f"Reference handoff failed: {exc}", file=sys.stderr)
+        return 1
     print(
         "Reference handoff succeeded: "
         f"{summary['output_layer']} with Starshine Geo {summary['core_version']}."
