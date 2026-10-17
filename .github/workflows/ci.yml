@@ -67,8 +67,8 @@ jobs:
       - run: >-
           python -m pip install --constraint requirements/ci-validation.txt
           -e ".[dev,server,server-test]"
-      - run: ruff check src/starshine_server tests/test_server_api.py tests/test_server_architecture.py
-      - run: python -m pytest -q tests/test_server_api.py tests/test_server_architecture.py
+      - run: ruff check src/starshine_server tests/test_server_api.py tests/test_server_transport.py tests/test_server_architecture.py
+      - run: python -m pytest -q tests/test_server_api.py tests/test_server_transport.py tests/test_server_architecture.py
 
   geopackage:
     runs-on: ubuntu-latest
@@ -572,4 +572,3 @@ jobs:
 
           print("All required CI jobs succeeded.")
           PY
-

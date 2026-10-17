@@ -84,11 +84,14 @@ pins the exact reviewed Hatchling release used inside PEP 517's isolated build e
 that pin is an explicit artifact-format change and requires rebuilding the wheel and sdist, running
 Twine validation, archive inspection, and all clean installed-wheel matrices.
 
-The current reviewed pair is Hatchling 1.32.3 with Twine 7.0.0. Hatchling 1.32.3 emits Core Metadata
-2.5 by default; Twine 7 validates that metadata through a current `packaging` implementation. Normal
-CI fixes Twine to the reviewed version in `requirements/ci-validation.txt`, while the `release` extra
-permits compatible Twine 7.x maintenance releases for manual/latest-compatible validation. Runtime
-requirements are unaffected by this release-toolchain policy.
+The current builder pin is recorded in `pyproject.toml`; the validator pin is recorded in
+`requirements/ci-validation.txt`. Read those files at the exact revision under review rather than
+maintaining a second version pair in this procedure. Twine must accept the metadata produced by that
+builder, and both archives must pass the existing inspection and installed-wheel matrices. The
+`release` extra permits compatible Twine 7.x maintenance releases for manual/latest-compatible
+validation. Runtime requirements are unaffected by this release-toolchain policy. Historical release
+notes describe the toolchain used for that release; dependency updates must not rewrite those notes,
+move the published tag, or replace published artifacts.
 
 Do not resolve a metadata-version mismatch by editing a built wheel, suppressing `twine check`, or
 silently downgrading metadata after the build. Change the builder/validator contract explicitly and
@@ -139,8 +142,8 @@ the downloaded wheel and run the public installed-wheel smoke scripts, which ver
   Preflight bindings, repository-relative SARIF locations, pre-I/O duplicate checks, and source
   overwrite protection on every supported Python version;
 - a focused installed-wheel server smoke installs the optional `server` extra and verifies that
-  health, operator discovery, Workflow validation, and planning delegate to the packaged Core rather
-  than a source checkout;
+  health, operator discovery, Workflow validation, planning, published limits, and data-aware
+  Preflight delegate to the packaged Core rather than a source checkout;
 - reprojection, projected geometry metrics, deterministic STRtree-backed nearest matching,
   point-in-polygon joining, pairwise intersection, and polygon-mask Difference work through
   installed APIs and workflow execution;

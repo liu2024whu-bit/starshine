@@ -106,6 +106,7 @@ Use the [documentation index](docs/README.md) as the ownership map. The most com
 
 | Need | Authoritative document |
 | --- | --- |
+| Understand the product goal and non-goals | [Product direction](docs/PRODUCT.md) |
 | Understand module boundaries | [Architecture](docs/ARCHITECTURE.md) |
 | Install and reproduce from a clean environment | [Reproducing Starshine](docs/REPRODUCING.md) |
 | Understand operators and extension rules | [Operator registry](docs/OPERATORS.md) |
