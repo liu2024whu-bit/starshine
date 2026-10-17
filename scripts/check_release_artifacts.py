@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import argparse
 import re
+import stat
 import tarfile
 import zipfile
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 
 try:
     import tomllib
@@ -38,20 +39,51 @@ def _latest_release_version() -> str:
 
 
 def _validate_member_names(members: list[tuple[str, int]], archive_name: str) -> None:
+    """Require canonical portable paths before interpreting any archive contents."""
+    seen: set[str] = set()
+    nodes: dict[str, tuple[str, bool]] = {}
+    reserved = {"con", "prn", "aux", "nul", "conin$", "conout$"}
+    reserved.update(f"{prefix}{number}" for prefix in ("com", "lpt") for number in "123456789¹²³")
     for name, size in members:
-        path = PurePosixPath(name)
-        if path.is_absolute() or "\\" in name:
-            raise RuntimeError(f"unsafe archive member path in {archive_name}: {name}")
-        if set(path.parts) & _FORBIDDEN_MEMBER_PARTS:
-            raise RuntimeError(f"forbidden archive member in {archive_name}: {name}")
+        relative = name[:-1] if name.endswith("/") else name
+        parts = relative.split("/")
+        if (
+            not relative
+            or "\\" in name
+            or any(ord(char) < 32 or ord(char) == 127 for char in name)
+            or any(
+                part in {"", ".", ".."}
+                or any(char in part for char in ':<>"|?*')
+                or part.rstrip(" .") != part
+                or part.split(".", 1)[0].casefold() in reserved
+                for part in parts
+            )
+        ):
+            raise RuntimeError(f"unsafe archive member path in {archive_name}: {name!r}")
+        if {part.casefold() for part in parts} & _FORBIDDEN_MEMBER_PARTS:
+            raise RuntimeError(f"forbidden archive member in {archive_name}: {name!r}")
+        key = relative.casefold()
+        if key in seen:
+            raise RuntimeError(f"duplicate archive member in {archive_name}: {name!r}")
+        seen.add(key)
+        # Check parent spellings too: Pkg/a.py and pkg/b.py collide on Windows.
+        for index in range(1, len(parts) + 1):
+            spelling = "/".join(parts[:index])
+            node = (spelling, index < len(parts) or name.endswith("/"))
+            previous = nodes.setdefault(spelling.casefold(), node)
+            if previous != node:
+                raise RuntimeError(f"archive path collision in {archive_name}: {name!r}")
+        if size < 0:
+            raise RuntimeError(f"invalid archive member size in {archive_name}: {name!r}")
         if size > _MAX_MEMBER_BYTES:
             raise RuntimeError(
-                f"archive member exceeds 5 MiB in {archive_name}: {name} ({size} bytes)"
+                f"archive member exceeds 5 MiB in {archive_name}: {name!r} ({size} bytes)"
             )
 
 
-def _require_suffixes(names: list[str], suffixes: tuple[str, ...], archive_name: str) -> None:
-    missing = [suffix for suffix in suffixes if not any(name.endswith(suffix) for name in names)]
+def _require_paths(names: list[str], paths: tuple[str, ...], archive_name: str) -> None:
+    present = set(names)
+    missing = [path for path in paths if path not in present]
     if missing:
         raise RuntimeError(f"{archive_name} is missing expected files: {missing}")
 
@@ -76,36 +108,51 @@ def _sdist_package_suffixes(source_root: Path = _PACKAGE_SOURCE_ROOT) -> tuple[s
 
 
 def _check_wheel(path: Path, version: str) -> None:
-    if f"-{version}-" not in path.name:
+    if not path.name.startswith(f"starshine_geo-{version}-"):
         raise RuntimeError(f"wheel filename does not contain version {version}: {path.name}")
     with zipfile.ZipFile(path) as archive:
         infos = archive.infolist()
         members = [(info.filename, info.file_size) for info in infos]
-        names = [name for name, _ in members]
         _validate_member_names(members, path.name)
-        _require_suffixes(
+        for info in infos:
+            mode = stat.S_IFMT(info.external_attr >> 16)
+            allowed = (0, stat.S_IFDIR) if info.is_dir() else (0, stat.S_IFREG)
+            if mode not in allowed:
+                raise RuntimeError(f"unsupported archive member type in {path.name}: {info.filename!r}")
+        names = [info.filename for info in infos if not info.is_dir()]
+        metadata_name = f"starshine_geo-{version}.dist-info/METADATA"
+        _require_paths(
             names,
             (
                 *_package_python_suffixes(),
-                ".dist-info/METADATA",
+                metadata_name,
             ),
             path.name,
         )
-        metadata_name = next(name for name in names if name.endswith(".dist-info/METADATA"))
         metadata = archive.read(metadata_name).decode("utf-8")
         if f"Version: {version}\n" not in metadata:
             raise RuntimeError(f"wheel metadata does not declare version {version}")
 
 
 def _check_sdist(path: Path, version: str, release_version: str) -> None:
-    if f"-{version}.tar.gz" not in path.name:
+    root = f"starshine_geo-{version}"
+    if path.name != f"{root}.tar.gz":
         raise RuntimeError(f"sdist filename does not contain version {version}: {path.name}")
     with tarfile.open(path, mode="r:gz") as archive:
         infos = archive.getmembers()
-        members = [(info.name, info.size) for info in infos if info.isfile()]
-        names = [name for name, _ in members]
+        for info in infos:
+            if not (info.isfile() or info.isdir()):
+                raise RuntimeError(f"unsupported archive member type in {path.name}: {info.name!r}")
+        members = [
+            (info.name + "/" if info.isdir() and not info.name.endswith("/") else info.name, info.size)
+            for info in infos
+        ]
         _validate_member_names(members, path.name)
-        _require_suffixes(
+        for info in infos:
+            if info.name.split("/", 1)[0] != root or (info.isfile() and "/" not in info.name):
+                raise RuntimeError(f"unexpected sdist root in {path.name}: {info.name!r}")
+        names = ["/" + info.name.split("/", 1)[1] for info in infos if info.isfile()]
+        _require_paths(
             names,
             (
                 "/pyproject.toml",
