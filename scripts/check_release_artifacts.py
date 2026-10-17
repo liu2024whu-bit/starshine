@@ -45,7 +45,7 @@ def _validate_member_names(members: list[tuple[str, int]], archive_name: str) ->
     reserved = {"con", "prn", "aux", "nul", "conin$", "conout$"}
     reserved.update(f"{prefix}{number}" for prefix in ("com", "lpt") for number in "123456789¹²³")
     for name, size in members:
-        relative = name[:-1] if name.endswith("/") else name
+        relative = name.removesuffix("/")
         parts = relative.split("/")
         if (
             not relative
