@@ -57,4 +57,4 @@ def test_latest_compatible_workflow_remains_unconstrained_and_scheduled():
     assert "--constraint" not in workflow
     assert '.[dev,server,server-test]' in workflow
     assert '.[release]' in workflow
-    assert "fastapi pydantic uvicorn httpx" in workflow
+    assert "fastapi pydantic psutil uvicorn httpx" in workflow

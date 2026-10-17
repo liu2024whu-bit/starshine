@@ -47,3 +47,24 @@ def test_server_does_not_import_spatial_backends_directly() -> None:
             violations.append(path.relative_to(ROOT).as_posix())
 
     assert violations == []
+
+
+def test_execution_worker_has_no_shell_or_network_dependencies() -> None:
+    worker = SERVER_ROOT / "worker.py"
+    imported = {name.split(".", 1)[0] for name in _imports(worker)}
+
+    assert imported.isdisjoint(
+        {"subprocess", "socket", "urllib", "requests", "httpx", "fastapi"}
+    )
+
+
+def test_execution_supervisor_uses_one_fixed_non_shell_worker_entrypoint() -> None:
+    execution_path = SERVER_ROOT / "execution.py"
+    source = execution_path.read_text(encoding="utf-8")
+
+    assert source.count("subprocess.Popen(") == 1
+    assert '"-m",\n            "starshine_server.worker"' in source
+    assert "shell=False" in source
+    assert "shell=True" not in source
+    assert "eval(" not in source
+    assert "exec(" not in source

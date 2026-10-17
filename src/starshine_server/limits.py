@@ -15,6 +15,10 @@ MAX_WORKFLOW_STEPS = 16
 MAX_FEATURES_PER_LAYER = 2_000
 MAX_TOTAL_FEATURES = 5_000
 
+MAX_EXECUTION_SECONDS = 10
+MAX_EXECUTION_MEMORY_BYTES = 512 * 1024 * 1024
+MAX_EXECUTION_RESPONSE_BYTES = 8 * 1024 * 1024
+
 
 class RequestLimitError(Exception):
     """Raised when a request exceeds an explicit Starshine Server semantic limit."""
@@ -179,6 +183,16 @@ def inline_preflight_limits() -> dict[str, int]:
     }
 
 
+def execution_limits() -> dict[str, int | str]:
+    """Return the fixed resource policy for synchronous isolated execution."""
+    return {
+        "mode": "isolated_subprocess",
+        "timeout_seconds": MAX_EXECUTION_SECONDS,
+        "memory_limit_bytes": MAX_EXECUTION_MEMORY_BYTES,
+        "max_response_bytes": MAX_EXECUTION_RESPONSE_BYTES,
+    }
+
+
 def enforce_inline_preflight_limits(
     workflow: dict[str, Any],
     layers: dict[str, dict[str, Any]],
@@ -236,6 +250,9 @@ def enforce_inline_preflight_limits(
 
 
 __all__ = [
+    "MAX_EXECUTION_MEMORY_BYTES",
+    "MAX_EXECUTION_RESPONSE_BYTES",
+    "MAX_EXECUTION_SECONDS",
     "MAX_FEATURES_PER_LAYER",
     "MAX_JSON_DEPTH",
     "MAX_LAYER_COUNT",
@@ -246,5 +263,6 @@ __all__ = [
     "RequestBodyLimitMiddleware",
     "RequestLimitError",
     "enforce_inline_preflight_limits",
+    "execution_limits",
     "inline_preflight_limits",
 ]
