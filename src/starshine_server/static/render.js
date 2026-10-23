@@ -205,6 +205,16 @@ function renderEvidence(container, reports) {
 }
 
 export function renderReports(containers, reports) {
+  if (!reports) {
+    for (const name of ["overview", "contract", "graph", "explain", "evidence"]) {
+      clearNode(containers[name]);
+      containers[name].appendChild(
+        textElement("p", "Run Review to generate current evidence.", "empty-state"),
+      );
+    }
+    return;
+  }
+
   renderOverview(containers.overview, reports);
   renderContract(containers.contract, reports.contract);
   renderGraph(containers.graph, reports.graph);
