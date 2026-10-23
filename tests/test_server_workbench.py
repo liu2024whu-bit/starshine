@@ -99,3 +99,14 @@ def test_workbench_first_slice_uses_review_endpoints_only() -> None:
     assert "/api/v1/workflows/execute" not in script
     assert "starshine_geo" not in script
     assert "starshine_server" not in script
+
+def test_workbench_invalidates_review_responses_after_input_edits() -> None:
+    script = (STATIC_ROOT / "app.js").read_text(encoding="utf-8")
+
+    assert "reviewRequestId: 0" in script
+    assert "function invalidateReview()" in script
+    assert "elements.workflow.addEventListener(\"input\", invalidateReview)" in script
+    assert "elements.layerNames.addEventListener(\"input\", invalidateReview)" in script
+    assert "if (requestId !== state.reviewRequestId) return;" in script
+    assert "if (requestId === state.reviewRequestId)" in script
+
