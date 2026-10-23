@@ -105,6 +105,7 @@ def test_workbench_invalidates_review_responses_after_input_edits() -> None:
 
     assert "reviewRequestId: 0" in script
     assert "function invalidateReview()" in script
+    assert "elements.reviewButton.disabled = false;" in script
     assert "elements.workflow.addEventListener(\"input\", invalidateReview)" in script
     assert "elements.layerNames.addEventListener(\"input\", invalidateReview)" in script
     assert "if (requestId !== state.reviewRequestId) return;" in script
