@@ -112,6 +112,23 @@ shell fragment, or plugin identifier is accepted by this execution surface.
 This is intentionally synchronous. A queue is not added until measured workloads demonstrate that
 the bounded 10-second service is insufficient.
 
+## Canonical review reports for browser clients
+
+Before browser work begins, the Server exposes the Core's existing data-free review reports as JSON.
+The three review endpoints all accept the same `WorkflowRequest` shape as validation/planning:
+one Workflow plus the names of its external layers.
+
+`contract`, `graph`, and `explain` are not Server-side reimplementations. They call
+`build_workflow_contract()`, `build_workflow_graph()`, and `explain_workflow()` directly. Their
+`plan_digest` values therefore remain linked to the same canonical plan; the explanation also carries
+the canonical graph digest.
+
+No Markdown or Mermaid rendering endpoint is introduced. A future browser can render the returned
+structured reports for people without becoming responsible for planning, default resolution,
+dependency analysis, operator metadata, or CRS rules. The Core references remain
+[WORKFLOW_CONTRACTS.md](WORKFLOW_CONTRACTS.md), [WORKFLOW_GRAPH.md](WORKFLOW_GRAPH.md), and
+[WORKFLOW_EXPLAIN.md](WORKFLOW_EXPLAIN.md).
+
 ## Reference handoff before Web UI
 
 `examples/server_handoff.py` is the single user-facing reference for the current HTTP product spine.
