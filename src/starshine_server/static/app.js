@@ -82,6 +82,7 @@ async function loadServiceMetadata() {
 function invalidateReview() {
   state.reviewRequestId += 1;
   state.reports = null;
+  renderReports(elements, null);
   // The invalidated request no longer owns the button's disabled state.
   elements.reviewButton.disabled = false;
   setReviewState(elements.reviewState, "Not reviewed");
