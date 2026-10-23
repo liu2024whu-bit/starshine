@@ -10,6 +10,8 @@ import {
 const state = {
   catalog: null,
   reports: null,
+  // A response may update the page only while it owns the latest review request.
+  reviewRequestId: 0,
 };
 
 const elements = {
@@ -77,7 +79,14 @@ async function loadServiceMetadata() {
   }
 }
 
+function invalidateReview() {
+  state.reviewRequestId += 1;
+  state.reports = null;
+  setReviewState(elements.reviewState, "Not reviewed");
+}
+
 async function reviewWorkflow() {
+  const requestId = ++state.reviewRequestId;
   elements.reviewButton.disabled = true;
   setRequestStatus(elements.requestStatus, "Validating workflow…");
   setReviewState(elements.reviewState, "Reviewing");
@@ -92,6 +101,7 @@ async function reviewWorkflow() {
       method: "POST",
       body: request,
     });
+    if (requestId !== state.reviewRequestId) return;
 
     setRequestStatus(elements.requestStatus, "Building canonical review reports…");
     const [plan, contract, graph, explain] = await Promise.all([
@@ -101,19 +111,25 @@ async function reviewWorkflow() {
       requestJson(ENDPOINTS.explain, { method: "POST", body: request }),
     ]);
 
+    if (requestId !== state.reviewRequestId) return;
     assertEvidenceChain(plan, contract, graph, explain);
     state.reports = { validation, plan, contract, graph, explain };
     renderReports(elements, state.reports);
     setRequestStatus(elements.requestStatus, "Canonical review complete.");
     setReviewState(elements.reviewState, "Reviewed");
   } catch (error) {
+    if (requestId !== state.reviewRequestId) return;
     setRequestStatus(elements.requestStatus, error.message, true);
     setReviewState(elements.reviewState, "Review failed", true);
   } finally {
-    elements.reviewButton.disabled = false;
+    if (requestId === state.reviewRequestId) {
+      elements.reviewButton.disabled = false;
+    }
   }
 }
 
+elements.workflow.addEventListener("input", invalidateReview);
+elements.layerNames.addEventListener("input", invalidateReview);
 elements.reviewButton.addEventListener("click", reviewWorkflow);
 initializeTabs();
 loadServiceMetadata();
