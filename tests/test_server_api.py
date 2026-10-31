@@ -150,6 +150,33 @@ def test_plan_endpoint_is_deterministic_and_uses_the_core_plan() -> None:
     assert first.json()["terminal_layers"] == ["buffered"]
 
 
+@pytest.mark.parametrize("version", [True, False])
+@pytest.mark.parametrize(
+    "endpoint", ["validate", "plan", "contract", "graph", "explain", "preflight", "execute"]
+)
+def test_workflow_endpoints_reject_boolean_versions(endpoint: str, version: bool) -> None:
+    workflow = {**VALID_WORKFLOW, "version": version}
+    payload = {"workflow": workflow}
+    if endpoint in {"preflight", "execute"}:
+        payload["layers"] = {"source": POINT_LAYER}
+        if endpoint == "execute":
+            payload["output_layer"] = "buffered"
+    else:
+        payload["layer_names"] = ["source"]
+
+    response = _client().post(f"/api/v1/workflows/{endpoint}", json=payload)
+
+    assert response.status_code == 422
+    assert response.json() == {
+        "error": "workflow_validation",
+        "diagnostic": {
+            "code": "unsupported_version",
+            "message": "workflow.version must equal 1",
+            "path": "version",
+        },
+    }
+
+
 
 
 def test_review_endpoints_return_canonical_core_reports() -> None:

@@ -4,6 +4,11 @@ All notable public changes are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- reject boolean Workflow versions consistently with the published JSON Schema, including through
+  Server review, Preflight, and execution endpoints, while retaining numeric version `1` support.
+
 ## [0.7.0] - 2026-09-27
 
 ### Added

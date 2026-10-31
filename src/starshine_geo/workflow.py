@@ -170,7 +170,8 @@ def validate_workflow(workflow: Any, layer_names: Iterable[str]) -> None:
             path=name,
         )
 
-    if workflow.get("version") != 1:
+    version = workflow.get("version")
+    if isinstance(version, bool) or version != 1:
         _raise_diagnostic(
             code="unsupported_version",
             message="workflow.version must equal 1",
