@@ -24,6 +24,8 @@ Preflight, testing, evidence, and release boundaries instead of creating paralle
 - read-only source inventory, GeoJSON inspection, and geometry-quality reports;
 - optional GeoPackage input/output with explicit layer selection and overwrite protection;
 - deterministic manifests, synthetic benchmark evidence, and path-free runtime diagnostics;
+- [offline result/manifest consistency checks](docs/REPRODUCIBILITY.md#verify-a-received-result-without-rerunning)
+  without rerunning a Workflow;
 - self-created reproduction fixtures and clean installed-wheel checks;
 - Python 3.10–3.14 source and built-wheel CI evidence, with clean Linux, Windows, and macOS
   reproduction on Python 3.14.

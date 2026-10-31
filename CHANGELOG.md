@@ -11,6 +11,9 @@ All notable public changes are documented here.
 
 ### Fixed
 
+- keep installed Server smoke failures fatal while reporting bounded, allowlisted execution error
+  codes without logging response text, request URLs, headers, or worker output.
+
 - normalize JSON parser, representation, and file I/O failures into expected diagnostics; validate
   output encoding before opening files to prevent truncation on encoding errors, while preserving
   geometry-quality and Preflight aggregation when collection digests are unavailable.
