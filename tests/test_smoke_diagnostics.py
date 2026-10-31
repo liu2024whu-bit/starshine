@@ -111,3 +111,24 @@ def test_server_boundary_error_remains_fatal_with_safe_diagnostics(monkeypatch):
     assert failure_diagnostic(reply) == {
         "status": 500, "error": "execution_boundary", "code": "worker_supervision_failed",
     }
+
+
+@pytest.mark.parametrize("reason", ["missing", "zombie", "access_denied", "other"])
+@pytest.mark.parametrize("stage", ["process_lookup", "tree_memory"])
+def test_known_supervision_reason_and_stage_are_safe(reason, stage):
+    diagnostic = failure_diagnostic(response(json={
+        "error": "execution_boundary", "code": "worker_supervision_failed",
+        "reason": reason, "stage": stage, "message": SECRET,
+    }))
+    assert diagnostic["reason"] == reason
+    assert diagnostic["stage"] == stage
+
+
+@pytest.mark.parametrize("value", [SECRET, [], {}, None, 1, True])
+def test_unknown_supervision_reason_and_stage_are_not_echoed(value):
+    diagnostic = failure_diagnostic(response(json={
+        "error": "execution_boundary", "code": "worker_supervision_failed",
+        "reason": value, "stage": value,
+    }))
+    assert "reason" not in diagnostic
+    assert "stage" not in diagnostic
