@@ -44,6 +44,13 @@ def _check_execution_response(response: httpx.Response) -> None:
                 if isinstance(code, str) and code in _BOUNDARY_CODES:
                     diagnostic["error"] = "execution_boundary"
                     diagnostic["code"] = code
+                    for key, allowed in (
+                        ("reason", {"missing", "zombie", "access_denied", "other"}),
+                        ("stage", {"process_lookup", "tree_memory"}),
+                    ):
+                        value = payload.get(key)
+                        if isinstance(value, str) and value in allowed:
+                            diagnostic[key] = value
                     for key in ("limit", "actual"):
                         value = payload.get(key)
                         if type(value) is int and 0 <= value <= 2**63 - 1:
@@ -287,31 +294,33 @@ def main() -> int:
     assert preflight.json() == starshine_geo.preflight_workflow_inputs(workflow, layers)
     assert preflight.json()["valid"] is True
 
-    execution = client.post(
-        "/api/v1/workflows/execute",
-        json={
-            "workflow": workflow,
-            "layers": layers,
-            "output_layer": "clipped",
-        },
-    )
-    _check_execution_response(execution)
-    execution_payload = execution.json()
-    expected_context = starshine_geo.run_workflow(workflow, layers)
-    expected_result = expected_context["clipped"]
-    expected_manifest = starshine_geo.build_manifest(
-        workflow,
-        layers,
-        output_layer_name="clipped",
-        output_layer=expected_result,
-    )
-    assert execution_payload["status"] == "succeeded"
-    assert starshine_geo.digest_json(execution_payload["result"]) == starshine_geo.digest_json(
-        expected_result
-    )
-    assert execution_payload["manifest"] == expected_manifest
-    assert execution_payload["preflight"] == preflight.json()
-    assert execution_payload["execution_policy"]["mode"] == "isolated_subprocess"
+    # Fixed coverage of short-lived workers, not retries: every execution must pass.
+    for _ in range(5):
+        execution = client.post(
+            "/api/v1/workflows/execute",
+            json={
+                "workflow": workflow,
+                "layers": layers,
+                "output_layer": "clipped",
+            },
+        )
+        _check_execution_response(execution)
+        execution_payload = execution.json()
+        expected_context = starshine_geo.run_workflow(workflow, layers)
+        expected_result = expected_context["clipped"]
+        expected_manifest = starshine_geo.build_manifest(
+            workflow,
+            layers,
+            output_layer_name="clipped",
+            output_layer=expected_result,
+        )
+        assert execution_payload["status"] == "succeeded"
+        assert starshine_geo.digest_json(execution_payload["result"]) == starshine_geo.digest_json(
+            expected_result
+        )
+        assert execution_payload["manifest"] == expected_manifest
+        assert execution_payload["preflight"] == preflight.json()
+        assert execution_payload["execution_policy"]["mode"] == "isolated_subprocess"
 
     # The same artifact includes the fixed client and its synthetic inputs, not a source checkout.
     client_script = Path(__file__).resolve().parents[1] / "examples" / "server_handoff.py"

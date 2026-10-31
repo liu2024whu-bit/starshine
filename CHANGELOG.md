@@ -11,6 +11,9 @@ All notable public changes are documented here.
 
 ### Fixed
 
+- accept a process-inspection race only after the owned worker is confirmed terminated; keep live
+  monitoring failures fail-closed and expose only fixed supervision reason/stage diagnostics.
+
 - keep installed Server smoke failures fatal while reporting bounded, allowlisted execution error
   codes without logging response text, request URLs, headers, or worker output.
 
