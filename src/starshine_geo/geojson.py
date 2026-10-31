@@ -37,7 +37,10 @@ def validate_feature_collection(collection: FeatureCollection) -> FeatureCollect
         properties = feature.get("properties", {})
         if properties is not None and not isinstance(properties, dict):
             raise ValidationError(f"Feature {index}.properties must be an object or null")
-    return deepcopy(collection)
+    try:
+        return deepcopy(collection)
+    except RecursionError as exc:
+        raise ValidationError("FeatureCollection exceeds supported nesting depth") from exc
 
 
 def iter_geometries(collection: FeatureCollection) -> Iterable[tuple[Feature, BaseGeometry]]:

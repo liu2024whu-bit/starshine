@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import math
 from collections import Counter
 from typing import Any
@@ -8,6 +7,7 @@ from typing import Any
 from pyproj import CRS
 from shapely.geometry import shape
 
+from ._json_identity import json_unique_key
 from ._preflight_findings import _FindingCollector
 from .crs import parse_crs
 from .errors import ValidationError
@@ -123,19 +123,6 @@ def _is_finite_json_scalar(value: Any) -> bool:
     return not (isinstance(value, float) and not math.isfinite(value))
 
 
-def _unique_key(value: Any) -> tuple[str, str] | None:
-    try:
-        payload = json.dumps(
-            value,
-            ensure_ascii=False,
-            sort_keys=True,
-            separators=(",", ":"),
-            allow_nan=False,
-        )
-    except (TypeError, ValueError):
-        return None
-    return type(value).__name__, payload
-
 
 def _check_required_field(
     *,
@@ -189,7 +176,7 @@ def _check_required_field(
             field_contract["finite_json_scalar"] and not _is_finite_json_scalar(value)
         )
         if field_contract["unique"] and not skip_uniqueness:
-            key = _unique_key(value)
+            key = json_unique_key(value)
             if key is None:
                 findings.add(
                     severity="error",

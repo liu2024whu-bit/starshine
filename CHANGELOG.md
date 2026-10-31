@@ -9,6 +9,11 @@ All notable public changes are documented here.
 - normalize JSON parser, representation, and file I/O failures into expected diagnostics; validate
   output encoding before opening files to prevent truncation on encoding errors, while preserving
   geometry-quality and Preflight aggregation when collection digests are unavailable.
+- reject failed coordinate transformations and invalid buffer results instead of reporting successful
+  empty geometry output; normalize oversized distance values and invalid dissolve grouping values to
+  validation errors, and keep direct buffer segment validation consistent with Workflow validation.
+- align point-summary identifier uniqueness with Preflight's existing JSON-value semantics, including
+  structured identifiers and distinct boolean/numeric values, without exposing rejected values.
 
 - reject existing hard-link output aliases in CLI reports, Workflow results and manifests before
   reading inputs; share file-identity checks with GeoPackage output validation and fail closed when
