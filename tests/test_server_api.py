@@ -77,6 +77,7 @@ def test_limits_endpoint_makes_the_inline_boundary_client_visible() -> None:
     assert response.json() == {
         "inline_preflight": {
             "max_request_bytes": 2 * 1024 * 1024,
+            "max_json_depth": 64,
             "max_layers": 8,
             "max_layer_name_chars": 128,
             "max_workflow_steps": 16,
@@ -147,6 +148,8 @@ def test_plan_endpoint_is_deterministic_and_uses_the_core_plan() -> None:
     assert first.json() == second.json()
     assert first.json() == starshine_geo.plan_workflow(VALID_WORKFLOW, ["source"])
     assert first.json()["terminal_layers"] == ["buffered"]
+
+
 
 
 def test_review_endpoints_return_canonical_core_reports() -> None:
@@ -223,7 +226,6 @@ def test_review_endpoints_preserve_workflow_validation_diagnostics(path: str) ->
             "operation": "buffer",
         },
     }
-
 
 def test_preflight_endpoint_returns_the_canonical_core_report() -> None:
     payload = {

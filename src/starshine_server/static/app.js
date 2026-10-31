@@ -90,6 +90,8 @@ function invalidateReview() {
 
 async function reviewWorkflow() {
   const requestId = ++state.reviewRequestId;
+  state.reports = null;
+  renderReports(elements, null);
   elements.reviewButton.disabled = true;
   setRequestStatus(elements.requestStatus, "Validating workflow…");
   setReviewState(elements.reviewState, "Reviewing");

@@ -114,12 +114,16 @@ explanation returned by the Server; it does not upload or execute feature data.
 Then run the standard-library reference handoff in another terminal:
 
 ```bash
-python examples/server_handoff.py --output-dir server-handoff-output
+python examples/server_handoff.py --output-dir examples/output/http-handoff-01
 ```
 
 The example uses the tracked synthetic zone/site workflow and writes validation, plan, Preflight,
 result, manifest, limits, health, and a compact handoff summary without importing Starshine Python
-APIs in the client. See [PLATFORM.md](docs/PLATFORM.md) for the service boundary.
+APIs in the client. Use a new output directory for each run; existing files are never overwritten.
+The included synthetic example produces `site_count` values of 1 for `east` and 2 for `west`.
+`handoff.json` is the completion marker, written only after all evidence files succeed. A failed run
+returns a nonzero exit code and must not be treated as a completed handoff. See
+[PLATFORM.md](docs/PLATFORM.md) for the service and evidence boundaries.
 
 ## Documentation
 
@@ -191,8 +195,10 @@ Release preparation and artifact verification are defined in
 Starshine Geo 0.8.0.dev0 is the current development snapshot.
 The latest stable release metadata remains 0.7.0. The public API remains intentionally
 bounded around auditable small-vector analysis, explicit CRS and input contracts, reproducible
-workflow execution, and independently checked distribution evidence. The optional Server adapter is developed on the post-0.7 draft stack and is not included in
-the published 0.7.0 core release.
+workflow execution, and independently checked distribution evidence. This development snapshot
+includes the optional Server adapter, HTTP reference handoff, and review-only browser Workbench.
+The assisted editor and data-aware browser increments remain staged for separate integration.
+None of these Server/Web additions are part of the published 0.7.0 core release.
 
 See [ROADMAP.md](ROADMAP.md), [CONTRIBUTING.md](CONTRIBUTING.md),
 [SECURITY.md](SECURITY.md), and [architecture notes](docs/ARCHITECTURE.md).
