@@ -6,6 +6,10 @@ All notable public changes are documented here.
 
 ### Fixed
 
+- reject existing hard-link output aliases in CLI reports, Workflow results and manifests before
+  reading inputs; share file-identity checks with GeoPackage output validation and fail closed when
+  file identity cannot be checked. This pre-write check does not lock paths against concurrent changes.
+
 - reject boolean Workflow versions consistently with the published JSON Schema, including through
   Server review, Preflight, and execution endpoints, while retaining numeric version `1` support.
 

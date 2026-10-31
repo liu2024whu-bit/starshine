@@ -148,3 +148,17 @@ def test_optional_dependency_error_is_actionable(monkeypatch):
 
     with pytest.raises(ValidationError, match=r"starshine-geo\[geopackage\]"):
         _require_optional_backend()
+
+
+def test_write_rejects_input_hardlink_without_flag(tmp_path, monkeypatch):
+    source = tmp_path / "input.gpkg"
+    source.write_bytes(b"synthetic original")
+    alias = tmp_path / "alias.gpkg"
+    alias.hardlink_to(source)
+    monkeypatch.setattr(
+        "starshine_geo.geopackage._write_layer_backend",
+        lambda *args: pytest.fail("backend must not run"),
+    )
+    with pytest.raises(ValidationError, match="overwrite an input file"):
+        write_geopackage(COLLECTION, alias, layer="results", input_paths=[source])
+    assert source.read_bytes() == b"synthetic original"

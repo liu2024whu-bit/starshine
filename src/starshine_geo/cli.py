@@ -7,6 +7,7 @@ from pathlib import Path
 
 from ._cli_layer_sources import prepare_layer_bindings
 from ._cli_run_output import prepare_run_output
+from ._path_identity import same_file
 from ._version import __version__
 from .contracts import build_workflow_contract, render_workflow_contract_markdown
 from .doctor import build_doctor_report, render_doctor_text
@@ -351,8 +352,7 @@ def _reject_output_collision(
 ) -> None:
     if output is None:
         return
-    resolved_output = output.resolve()
-    if any(resolved_output == protected.resolve() for protected in protected_paths):
+    if any(same_file(output, protected) for protected in protected_paths):
         raise StarshineError(message)
 
 

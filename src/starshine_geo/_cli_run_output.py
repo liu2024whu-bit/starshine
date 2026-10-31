@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
+from ._path_identity import same_file
 from .errors import StarshineError
 from .geojson import FeatureCollection
 from .io import write_json
@@ -50,24 +51,17 @@ def prepare_run_output(
     manifest_path: Path | None,
 ) -> PreparedRunOutput:
     """Validate output/manifest paths before any workflow input is loaded."""
-    output = path.resolve(strict=False)
-    workflow = workflow_path.resolve(strict=False)
-    inputs = tuple(source.resolve(strict=False) for source in input_paths)
-
-    if output == workflow:
+    if same_file(path, workflow_path):
         raise StarshineError("workflow output must not overwrite the workflow file")
-    if output in inputs:
+    if any(same_file(path, source) for source in input_paths):
         raise StarshineError("workflow output must not overwrite an input file")
-
     if manifest_path is not None:
-        manifest = manifest_path.resolve(strict=False)
-        if manifest == workflow:
+        if same_file(manifest_path, workflow_path):
             raise StarshineError("workflow manifest must not overwrite the workflow file")
-        if manifest in inputs:
+        if any(same_file(manifest_path, source) for source in input_paths):
             raise StarshineError("workflow manifest must not overwrite an input file")
-        if manifest == output:
+        if same_file(manifest_path, path):
             raise StarshineError("workflow manifest must not overwrite the workflow output")
-
     if output_format == "geojson":
         if geopackage_layer is not None:
             raise StarshineError("--geopackage-output-layer requires --output-format geopackage")
