@@ -4,6 +4,11 @@ All notable public changes are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- read-only `verify_result_manifest()` and `starshine verify-result` for offline selected-output
+  digest/declared-CRS consistency checks, with explicit limits and meaningful CLI exit codes.
+
 ### Fixed
 
 - normalize JSON parser, representation, and file I/O failures into expected diagnostics; validate
