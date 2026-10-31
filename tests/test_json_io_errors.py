@@ -10,9 +10,7 @@ from starshine_geo.errors import ValidationError
 from starshine_geo.io import read_json, write_json, write_text
 
 
-@pytest.mark.parametrize(
-    "raw", [b"\xff", b'{"private":', b'{"x":' + b"[" * 10000 + b"0" + b"]" * 10000 + b"}"]
-)
+@pytest.mark.parametrize("raw", [b"\xff", b'{"private":'])
 def test_read_failure_has_stable_diagnostic(tmp_path, capsys, raw):
     source = tmp_path / "input.json"
     source.write_bytes(raw)
@@ -20,6 +18,39 @@ def test_read_failure_has_stable_diagnostic(tmp_path, capsys, raw):
     diagnostic = json.loads(capsys.readouterr().err)
     assert diagnostic["error"] == "starshine_error"
     assert diagnostic["message"] == f"Cannot read JSON from {source}"
+
+
+def test_parser_recursion_error_is_normalized(tmp_path, capsys, monkeypatch):
+    source = tmp_path / "input.json"
+    source.write_text("{}")
+
+    def fail_decode(*args, **kwargs):
+        raise RecursionError("private parser detail")
+
+    with monkeypatch.context() as patch:
+        patch.setattr("starshine_geo.io.json.loads", fail_decode)
+        assert main(["validate", str(source), "--diagnostic-format", "json"]) == 2
+    diagnostic = json.loads(capsys.readouterr().err)
+    assert diagnostic == {
+        "error": "starshine_error",
+        "message": f"Cannot read JSON from {source}",
+    }
+
+
+@pytest.mark.parametrize("depth", [1, 10000])
+def test_deep_input_retains_cli_error_boundary(tmp_path, capsys, depth):
+    source = tmp_path / "deep.json"
+    source.write_bytes(b'{"x":' + b"[" * depth + b"0" + b"]" * depth + b"}")
+    assert main(["validate", str(source), "--diagnostic-format", "json"]) == 2
+    diagnostic = json.loads(capsys.readouterr().err)
+    # JSON decoder depth acceptance differs across Python versions. An accepted
+    # document still fails Workflow validation because x is not a Workflow field.
+    if diagnostic["error"] == "starshine_error":
+        assert diagnostic["message"] == f"Cannot read JSON from {source}"
+    else:
+        assert diagnostic["error"] == "workflow_validation"
+        assert diagnostic["diagnostic"]["code"] == "unexpected_workflow_field"
+        assert diagnostic["diagnostic"]["path"] == "x"
 
 
 def test_integer_parser_limit_is_normalized(tmp_path):
