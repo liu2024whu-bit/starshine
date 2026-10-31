@@ -232,7 +232,7 @@ def sleeping_worker():
         child.wait(timeout=2)
 
 
-@pytest.mark.parametrize("error_kind", ["denied", "missing", "unexpected"])
+@pytest.mark.parametrize("error_kind", ["denied", "missing", "zombie", "other", "unexpected"])
 def test_monitoring_exception_terminates_and_reaps_real_worker(
     monkeypatch, sleeping_worker, error_kind,
 ) -> None:
@@ -241,6 +241,8 @@ def test_monitoring_exception_terminates_and_reaps_real_worker(
     errors = {
         "denied": psutil.AccessDenied(pid=sleeping_worker.pid),
         "missing": psutil.NoSuchProcess(pid=sleeping_worker.pid),
+        "zombie": psutil.ZombieProcess(pid=sleeping_worker.pid),
+        "other": psutil.Error("synthetic private detail"),
         "unexpected": RuntimeError("synthetic supervision fault"),
     }
 
@@ -253,6 +255,10 @@ def test_monitoring_exception_terminates_and_reaps_real_worker(
         _supervise_process(sleeping_worker, timeout_seconds=2, memory_limit_bytes=1024)
     if error_kind != "unexpected":
         assert caught.value.code == "worker_supervision_failed"
+        assert caught.value.as_dict()["reason"] == (
+            "access_denied" if error_kind == "denied" else error_kind
+        )
+        assert caught.value.as_dict()["stage"] == "tree_memory"
     assert sleeping_worker.returncode is not None
     assert sleeping_worker.poll() is not None
 
@@ -405,3 +411,123 @@ def test_execute_inherits_hardened_json_transport_before_worker(monkeypatch, bod
         "/api/v1/workflows/execute", content=body, headers={"Content-Type": "application/json"},
     )
     assert response.status_code == status
+
+
+@pytest.mark.parametrize("error_kind", ["missing", "zombie", "denied", "other"])
+@pytest.mark.parametrize("exit_code", [0, 7])
+def test_inspection_race_accepts_only_confirmed_terminal_worker(monkeypatch, error_kind, exit_code):
+    import psutil
+
+    child = subprocess.Popen(
+        [sys.executable, "-c", f"import sys; sys.stdin.readline(); sys.exit({exit_code})"],
+        stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    )
+    errors = {
+        "missing": psutil.NoSuchProcess(pid=child.pid),
+        "zombie": psutil.ZombieProcess(pid=child.pid),
+        "denied": psutil.AccessDenied(pid=child.pid),
+        "other": psutil.Error("synthetic private detail"),
+    }
+    measured = []
+
+    def exiting_measurement(process):
+        measured.append(process.pid)
+        assert child.stdin is not None
+        child.stdin.write(b"exit\n")
+        child.stdin.flush()
+        assert child.wait(timeout=2) == exit_code
+        raise errors[error_kind]
+
+    monkeypatch.setattr(execution_module, "_process_tree_rss", exiting_measurement)
+    try:
+        _supervise_process(child, timeout_seconds=2, memory_limit_bytes=1024)
+        assert measured == [child.pid]
+        # Supervision completion must not rewrite nonzero worker exits as success.
+        assert child.returncode == exit_code
+    finally:
+        if child.poll() is None:
+            child.kill()
+        child.wait(timeout=2)
+        if child.stdin is not None:
+            child.stdin.close()
+
+
+@pytest.mark.parametrize("value", ["private arbitrary detail", [], {}, None, 1, True])
+def test_supervision_reason_and_stage_never_include_arbitrary_text(value):
+    error = ExecutionBoundaryError(
+        code="worker_supervision_failed", message="fixed safe message", status_code=500,
+        reason=value, stage=value,
+    )
+    assert "reason" not in error.as_dict()
+    assert "stage" not in error.as_dict()
+
+
+def test_live_lookup_failure_keeps_safe_reason_and_reaps_worker(monkeypatch, sleeping_worker):
+    import psutil
+
+    original = psutil.Process
+    calls = []
+
+    def deny_first_lookup(pid):
+        calls.append(pid)
+        if len(calls) == 1:
+            monkeypatch.setattr(execution_module.psutil, "Process", original)
+            raise psutil.AccessDenied(pid=pid)
+        return original(pid)
+
+    monkeypatch.setattr(execution_module.psutil, "Process", deny_first_lookup)
+    with pytest.raises(ExecutionBoundaryError) as caught:
+        _supervise_process(sleeping_worker, timeout_seconds=2, memory_limit_bytes=1024)
+    assert caught.value.as_dict() == {
+        "error": "execution_boundary", "code": "worker_supervision_failed",
+        "message": "The execution worker could not be supervised safely.",
+        "reason": "access_denied", "stage": "process_lookup",
+    }
+    assert sleeping_worker.returncode is not None
+
+
+@pytest.mark.parametrize("error_kind", ["missing", "zombie", "denied", "other"])
+@pytest.mark.parametrize("exit_code", [0, 7])
+def test_owner_checks_exit_status_and_response_after_terminal_inspection_race(
+    monkeypatch, error_kind, exit_code,
+):
+    import psutil
+
+    original_spawn = subprocess.Popen
+    children = []
+    measured = []
+
+    def spawn_owned_worker(command, **kwargs):
+        del command
+        kwargs["stdin"] = subprocess.PIPE
+        child = original_spawn(
+            [sys.executable, "-c", f"import sys; sys.stdin.readline(); raise SystemExit({exit_code})"],
+            **kwargs,
+        )
+        children.append(child)
+        return child
+
+    def exiting_measurement(process):
+        child = children[0]
+        assert process.pid == child.pid
+        measured.append(child.pid)
+        assert child.stdin is not None
+        child.stdin.write(b"exit\n")
+        child.stdin.close()
+        assert child.wait(timeout=2) == exit_code
+        errors = {
+            "missing": psutil.NoSuchProcess(pid=child.pid),
+            "zombie": psutil.ZombieProcess(pid=child.pid),
+            "denied": psutil.AccessDenied(pid=child.pid),
+            "other": psutil.Error("synthetic private detail"),
+        }
+        raise errors[error_kind]
+
+    monkeypatch.setattr(execution_module.subprocess, "Popen", spawn_owned_worker)
+    monkeypatch.setattr(execution_module, "_process_tree_rss", exiting_measurement)
+    with pytest.raises(ExecutionBoundaryError) as caught:
+        execution_module._run_worker({"protocol_version": 1})
+    assert caught.value.code == ("worker_failed" if exit_code else "worker_protocol_error")
+    assert len(children) == 1
+    assert children[0].returncode == exit_code
+    assert measured == [children[0].pid]

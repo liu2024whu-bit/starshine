@@ -54,11 +54,15 @@ class ExecutionBoundaryError(Exception):
         status_code: int,
         limit: int | None = None,
         actual: int | None = None,
+        reason: str | None = None,
+        stage: str | None = None,
     ) -> None:
         self.code = code
         self.status_code = status_code
         self.limit = limit
         self.actual = actual
+        self.reason = reason
+        self.stage = stage
         super().__init__(message)
 
     def as_dict(self) -> dict[str, Any]:
@@ -71,6 +75,12 @@ class ExecutionBoundaryError(Exception):
             payload["limit"] = self.limit
         if self.actual is not None:
             payload["actual"] = self.actual
+        if isinstance(self.reason, str) and self.reason in {
+            "missing", "zombie", "access_denied", "other",
+        }:
+            payload["reason"] = self.reason
+        if isinstance(self.stage, str) and self.stage in {"process_lookup", "tree_memory"}:
+            payload["stage"] = self.stage
         return payload
 
 
@@ -173,10 +183,12 @@ def _supervise_process(
     """Enforce limits and fail closed when live-process monitoring is unavailable."""
     started = time.monotonic()
     process: psutil.Process | None = None
+    stage = "process_lookup"
     try:
         if child.poll() is not None:
             return
         process = psutil.Process(child.pid)
+        stage = "tree_memory"
         while child.poll() is None:
             elapsed = time.monotonic() - started
             if elapsed > timeout_seconds:
@@ -198,20 +210,26 @@ def _supervise_process(
                     actual=resident_bytes,
                 )
             time.sleep(_POLL_SECONDS)
-    except psutil.NoSuchProcess:
-        # Exiting between poll and inspection is normal only if Popen confirms it.
+    except psutil.Error as exc:
+        # Inspection can race with worker exit on any platform/error class.
+        # Only the owned Popen handle can confirm termination. Never retry or
+        # tolerate unavailable monitoring while that worker is still live.
         if child.poll() is None:
+            if isinstance(exc, psutil.ZombieProcess):
+                reason = "zombie"
+            elif isinstance(exc, psutil.NoSuchProcess):
+                reason = "missing"
+            elif isinstance(exc, psutil.AccessDenied):
+                reason = "access_denied"
+            else:
+                reason = "other"
             raise ExecutionBoundaryError(
                 code="worker_supervision_failed",
                 message="The execution worker could not be supervised safely.",
                 status_code=500,
+                reason=reason,
+                stage=stage,
             ) from None
-    except psutil.Error as exc:
-        raise ExecutionBoundaryError(
-            code="worker_supervision_failed",
-            message="The execution worker could not be supervised safely.",
-            status_code=500,
-        ) from exc
     finally:
         if child.poll() is None:
             _cleanup_worker(child, process)
