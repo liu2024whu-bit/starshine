@@ -53,6 +53,7 @@ def _assert_public_imports() -> None:
         "build_workflow_contract",
         "build_workflow_graph",
         "build_manifest",
+        "verify_result_manifest",
         "clip_features",
         "calculate_geometry_metrics",
         "digest_json",
@@ -954,6 +955,24 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
             raise RuntimeError(f"manifest has the wrong package version: {manifest}")
         if manifest.get("output_layer", {}).get("name") != "summary":
             raise RuntimeError(f"manifest has the wrong output layer: {manifest}")
+
+        verification_command = [
+            starshine_command, "verify-result", str(output_path),
+            "--manifest", str(manifest_path),
+        ]
+        verified = json.loads(_run(verification_command).stdout)
+        if verified != starshine_geo.verify_result_manifest(output, manifest):
+            raise RuntimeError("Installed result verification differs between CLI and API")
+        if not verified["matched"] or verified["scope"] != "selected_output_only":
+            raise RuntimeError("Installed result verification did not match the produced result")
+        output["features"] = []
+        _write_json(output_path, output)
+        changed = json.loads(_run(verification_command, expected_returncode=1).stdout)
+        if changed["matched"]:
+            raise RuntimeError("Installed result verification accepted altered content")
+        manifest["manifest_version"] = True
+        _write_json(manifest_path, manifest)
+        _run(verification_command, expected_returncode=2)
 
     return direct_counts
 

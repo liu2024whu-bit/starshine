@@ -18,7 +18,7 @@ from .graph import build_workflow_graph, render_workflow_mermaid
 from .inspection import inspect_feature_collection
 from .inventory import inventory_source, render_source_inventory_markdown
 from .io import read_json, write_json
-from .manifest import build_manifest
+from .manifest import build_manifest, verify_result_manifest
 from .operator_registry import operator_catalog
 from .planning import plan_workflow
 from .preflight import preflight_workflow_inputs, render_workflow_preflight_markdown
@@ -64,6 +64,13 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         help="Optionally write the doctor report instead of printing it",
     )
+
+    verify_parser = subparsers.add_parser(
+        "verify-result", help="Check result content and declared CRS against a supplied manifest"
+    )
+    verify_parser.add_argument("result", type=Path)
+    verify_parser.add_argument("--manifest", required=True, type=Path)
+    _add_diagnostic_format(verify_parser)
 
     run_parser = subparsers.add_parser("run", help="Run a bounded JSON spatial workflow")
     run_parser.add_argument("workflow", type=Path)
@@ -600,6 +607,17 @@ def _preflight_command(args: argparse.Namespace) -> int:
     return 0 if report["valid"] else 1
 
 
+def _verify_result_command(args: argparse.Namespace) -> int:
+    try:
+        result = read_json(args.result)
+        manifest = read_json(args.manifest)
+    except (UnicodeError, RecursionError) as exc:
+        raise StarshineError("Result and manifest must be readable UTF-8 JSON") from exc
+    report = verify_result_manifest(result, manifest)
+    print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
+    return 0 if report["matched"] else 1
+
+
 def _run_command(args: argparse.Namespace) -> int:
     bindings = prepare_layer_bindings(args.layer, args.geopackage_layer)
     input_paths = tuple(bindings.paths.values())
@@ -635,6 +653,8 @@ def _run_command(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
+        if args.command == "verify-result":
+            return _verify_result_command(args)
         if args.command == "doctor":
             return _doctor_command(args)
         if args.command == "validate":

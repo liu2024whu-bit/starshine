@@ -32,7 +32,7 @@ from .inventory import (
     inventory_source,
     render_source_inventory_markdown,
 )
-from .manifest import build_manifest, digest_json
+from .manifest import build_manifest, digest_json, verify_result_manifest
 from .metrics import calculate_geometry_metrics
 from .operator_registry import OPERATOR_REGISTRY, operator_catalog
 from .operators import (
@@ -114,5 +114,6 @@ __all__ = [
     "summarize_points_within",
     "validate_feature_collection",
     "validate_workflow",
+    "verify_result_manifest",
     "write_geopackage",
 ]
