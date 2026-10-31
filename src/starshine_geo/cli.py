@@ -17,7 +17,7 @@ from .geometry_quality import assess_geometry_quality, render_geometry_quality_m
 from .graph import build_workflow_graph, render_workflow_mermaid
 from .inspection import inspect_feature_collection
 from .inventory import inventory_source, render_source_inventory_markdown
-from .io import read_json, write_json
+from .io import read_json, write_json, write_text
 from .manifest import build_manifest
 from .operator_registry import operator_catalog
 from .planning import plan_workflow
@@ -360,8 +360,7 @@ def _emit_text(content: str, output: Path | None) -> None:
     if output is None:
         print(content, end="")
         return
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(content, encoding="utf-8")
+    write_text(content, output)
     print(output)
 
 

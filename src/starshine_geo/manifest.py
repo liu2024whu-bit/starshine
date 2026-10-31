@@ -7,6 +7,7 @@ from copy import deepcopy
 from typing import Any
 
 from ._version import package_version
+from .errors import ValidationError
 from .geojson import FeatureCollection
 
 _SENSITIVE_KEY_PARTS = (
@@ -27,18 +28,24 @@ _URL_WITH_CREDENTIALS = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*://[^/@\s]+:[^/@\s]
 
 def canonical_json(value: Any) -> str:
     """Serialize JSON-compatible data deterministically for hashing."""
-    return json.dumps(
-        value,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-        allow_nan=False,
-    )
+    try:
+        return json.dumps(
+            value,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        )
+    except (TypeError, ValueError, RecursionError) as exc:
+        raise ValidationError("Cannot serialize canonical JSON") from exc
 
 
 def digest_json(value: Any) -> str:
     """Return a prefixed SHA-256 digest for JSON-compatible data."""
-    payload = canonical_json(value).encode("utf-8")
+    try:
+        payload = canonical_json(value).encode("utf-8")
+    except UnicodeError as exc:
+        raise ValidationError("Cannot encode canonical JSON as UTF-8") from exc
     return f"sha256:{hashlib.sha256(payload).hexdigest()}"
 
 
