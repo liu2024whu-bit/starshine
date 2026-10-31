@@ -7,6 +7,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+from ._path_identity import same_file
 from .crs import parse_crs
 from .errors import ValidationError
 from .geojson import FeatureCollection, validate_feature_collection
@@ -148,9 +149,7 @@ def write_geopackage(
         raise ValidationError("GeoPackage output requires a declared starshine:crs value")
     normalized_crs = parse_crs(crs_value).to_string()
 
-    destination_resolved = destination.resolve(strict=False)
-    source_paths = {Path(source).resolve(strict=False) for source in input_paths}
-    if destination_resolved in source_paths and not overwrite:
+    if not overwrite and any(same_file(destination, Path(source)) for source in input_paths):
         raise ValidationError(
             "GeoPackage output would overwrite an input file; pass overwrite=True explicitly"
         )

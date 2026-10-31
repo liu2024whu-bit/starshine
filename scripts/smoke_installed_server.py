@@ -11,12 +11,49 @@ from unittest.mock import patch
 from urllib.error import URLError
 from urllib.request import urlopen
 
+import httpx
 import psutil
 from fastapi.testclient import TestClient
 
 import starshine_geo
 from starshine_server import create_app
 from starshine_server.execution import ExecutionBoundaryError, _supervise_process
+
+# Never echo untrusted response text, URLs, headers, or worker output into CI logs.
+_BOUNDARY_CODES = frozenset({
+    "execution_timeout", "execution_memory_limit", "execution_output_too_large",
+    "worker_supervision_failed", "worker_cleanup_failed", "worker_failed",
+    "worker_protocol_error",
+})
+
+
+def _check_execution_response(response: httpx.Response) -> None:
+    """Keep HTTP failure fatal while exposing only bounded, known diagnostics."""
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError:
+        diagnostic: dict[str, object] = {"status": response.status_code}
+        body = response.content
+        if len(body) <= 4096:
+            try:
+                payload = json.loads(body)
+            except (ValueError, RecursionError):
+                payload = None
+            if isinstance(payload, dict) and payload.get("error") == "execution_boundary":
+                code = payload.get("code")
+                if isinstance(code, str) and code in _BOUNDARY_CODES:
+                    diagnostic["error"] = "execution_boundary"
+                    diagnostic["code"] = code
+                    for key in ("limit", "actual"):
+                        value = payload.get(key)
+                        if type(value) is int and 0 <= value <= 2**63 - 1:
+                            diagnostic[key] = value
+        # Do not chain httpx's original exception: its message includes the request URL.
+        raise httpx.HTTPStatusError(
+            "Installed server execution failed: " + json.dumps(diagnostic, sort_keys=True),
+            request=response.request,
+            response=response,
+        ) from None
 
 
 def _point_layer() -> dict:
@@ -258,7 +295,7 @@ def main() -> int:
             "output_layer": "clipped",
         },
     )
-    execution.raise_for_status()
+    _check_execution_response(execution)
     execution_payload = execution.json()
     expected_context = starshine_geo.run_workflow(workflow, layers)
     expected_result = expected_context["clipped"]

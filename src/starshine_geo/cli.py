@@ -7,6 +7,7 @@ from pathlib import Path
 
 from ._cli_layer_sources import prepare_layer_bindings
 from ._cli_run_output import prepare_run_output
+from ._path_identity import same_file
 from ._version import __version__
 from .contracts import build_workflow_contract, render_workflow_contract_markdown
 from .doctor import build_doctor_report, render_doctor_text
@@ -16,8 +17,8 @@ from .geometry_quality import assess_geometry_quality, render_geometry_quality_m
 from .graph import build_workflow_graph, render_workflow_mermaid
 from .inspection import inspect_feature_collection
 from .inventory import inventory_source, render_source_inventory_markdown
-from .io import read_json, write_json
-from .manifest import build_manifest
+from .io import read_json, write_json, write_text
+from .manifest import build_manifest, verify_result_manifest
 from .operator_registry import operator_catalog
 from .planning import plan_workflow
 from .preflight import preflight_workflow_inputs, render_workflow_preflight_markdown
@@ -63,6 +64,13 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         help="Optionally write the doctor report instead of printing it",
     )
+
+    verify_parser = subparsers.add_parser(
+        "verify-result", help="Check result content and declared CRS against a supplied manifest"
+    )
+    verify_parser.add_argument("result", type=Path)
+    verify_parser.add_argument("--manifest", required=True, type=Path)
+    _add_diagnostic_format(verify_parser)
 
     run_parser = subparsers.add_parser("run", help="Run a bounded JSON spatial workflow")
     run_parser.add_argument("workflow", type=Path)
@@ -351,8 +359,7 @@ def _reject_output_collision(
 ) -> None:
     if output is None:
         return
-    resolved_output = output.resolve()
-    if any(resolved_output == protected.resolve() for protected in protected_paths):
+    if any(same_file(output, protected) for protected in protected_paths):
         raise StarshineError(message)
 
 
@@ -360,8 +367,7 @@ def _emit_text(content: str, output: Path | None) -> None:
     if output is None:
         print(content, end="")
         return
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(content, encoding="utf-8")
+    write_text(content, output)
     print(output)
 
 
@@ -600,6 +606,14 @@ def _preflight_command(args: argparse.Namespace) -> int:
     return 0 if report["valid"] else 1
 
 
+def _verify_result_command(args: argparse.Namespace) -> int:
+    result = read_json(args.result)
+    manifest = read_json(args.manifest)
+    report = verify_result_manifest(result, manifest)
+    print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
+    return 0 if report["matched"] else 1
+
+
 def _run_command(args: argparse.Namespace) -> int:
     bindings = prepare_layer_bindings(args.layer, args.geopackage_layer)
     input_paths = tuple(bindings.paths.values())
@@ -635,6 +649,8 @@ def _run_command(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
+        if args.command == "verify-result":
+            return _verify_result_command(args)
         if args.command == "doctor":
             return _doctor_command(args)
         if args.command == "validate":

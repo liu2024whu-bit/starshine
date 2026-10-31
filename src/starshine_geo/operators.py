@@ -8,6 +8,8 @@ from shapely.errors import GEOSException
 from shapely.geometry import Point
 from shapely.ops import unary_union
 
+from ._json_identity import json_unique_key
+from ._numeric import is_finite_number
 from ._spatial_index import DeterministicSpatialIndex
 from .crs import geometry_transformer, parse_crs, require_projected_crs
 from .errors import ValidationError
@@ -116,9 +118,9 @@ def buffer_features(
     segments: int = 16,
 ) -> FeatureCollection:
     """Buffer every feature in a projected working CRS and return it in the source CRS."""
-    if not math.isfinite(distance) or distance <= 0:
+    if not is_finite_number(distance) or distance <= 0:
         raise ValidationError("distance must be a positive finite number")
-    if not isinstance(segments, int) or not 1 <= segments <= 64:
+    if isinstance(segments, bool) or not isinstance(segments, int) or not 1 <= segments <= 64:
         raise ValidationError("segments must be an integer between 1 and 64")
     require_projected_crs(work_crs)
     to_work = geometry_transformer(source_crs, work_crs)
@@ -131,7 +133,7 @@ def buffer_features(
         properties["starshine:buffer_distance"] = distance
         properties["starshine:work_crs"] = work_crs
         output.append(make_feature(buffered, properties))
-    return make_collection(output, crs=source_crs)
+    return validate_feature_collection(make_collection(output, crs=source_crs))
 
 
 def clip_features(
@@ -305,7 +307,7 @@ def nearest_features(
     if max_distance is not None:
         if isinstance(max_distance, bool) or not isinstance(max_distance, (int, float)):
             raise ValidationError("max_distance must be a non-negative finite number or null")
-        if not math.isfinite(float(max_distance)) or float(max_distance) < 0:
+        if not is_finite_number(max_distance) or max_distance < 0:
             raise ValidationError("max_distance must be a non-negative finite number or null")
         max_distance = float(max_distance)
 
@@ -524,7 +526,10 @@ def dissolve_features(
     groups: dict[Any, list] = defaultdict(list)
     for feature, geometry in iter_geometries(collection):
         key = None if group_field is None else (feature.get("properties") or {}).get(group_field)
-        groups[key].append(geometry)
+        try:
+            groups[key].append(geometry)
+        except TypeError as exc:
+            raise ValidationError("dissolve group property must be a hashable scalar or null") from exc
 
     features = []
     for key, geometries in groups.items():
@@ -551,20 +556,25 @@ def summarize_points_within(
         point_geometries.append(geometry)
 
     output = []
-    seen_ids: set[Any] = set()
+    seen_ids: set[tuple[str, str]] = set()
     for index, (feature, polygon) in enumerate(iter_geometries(polygons)):
         properties = dict(feature.get("properties") or {})
         polygon_id = properties.get(polygon_id_field)
         if polygon_id is None:
             raise ValidationError(f"polygon is missing required property: {polygon_id_field}")
-        if polygon_id in seen_ids:
+        identifier_key = json_unique_key(polygon_id)
+        if identifier_key is None:
+            raise ValidationError(
+                f"polygon {index} property {polygon_id_field!r} must be a finite JSON value"
+            )
+        if identifier_key in seen_ids:
             _raise_duplicate_identifier(
                 identifier_label="polygon",
                 entity="polygon",
                 index=index,
                 field=polygon_id_field,
             )
-        seen_ids.add(polygon_id)
+        seen_ids.add(identifier_key)
         properties[count_field] = sum(1 for point in point_geometries if polygon.covers(point))
         output.append(make_feature(polygon, properties))
     return make_collection(output, crs=polygons.get("starshine:crs"))

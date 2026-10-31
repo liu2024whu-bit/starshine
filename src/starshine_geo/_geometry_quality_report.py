@@ -69,7 +69,7 @@ def build_geometry_quality_report(collection: FeatureCollection) -> GeometryQual
     try:
         collection_digest = digest_json(collection)
         collection_digest_status = "available"
-    except (TypeError, ValueError):
+    except ValidationError:
         collection_digest = None
         collection_digest_status = "unavailable"
         findings.add(

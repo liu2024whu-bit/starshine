@@ -4,7 +4,28 @@ All notable public changes are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- read-only `verify_result_manifest()` and `starshine verify-result` for offline selected-output
+  digest/declared-CRS consistency checks, with explicit limits and meaningful CLI exit codes.
+
 ### Fixed
+
+- keep installed Server smoke failures fatal while reporting bounded, allowlisted execution error
+  codes without logging response text, request URLs, headers, or worker output.
+
+- normalize JSON parser, representation, and file I/O failures into expected diagnostics; validate
+  output encoding before opening files to prevent truncation on encoding errors, while preserving
+  geometry-quality and Preflight aggregation when collection digests are unavailable.
+- reject failed coordinate transformations and invalid buffer results instead of reporting successful
+  empty geometry output; normalize oversized distance values and invalid dissolve grouping values to
+  validation errors, and keep direct buffer segment validation consistent with Workflow validation.
+- align point-summary identifier uniqueness with Preflight's existing JSON-value semantics, including
+  structured identifiers and distinct boolean/numeric values, without exposing rejected values.
+
+- reject existing hard-link output aliases in CLI reports, Workflow results and manifests before
+  reading inputs; share file-identity checks with GeoPackage output validation and fail closed when
+  file identity cannot be checked. This pre-write check does not lock paths against concurrent changes.
 
 - reject boolean Workflow versions consistently with the published JSON Schema, including through
   Server review, Preflight, and execution endpoints, while retaining numeric version `1` support.

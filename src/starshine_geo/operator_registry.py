@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Any
 
+from ._numeric import is_finite_number
 from .contract_specs import (
     FieldRequirementSpec,
     FieldWriteSpec,
@@ -148,7 +149,7 @@ class OperatorSpec:
 def _validate_positive_number(value: Any) -> str | None:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return "must be a number"
-    if not math.isfinite(float(value)) or float(value) <= 0:
+    if not is_finite_number(value) or value <= 0:
         return "must be a positive finite number"
     return None
 
@@ -158,7 +159,7 @@ def _validate_optional_non_negative_number(value: Any) -> str | None:
         return None
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return "must be a non-negative finite number or null"
-    if not math.isfinite(float(value)) or float(value) < 0:
+    if not is_finite_number(value) or value < 0:
         return "must be a non-negative finite number or null"
     return None
 

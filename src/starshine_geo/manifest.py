@@ -7,6 +7,7 @@ from copy import deepcopy
 from typing import Any
 
 from ._version import package_version
+from .errors import ValidationError
 from .geojson import FeatureCollection
 
 _SENSITIVE_KEY_PARTS = (
@@ -27,18 +28,24 @@ _URL_WITH_CREDENTIALS = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*://[^/@\s]+:[^/@\s]
 
 def canonical_json(value: Any) -> str:
     """Serialize JSON-compatible data deterministically for hashing."""
-    return json.dumps(
-        value,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-        allow_nan=False,
-    )
+    try:
+        return json.dumps(
+            value,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        )
+    except (TypeError, ValueError, RecursionError) as exc:
+        raise ValidationError("Cannot serialize canonical JSON") from exc
 
 
 def digest_json(value: Any) -> str:
     """Return a prefixed SHA-256 digest for JSON-compatible data."""
-    payload = canonical_json(value).encode("utf-8")
+    try:
+        payload = canonical_json(value).encode("utf-8")
+    except UnicodeError as exc:
+        raise ValidationError("Cannot encode canonical JSON as UTF-8") from exc
     return f"sha256:{hashlib.sha256(payload).hexdigest()}"
 
 
@@ -133,4 +140,54 @@ def build_manifest(
             "digest": digest_json(output_layer),
             "crs": _declared_crs(output_layer),
         },
+    }
+
+
+def verify_result_manifest(
+    result: FeatureCollection, manifest: dict[str, Any]
+) -> dict[str, Any]:
+    """Check selected-output content/declared CRS only, not provenance or GIS correctness.
+
+    Object-key order and JSON whitespace do not affect the canonical digest. Array
+    order and numeric representations retain the existing digest_json semantics.
+    No workflow execution, geometry validation, mutation, or file I/O occurs here.
+    """
+    if not isinstance(manifest, dict):
+        raise ValidationError("Result manifest must be a JSON object")
+    version = manifest.get("manifest_version")
+    if isinstance(version, bool) or not isinstance(version, (int, float)) or version != 1:
+        raise ValidationError("Result verification requires manifest version 1")
+    output = manifest.get("output_layer")
+    if not isinstance(output, dict):
+        raise ValidationError("Result manifest requires an output_layer object")
+    expected = output.get("digest")
+    if not isinstance(expected, str) or re.fullmatch(r"sha256:[0-9a-f]{64}", expected) is None:
+        raise ValidationError("Result manifest requires a canonical SHA-256 output digest")
+    if "crs" not in output or (
+        output["crs"] is not None
+        and (not isinstance(output["crs"], str) or not output["crs"].strip())
+    ):
+        raise ValidationError("Result manifest output CRS must be a non-empty string or null")
+    if (
+        not isinstance(result, dict)
+        or result.get("type") != "FeatureCollection"
+        or not isinstance(result.get("features"), list)
+    ):
+        raise ValidationError("Result must be a GeoJSON FeatureCollection object")
+    try:
+        # Reject unsupported JSON representations even in unverified manifest fields.
+        canonical_json(manifest)
+        actual = digest_json(result)
+    except (TypeError, ValueError, UnicodeError, RecursionError) as exc:
+        raise ValidationError("Result and manifest must contain finite JSON values") from exc
+    checks = {
+        "content_digest": actual == expected,
+        "declared_crs": _declared_crs(result) == output["crs"],
+    }
+    return {
+        "scope": "selected_output_only",
+        "matched": all(checks.values()),
+        "checks": checks,
+        "expected_digest": expected,
+        "actual_digest": actual,
     }

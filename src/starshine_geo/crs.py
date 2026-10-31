@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from functools import partial
 
 from pyproj import CRS, Transformer
+from pyproj.exceptions import ProjError
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform
 
@@ -29,4 +31,13 @@ def geometry_transformer(source_crs: str, target_crs: str) -> Callable[[BaseGeom
     source = parse_crs(source_crs)
     target = parse_crs(target_crs)
     transformer = Transformer.from_crs(source, target, always_xy=True)
-    return lambda geometry: transform(transformer.transform, geometry)
+    def transform_geometry(geometry: BaseGeometry) -> BaseGeometry:
+        try:
+            result = transform(partial(transformer.transform, errcheck=True), geometry)
+        except ProjError as exc:
+            raise ValidationError("geometry coordinate transformation failed") from exc
+        if result.is_empty or not result.is_valid:
+            raise ValidationError("geometry coordinate transformation produced invalid geometry")
+        return result
+
+    return transform_geometry
