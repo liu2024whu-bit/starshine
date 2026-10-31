@@ -310,7 +310,7 @@ def summarize_layer(
 
     try:
         collection_digest = digest_json(validated)
-    except (TypeError, ValueError):
+    except ValidationError:
         collection_digest = None
         findings.add(
             severity="error",

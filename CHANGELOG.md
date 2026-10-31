@@ -11,6 +11,10 @@ All notable public changes are documented here.
 
 ### Fixed
 
+- normalize JSON parser, representation, and file I/O failures into expected diagnostics; validate
+  output encoding before opening files to prevent truncation on encoding errors, while preserving
+  geometry-quality and Preflight aggregation when collection digests are unavailable.
+
 - reject existing hard-link output aliases in CLI reports, Workflow results and manifests before
   reading inputs; share file-identity checks with GeoPackage output validation and fail closed when
   file identity cannot be checked. This pre-write check does not lock paths against concurrent changes.

@@ -965,6 +965,25 @@ def _assert_cli_and_demo(starshine_command: str, installed_version: str) -> dict
             raise RuntimeError("Installed result verification differs between CLI and API")
         if not verified["matched"] or verified["scope"] != "selected_output_only":
             raise RuntimeError("Installed result verification did not match the produced result")
+        digit_limit = getattr(sys, "get_int_max_str_digits", lambda: 0)()
+        if digit_limit:
+            for target in (output_path, manifest_path):
+                original = target.read_bytes()
+                text = original.decode("utf-8").rstrip()
+                target.write_text(
+                    text[:-1] + ', "oversized": ' + "9" * (digit_limit + 1) + "}",
+                    encoding="utf-8",
+                )
+                before = (output_path.read_bytes(), manifest_path.read_bytes())
+                rejected = _run(
+                    verification_command + ["--diagnostic-format", "json"],
+                    expected_returncode=2,
+                )
+                if rejected.stdout or json.loads(rejected.stderr)["error"] != "starshine_error":
+                    raise RuntimeError("Installed verifier did not diagnose an oversized integer")
+                if before != (output_path.read_bytes(), manifest_path.read_bytes()):
+                    raise RuntimeError("Installed verifier modified an input")
+                target.write_bytes(original)
         output["features"] = []
         _write_json(output_path, output)
         changed = json.loads(_run(verification_command, expected_returncode=1).stdout)

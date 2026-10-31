@@ -1,4 +1,5 @@
 import json
+import sys
 from copy import deepcopy
 
 import pytest
@@ -283,3 +284,33 @@ def test_verify_result_cli_exit_codes_stdout_and_read_only(tmp_path, capsys, mon
     assert json.loads(captured.err)["error"]
     manifest_path.unlink()
     assert main(args) == 2
+
+
+@pytest.mark.parametrize("target", ["result", "manifest"])
+def test_verify_result_cli_rejects_overlimit_integer_without_mutation(tmp_path, capsys, target):
+    limit = getattr(sys, "get_int_max_str_digits", lambda: 0)()
+    if not limit:
+        pytest.skip("This Python runtime has no active integer string conversion limit")
+    result_path = tmp_path / "result.json"
+    manifest_path = tmp_path / "manifest.json"
+    result_path.write_text(json.dumps(ZONES), encoding="utf-8")
+    manifest_path.write_text(json.dumps(_manifest()), encoding="utf-8")
+    target_path = result_path if target == "result" else manifest_path
+    original = target_path.read_text(encoding="utf-8")
+    # Construct text directly: building the integer would itself trip the runtime limit.
+    target_path.write_text(
+        original[:-1] + ', "oversized": ' + "9" * (limit + 1) + "}", encoding="utf-8"
+    )
+    before = (result_path.read_bytes(), manifest_path.read_bytes())
+    assert main([
+        "verify-result", str(result_path), "--manifest", str(manifest_path),
+        "--diagnostic-format", "json",
+    ]) == 2
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    diagnostic = json.loads(captured.err)
+    assert diagnostic["error"] == "starshine_error"
+    assert "Cannot read JSON" in diagnostic["message"]
+    assert "9999999999" not in captured.err
+    assert before == (result_path.read_bytes(), manifest_path.read_bytes())
+    assert set(tmp_path.iterdir()) == {result_path, manifest_path}

@@ -17,7 +17,7 @@ from .geometry_quality import assess_geometry_quality, render_geometry_quality_m
 from .graph import build_workflow_graph, render_workflow_mermaid
 from .inspection import inspect_feature_collection
 from .inventory import inventory_source, render_source_inventory_markdown
-from .io import read_json, write_json
+from .io import read_json, write_json, write_text
 from .manifest import build_manifest, verify_result_manifest
 from .operator_registry import operator_catalog
 from .planning import plan_workflow
@@ -367,8 +367,7 @@ def _emit_text(content: str, output: Path | None) -> None:
     if output is None:
         print(content, end="")
         return
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(content, encoding="utf-8")
+    write_text(content, output)
     print(output)
 
 
@@ -608,11 +607,8 @@ def _preflight_command(args: argparse.Namespace) -> int:
 
 
 def _verify_result_command(args: argparse.Namespace) -> int:
-    try:
-        result = read_json(args.result)
-        manifest = read_json(args.manifest)
-    except (UnicodeError, RecursionError) as exc:
-        raise StarshineError("Result and manifest must be readable UTF-8 JSON") from exc
+    result = read_json(args.result)
+    manifest = read_json(args.manifest)
     report = verify_result_manifest(result, manifest)
     print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
     return 0 if report["matched"] else 1
