@@ -35,10 +35,16 @@ def write_text(content: str, path: str | Path) -> Path:
     return destination
 
 
-def write_json(value: JsonObject, path: str | Path) -> Path:
-    destination = Path(path)
+def prepare_json_text(value: JsonObject, path: str | Path) -> str:
+    """Serialize and validate UTF-8 before any destination is opened."""
     try:
         content = json.dumps(value, ensure_ascii=False, indent=2) + "\n"
+        content.encode("utf-8")
     except (TypeError, ValueError, RecursionError) as exc:
-        raise ValidationError(f"Cannot serialize JSON for {destination}") from exc
-    return write_text(content, destination)
+        raise ValidationError(f"Cannot serialize JSON for {path}") from exc
+    return content
+
+
+def write_json(value: JsonObject, path: str | Path) -> Path:
+    destination = Path(path)
+    return write_text(prepare_json_text(value, destination), destination)
