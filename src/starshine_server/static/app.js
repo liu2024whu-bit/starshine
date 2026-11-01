@@ -85,6 +85,7 @@ function invalidateReview() {
   renderReports(elements, null);
   // The invalidated request no longer owns the button's disabled state.
   elements.reviewButton.disabled = false;
+  setRequestStatus(elements.requestStatus, "Inputs changed. Review again for current evidence.");
   setReviewState(elements.reviewState, "Not reviewed");
 }
 

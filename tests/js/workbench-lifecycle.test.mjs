@@ -21,7 +21,11 @@ class Element {
   disabled = false;
   value = "";
   ownText = "";
-  classList = { toggle() {} };
+  classes = new Set();
+  classList = {
+    toggle: (name, enabled) => enabled ? this.classes.add(name) : this.classes.delete(name),
+    contains: (name) => this.classes.has(name),
+  };
   get firstChild() { return this.children[0] || null; }
   get textContent() { return this.ownText + this.children.map((child) => child.textContent).join(""); }
   set textContent(value) { this.ownText = String(value); this.children = []; }
@@ -113,6 +117,8 @@ test("input invalidation releases controls and stale validation does not request
   await pending;
   assert.equal(context.requests.length, 0);
   assert.equal(context.element("review-state").textContent, "Not reviewed");
+  assert.equal(context.element("request-status").textContent,
+    "Inputs changed. Review again for current evidence.");
 });
 
 test("stale report completion cannot restore panels or release a newer review's controls", async () => {
@@ -150,3 +156,26 @@ test("mismatched canonical report chain leaves no successful evidence", async ()
   assert.equal(context.element("review-state").textContent, "Review failed");
   assert.match(context.element("request-status").textContent, /canonical evidence chain/);
 });
+
+for (const input of ["workflow-editor", "layer-names"]) {
+  test(`${input} edit clears stale success and failure request statuses`, async () => {
+    const context = await setup();
+    await succeed(context);
+    context.element(input).dispatch("input");
+    assertEmpty(context);
+    assert.equal(context.element("request-status").textContent,
+      "Inputs changed. Review again for current evidence.");
+    assert.equal(context.element("review-state").textContent, "Not reviewed");
+    const failed = context.click();
+    context.requests.shift().resolve(reply({ message: "Temporarily unavailable" }, false));
+    await failed;
+    assert.equal(context.element("request-status").classList.contains("is-error"), true);
+    context.element(input).dispatch("input");
+    assertEmpty(context);
+    assert.equal(context.element("request-status").textContent,
+      "Inputs changed. Review again for current evidence.");
+    assert.equal(context.element("request-status").classList.contains("is-error"), false);
+    assert.equal(context.element("review-state").textContent, "Not reviewed");
+    assert.equal(context.element("review-button").disabled, false);
+  });
+}
