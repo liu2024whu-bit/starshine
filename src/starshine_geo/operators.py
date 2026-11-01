@@ -40,7 +40,7 @@ def _json_scalar_key(
     index: int,
     field: str,
     entity: str,
-) -> tuple[str, Any]:
+) -> tuple[str, str]:
     if value is None or isinstance(value, (dict, list)):
         raise ValidationError(
             f"{entity} {index} property {field!r} must be a non-null JSON scalar"
@@ -53,7 +53,12 @@ def _json_scalar_key(
         raise ValidationError(
             f"{entity} {index} property {field!r} must be a JSON scalar"
         )
-    return type(value).__name__, value
+    key = json_unique_key(value)
+    if key is None:
+        raise ValidationError(
+            f"{entity} {index} property {field!r} must be a finite JSON scalar"
+        )
+    return key
 
 
 def _raise_duplicate_identifier(
@@ -69,7 +74,7 @@ def _raise_duplicate_identifier(
     )
 
 
-def _candidate_identifier_key(value: Any, *, index: int, field: str) -> tuple[str, Any]:
+def _candidate_identifier_key(value: Any, *, index: int, field: str) -> tuple[str, str]:
     return _json_scalar_key(
         value,
         index=index,
@@ -218,7 +223,7 @@ def intersect_features(
         raise ValidationError("intersection inputs must declare equivalent CRS values")
 
     right_records: list[tuple[Any, Any]] = []
-    seen_identifiers: set[tuple[str, Any]] = set()
+    seen_identifiers: set[tuple[str, str]] = set()
     for right_index, (feature, geometry) in enumerate(iter_geometries(validated_right)):
         properties = feature.get("properties") or {}
         if right_id_field not in properties:
@@ -323,7 +328,7 @@ def nearest_features(
     require_projected_crs(candidate_crs_label)
 
     candidate_records: list[tuple[Any, Any]] = []
-    seen_identifiers: set[tuple[str, Any]] = set()
+    seen_identifiers: set[tuple[str, str]] = set()
     for index, (feature, geometry) in enumerate(iter_geometries(validated_candidates)):
         properties = feature.get("properties") or {}
         if candidate_id_field not in properties:
@@ -410,7 +415,7 @@ def join_points_to_polygons(
         raise ValidationError("point join inputs must declare equivalent CRS values")
 
     polygon_records: list[tuple[Any, Any]] = []
-    seen_identifiers: set[tuple[str, Any]] = set()
+    seen_identifiers: set[tuple[str, str]] = set()
     for index, (feature, geometry) in enumerate(iter_geometries(validated_polygons)):
         if geometry.geom_type not in {"Polygon", "MultiPolygon"}:
             raise ValidationError(

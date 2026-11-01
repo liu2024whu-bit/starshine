@@ -30,7 +30,11 @@ def require_projected_crs(value: str) -> CRS:
 def geometry_transformer(source_crs: str, target_crs: str) -> Callable[[BaseGeometry], BaseGeometry]:
     source = parse_crs(source_crs)
     target = parse_crs(target_crs)
-    transformer = Transformer.from_crs(source, target, always_xy=True)
+    try:
+        transformer = Transformer.from_crs(source, target, always_xy=True)
+    except ProjError as exc:
+        raise ValidationError("geometry coordinate transformation could not be created") from exc
+
     def transform_geometry(geometry: BaseGeometry) -> BaseGeometry:
         try:
             result = transform(partial(transformer.transform, errcheck=True), geometry)

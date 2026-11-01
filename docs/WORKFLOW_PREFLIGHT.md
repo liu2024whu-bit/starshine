@@ -118,6 +118,10 @@ Preflight currently checks:
 - operator output fields that would collide with existing properties;
 - multiple output parameters that resolve to the same field name.
 
+Identifier uniqueness uses typed canonical JSON identity in Preflight and execution: booleans,
+integers, and floats remain distinct, as do `-0.0` and `0.0`. Operators that require scalar
+identifiers still reject arrays, objects, null, and non-finite floats.
+
 Repeated feature-level failures are aggregated by rule. Reports contain occurrence counts and up to
 20 sample feature indexes, not the failing property values.
 

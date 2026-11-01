@@ -82,3 +82,15 @@ fields needed for these output checks, not the full provenance record. Keep the 
 and workflow separately for independent reproduction. GeoPackage conversion can change the
 canonical JSON representation; supply the original GeoJSON result rather than expecting
 byte-independent or spatial-equivalence verification of an exported dataset.
+
+### Output failure boundaries
+
+When `run --manifest` is requested, Starshine builds and UTF-8-validates the manifest before
+writing the selected result. Deterministic digest or representation failures therefore leave
+existing result and manifest files untouched. This is not a two-file atomic transaction: a later
+filesystem failure can still leave a result without its new manifest.
+
+CLI reports retain Unicode text. If a terminal cannot encode that text, the CLI reports a normal
+error (exit 2) rather than replacing characters; use `--output` to save a UTF-8 report. Observed
+stdout write/flush errors also receive a bounded diagnostic. This does not guarantee recovery
+from stream failures occurring later during interpreter shutdown.

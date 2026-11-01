@@ -17,7 +17,7 @@ from .geometry_quality import assess_geometry_quality, render_geometry_quality_m
 from .graph import build_workflow_graph, render_workflow_mermaid
 from .inspection import inspect_feature_collection
 from .inventory import inventory_source, render_source_inventory_markdown
-from .io import read_json, write_json, write_text
+from .io import prepare_json_text, read_json, write_json, write_text
 from .manifest import build_manifest, verify_result_manifest
 from .operator_registry import operator_catalog
 from .planning import plan_workflow
@@ -363,12 +363,25 @@ def _reject_output_collision(
         raise StarshineError(message)
 
 
+def _print_stdout(content: object, *, end: str = "\n") -> None:
+    """Keep terminal encoding/write failures inside the CLI diagnostic boundary."""
+    try:
+        text = str(content) + end
+        encoding = getattr(sys.stdout, "encoding", None)
+        if encoding is not None:
+            text.encode(encoding, errors="strict")
+        sys.stdout.write(text)
+        sys.stdout.flush()
+    except (UnicodeError, OSError) as exc:
+        raise StarshineError("Cannot write CLI output to stdout") from exc
+
+
 def _emit_text(content: str, output: Path | None) -> None:
     if output is None:
-        print(content, end="")
+        _print_stdout(content, end="")
         return
     write_text(content, output)
-    print(output)
+    _print_stdout(output)
 
 
 def _repository_relative_uri(path: Path, root: Path) -> str:
@@ -416,14 +429,14 @@ def _validate_command(args: argparse.Namespace) -> int:
     workflow = read_json(args.workflow)
     validate_workflow(workflow, _parse_layer_names(args.layer_name))
     if args.diagnostic_format == "json":
-        print(
+        _print_stdout(
             json.dumps(
                 {"valid": True, "workflow_version": workflow.get("version")},
                 sort_keys=True,
             )
         )
     else:
-        print("valid")
+        _print_stdout("valid")
     return 0
 
 
@@ -435,10 +448,10 @@ def _inspect_command(args: argparse.Namespace) -> int:
     )
     report = inspect_feature_collection(read_json(args.source))
     if args.output is None:
-        print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
+        _print_stdout(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
     else:
         write_json(report, args.output)
-        print(args.output)
+        _print_stdout(args.output)
     return 0
 
 
@@ -481,10 +494,10 @@ def _quality_command(args: argparse.Namespace) -> int:
 def _operators_command(args: argparse.Namespace) -> int:
     catalog = operator_catalog()
     if args.output is None:
-        print(json.dumps(catalog, ensure_ascii=False, indent=2, sort_keys=True))
+        _print_stdout(json.dumps(catalog, ensure_ascii=False, indent=2, sort_keys=True))
     else:
         write_json(catalog, args.output)
-        print(args.output)
+        _print_stdout(args.output)
     return 0
 
 
@@ -497,10 +510,10 @@ def _plan_command(args: argparse.Namespace) -> int:
     workflow = read_json(args.workflow)
     plan = plan_workflow(workflow, _parse_layer_names(args.layer_name))
     if args.output is None:
-        print(json.dumps(plan, ensure_ascii=False, indent=2, sort_keys=True))
+        _print_stdout(json.dumps(plan, ensure_ascii=False, indent=2, sort_keys=True))
     else:
         write_json(plan, args.output)
-        print(args.output)
+        _print_stdout(args.output)
     return 0
 
 
@@ -610,7 +623,7 @@ def _verify_result_command(args: argparse.Namespace) -> int:
     result = read_json(args.result)
     manifest = read_json(args.manifest)
     report = verify_result_manifest(result, manifest)
-    print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
+    _print_stdout(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
     return 0 if report["matched"] else 1
 
 
@@ -633,7 +646,7 @@ def _run_command(args: argparse.Namespace) -> int:
     if args.output_layer not in results:
         raise StarshineError(f"workflow did not produce layer: {args.output_layer}")
     output_layer = results[args.output_layer]
-    output.write(output_layer, input_paths=input_paths)
+    manifest_text = None
     if args.manifest is not None:
         manifest = build_manifest(
             workflow,
@@ -641,8 +654,11 @@ def _run_command(args: argparse.Namespace) -> int:
             output_layer_name=args.output_layer,
             output_layer=output_layer,
         )
-        write_json(manifest, args.manifest)
-    print(args.output)
+        manifest_text = prepare_json_text(manifest, args.manifest)
+    output.write(output_layer, input_paths=input_paths)
+    if manifest_text is not None:
+        write_text(manifest_text, args.manifest)
+    _print_stdout(args.output)
     return 0
 
 
