@@ -239,7 +239,7 @@ def test_markdown_renderer_matches_tracked_example_and_escapes_labels():
         {layer_name},
     )
     markdown = render_workflow_contract_markdown(report)
-    assert "sites\\` next" in markdown
+    assert "``sites` next``" in markdown
     assert "\nnext" not in markdown
 
     with pytest.raises(ValidationError, match="schema version 1"):

@@ -7,6 +7,7 @@ from typing import Any
 
 from shapely.geometry import shape
 
+from ._markdown import inline_code
 from .errors import ValidationError
 from .geojson import FeatureCollection, validate_feature_collection
 from .io import read_json
@@ -284,7 +285,7 @@ def render_source_inventory_markdown(report: SourceInventoryReport) -> str:
     lines = [
         "# Starshine Source Inventory",
         "",
-        f"- Format: `{report['source_format']}`",
+        f"- Format: {inline_code(report['source_format'], quote_strings=False)}",
         f"- Layers: {report['layer_count']}",
         f"- Forced feature count: {'yes' if report['feature_count_forced'] else 'no'}",
         f"- Bounds requested: {'yes' if report['bounds_requested'] else 'no'}",
@@ -294,13 +295,20 @@ def render_source_inventory_markdown(report: SourceInventoryReport) -> str:
     for layer in report["layers"]:
         lines.extend(
             [
-                f"## Layer `{layer['name']}`",
+                f"## Layer {inline_code(layer['name'], quote_strings=False)}",
                 "",
                 f"- Spatial: {'yes' if layer['spatial'] else 'no'}",
-                f"- Geometry type: `{layer['geometry_type']}`" if layer["geometry_type"] else "- Geometry type: n/a",
-                f"- CRS status: `{layer['crs_status']}`",
-                f"- CRS: `{layer['crs']}`" if layer["crs"] else "- CRS: n/a",
-                f"- Feature count status: `{layer['feature_count_status']}`",
+                (
+                    f"- Geometry type: {inline_code(layer['geometry_type'], quote_strings=False)}"
+                    if layer["geometry_type"] else "- Geometry type: n/a"
+                ),
+                f"- CRS status: {inline_code(layer['crs_status'], quote_strings=False)}",
+                (
+                    f"- CRS: {inline_code(layer['crs'], quote_strings=False)}"
+                    if layer["crs"] else "- CRS: n/a"
+                ),
+                "- Feature count status: "
+                + inline_code(layer["feature_count_status"], quote_strings=False),
                 (
                     f"- Feature count: {layer['feature_count']}"
                     if layer["feature_count"] is not None
@@ -319,7 +327,10 @@ def render_source_inventory_markdown(report: SourceInventoryReport) -> str:
                     field_type = ", ".join(field["types"])
                 else:
                     field_type = field.get("type", "unknown")
-                lines.append(f"- `{field['name']}`: `{field_type}`")
+                lines.append(
+                    f"- {inline_code(field['name'], quote_strings=False)}: "
+                    f"{inline_code(field_type, quote_strings=False)}"
+                )
         lines.append("")
 
     return "\n".join(lines).rstrip() + "\n"

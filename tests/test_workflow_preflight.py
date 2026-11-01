@@ -331,3 +331,21 @@ def test_preflight_cli_rejects_overwriting_workflow_or_input(tmp_path, capsys):
         == 2
     )
     assert "must not overwrite an input layer" in capsys.readouterr().err
+
+
+def test_markdown_keeps_external_geometry_diagnostic_literal():
+    geometry_type = "bad **bold** <b>fake</b> [link](url) `code`\n\n# heading"
+    point = _point(0, 0)
+    point["geometry"]["type"] = geometry_type
+    report = preflight_workflow_inputs(
+        _join_workflow(),
+        {"points": _collection([point]), "zones": _collection([_square(0, 0, zone_id=1)])},
+    )
+    before = json.dumps(report, sort_keys=True)
+    finding = next(f for f in report["findings"] if f["code"] == "invalid_feature_collection")
+    assert "<b>fake</b>" in finding["message"]
+    markdown = render_workflow_preflight_markdown(report)
+    assert "<b>fake</b>" not in markdown
+    assert r"\*\*bold\*\* &lt;b&gt;fake&lt;/b&gt; \[link\](url) \`code\`" in markdown
+    assert "\n# heading\n" not in markdown
+    assert json.dumps(report, sort_keys=True) == before

@@ -143,7 +143,7 @@ def test_markdown_renderer_normalizes_user_labels_and_rejects_bad_reports():
     explanation = explain_workflow(_buffer_workflow(layer_name), {layer_name})
     markdown = render_workflow_explanation_markdown(explanation)
 
-    assert "sites\\` next" in markdown
+    assert "``sites` next``" in markdown
     assert "\nnext" not in markdown
 
     with pytest.raises(ValidationError, match="schema version 1"):

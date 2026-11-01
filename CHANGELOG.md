@@ -11,6 +11,10 @@ All notable public changes are documented here.
 
 ### Fixed
 
+- preserve Markdown report structure for unusual inventory metadata and workflow labels using
+  delimiter-safe code spans; render external Preflight diagnostics as literal text, without
+  changing JSON reports or evidence digests.
+
 - validate requested manifest serialization before writing Workflow results, preserving existing
   result/manifest files on deterministic digest or encoding errors; normalize CLI terminal
   encoding and observed stdout write failures without replacing unrepresentable report data.

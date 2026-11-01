@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ._markdown import inline_code
+from ._markdown import inline_code, plain_text
 from ._preflight_model import WorkflowPreflight
 from .errors import ValidationError
 
@@ -71,7 +71,7 @@ def render_workflow_preflight_markdown(report: WorkflowPreflight) -> str:
                 severity = finding["severity"].upper()
                 code = inline_code(finding["code"], quote_strings=False)
                 lines.append(
-                    f"  - **{severity}** {code}{suffix}: {finding['message']} "
+                    f"  - **{severity}** {code}{suffix}: {plain_text(finding['message'])} "
                     f"Count: {finding['occurrence_count']}{sample}"
                 )
         else:

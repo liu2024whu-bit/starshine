@@ -225,3 +225,61 @@ def test_geopackage_expensive_metadata_is_opt_in(
     layer = report["layers"][0]
     assert layer["feature_count"] == 42
     assert layer["bounds"] == [0.0, 0.0, 10.0, 20.0]
+
+
+def test_markdown_unusual_fields_have_exact_single_line_representation() -> None:
+    collection = _collection()
+    collection["features"] = collection["features"][:1]
+    names = ["x`\n\n# Forged heading\n\n`y", "a|b", "地块 café", "", "`", " x "]
+    collection["features"][0]["properties"] = dict.fromkeys(names, 1)
+    report = inventory_geojson(collection)
+    before = json.dumps(report, ensure_ascii=False, sort_keys=True)
+
+    markdown = render_source_inventory_markdown(report)
+
+    assert markdown.split("### Fields\n\n", 1)[1] == (
+        '- `""`: `integer`\n'
+        '- `  x  `: `integer`\n'
+        '- `` ` ``: `integer`\n'
+        '- `a|b`: `integer`\n'
+        '- ``x`  # Forged heading  `y``: `integer`\n'
+        '- `地块 café`: `integer`\n'
+    )
+    assert [line for line in markdown.splitlines() if line.startswith("#")] == [
+        "# Starshine Source Inventory", "## Layer `feature_collection`", "### Fields"
+    ]
+    assert {field["name"] for field in report["layers"][0]["fields"]} == set(names)
+    assert json.dumps(report, ensure_ascii=False, sort_keys=True) == before
+
+
+def test_markdown_metadata_uses_the_same_code_span_policy() -> None:
+    report = inventory_geojson(_collection())
+    layer = report["layers"][0]
+    # These strings can originate in external GeoPackage metadata. Keep the test
+    # independent of an optional GDAL installation or driver's naming restrictions.
+    layer.update(name="`地块|one`\n# heading", crs="custom`\r\n# crs", geometry_type="a`b")
+    layer["fields"] = [{"name": "", "type": "kind`\n# type"}]
+    before = json.dumps(report, sort_keys=True)
+    markdown = render_source_inventory_markdown(report)
+    assert "## Layer `` `地块|one` # heading ``\n" in markdown
+    assert "- CRS: ``custom` # crs``\n" in markdown
+    assert "- Geometry type: ``a`b``\n" in markdown
+    assert '- `""`: ``kind` # type``\n' in markdown
+    assert json.dumps(report, sort_keys=True) == before
+
+
+def test_inventory_cli_keeps_unusual_json_names_and_safe_markdown(tmp_path: Path) -> None:
+    source = tmp_path / "source.geojson"
+    output = tmp_path / "report.md"
+    json_output = tmp_path / "report.json"
+    collection = _collection()
+    name = "x`\n\n# Forged heading\n\n`y"
+    collection["features"][0]["properties"][name] = 1
+    source.write_text(json.dumps(collection), encoding="utf-8")
+    assert cli_main(["inventory", str(source), "--output", str(output)]) == 0
+    assert cli_main([
+        "inventory", str(source), "--format", "json", "--output", str(json_output)
+    ]) == 0
+    assert "\n# Forged heading\n" not in output.read_text(encoding="utf-8")
+    report = json.loads(json_output.read_text(encoding="utf-8"))
+    assert name in {field["name"] for field in report["layers"][0]["fields"]}

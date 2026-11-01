@@ -66,6 +66,16 @@ The same functionality is available through `inventory_source()`, `inventory_geo
 `inventory_geopackage()`. Machine-readable reports conform to
 `schemas/source-inventory-v1.schema.json`.
 
+## Markdown metadata presentation
+
+Inventory and workflow reports render metadata in single-line code spans. Backtick runs use
+longer delimiters; line breaks and ASCII controls are normalized to spaces. Unicode and literal
+pipes remain intact in these heading/list contexts (this is not a GFM table-cell escaping policy).
+Empty names are displayed as `""`, and surrounding spaces are padded to preserve code-span content.
+Preflight diagnostic prose is escaped as literal text rather than interpreted as Markdown or HTML.
+These are presentation rules only: JSON reports retain original strings and evidence digests.
+Use JSON when exact metadata, including line breaks or empty names, must be recovered.
+
 ## Privacy and scope
 
 Neither inspection nor inventory copies property values into reports. `inspect` intentionally
