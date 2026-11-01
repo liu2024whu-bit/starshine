@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
 from typing import Any
 
 from shapely.geometry.base import BaseGeometry
 from shapely.validation import explain_validity
+
+from ._numeric import is_finite_number
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,7 +51,7 @@ def _coordinate_stats(value: Any) -> CoordinateStats:
         for ordinate in value:
             if isinstance(ordinate, bool) or not isinstance(ordinate, (int, float)):
                 malformed = True
-            elif not math.isfinite(float(ordinate)):
+            elif not is_finite_number(ordinate):
                 non_finite = True
         return CoordinateStats(1, frozenset({dimension}), malformed, non_finite)
 

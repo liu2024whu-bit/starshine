@@ -14,6 +14,10 @@ All notable public changes are documented here.
 - validate requested manifest serialization before writing Workflow results, preserving existing
   result/manifest files on deterministic digest or encoding errors; normalize CLI terminal
   encoding and observed stdout write failures without replacing unrepresentable report data.
+- aggregate coordinates outside double-precision range in Geometry Quality reports instead of
+  crashing, and normalize unavailable CRS transformation creation into validation diagnostics.
+- align nearest, point-join, and intersection scalar identifier uniqueness with Preflight's typed
+  canonical JSON identity, preserving signed zero and boolean/integer/float distinctions.
 
 - accept a process-inspection race only after the owned worker is confirmed terminated; keep live
   monitoring failures fail-closed and expose only fixed supervision reason/stage diagnostics.
