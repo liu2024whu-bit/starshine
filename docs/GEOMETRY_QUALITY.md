@@ -63,7 +63,8 @@ The current version reports:
 
 - entries that are not GeoJSON Features;
 - missing or unparseable geometry objects;
-- malformed coordinate arrays, non-finite ordinates, and unsupported coordinate dimensions;
+- malformed coordinate arrays, non-finite ordinates (including integers outside the geometry
+  engine's double-precision range), and unsupported coordinate dimensions;
 - empty geometries;
 - topologically invalid geometries with coordinate-free validity reasons;
 - mixed two- and three-dimensional coordinate positions;
