@@ -106,3 +106,7 @@
 
 /examples/server_handoff.py @liu2024whu-bit
 /tests/test_server_handoff.py @liu2024whu-bit
+
+/tests/test_server_workbench.py @liu2024whu-bit
+
+/tests/js/workbench-lifecycle.test.mjs @liu2024whu-bit

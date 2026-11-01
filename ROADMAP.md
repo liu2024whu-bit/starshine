@@ -8,7 +8,8 @@ Roadmap headings describe development phases, not proof that every matching pack
 published. The current platform development line builds `0.8.0.dev0`; the latest stable release is
 [`0.7.0`](https://github.com/liu2024whu-bit/starshine/releases/tag/v0.7.0), published from the verified
 core commit without rebuilding its CI artifacts. This revision includes the optional API foundation,
-Preflight, bounded execution and reference HTTP handoff. Browser implementations remain on the
+Preflight, bounded execution and reference HTTP handoff. The review-only Workbench is packaged with
+the Server; later browser increments remain on the
 stacked PR line pending their own integration and rendered acceptance; the source in this revision
 is not a claim that the entire 0.8 platform is released.
 
@@ -151,6 +152,7 @@ HTTP handlers; it is to make the existing auditable core usable from a service a
 ### 0.8C — Web workbench
 
 - [x] expose canonical contract/graph/explain JSON reports before browser code owns review semantics
+- [x] package a same-origin review-only Workbench and verify its assets from the exact Server wheel
 - [ ] build operator selection and Workflow editing from the canonical catalog/contracts
 - [ ] surface plan/graph/explain and Preflight findings before execution
 - [ ] add map preview without reproducing spatial-analysis semantics in JavaScript

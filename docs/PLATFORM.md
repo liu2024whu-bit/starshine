@@ -168,6 +168,31 @@ This reference path is intentionally completed before a browser workbench. It gi
 measured interaction sequence to simplify rather than encouraging the browser to invent parallel GIS
 semantics.
 
+## Review-first Workbench shell
+
+The first browser surface is packaged inside `starshine_server` and served at `/workbench/` from
+the same origin as the API. It has no Node build, CDN, third-party browser runtime, external fonts, or
+separate deployment process. The same HTML/CSS/JavaScript assets are required in both the wheel and
+source distribution and are exercised by the installed-wheel Server smoke.
+
+This first slice is deliberately data-free. A user can edit Workflow JSON and external layer names,
+inspect the canonical operator catalog, validate the Workflow, and review plan/contract/graph/explain
+reports. The browser verifies that the reports share the same canonical plan/graph evidence chain,
+but it does not derive that chain itself.
+
+Browser rendering uses DOM element creation and `textContent` for report/user text. The source
+boundary tests reject dynamic HTML/code sinks and external browser runtimes. The Workbench does not
+call Preflight or execution endpoints yet, does not persist state, and does not contain a GIS library.
+
+Each new review and each input edit invalidates the previous reports immediately. Responses from
+older requests cannot restore stale evidence or re-enable controls owned by a newer request.
+`node --test tests/js/workbench-lifecycle.test.mjs` exercises the shipped JavaScript modules with a
+controlled DOM and HTTP replies, including retry failures and out-of-order completion; it is not a
+substitute for rendered browser acceptance.
+
+That boundary leaves the next 0.8C increments explicit: operator-assisted editing from canonical
+catalog metadata, bounded feature-data assurance, and only then a map/result surface.
+
 ## Next platform increments
 
 ### 0.8C — Web workbench

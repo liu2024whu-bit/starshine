@@ -109,6 +109,10 @@ python -m pip install -e ".[server]"
 python -m uvicorn starshine_server:create_app --factory --host 127.0.0.1 --port 8000
 ```
 
+Open `http://127.0.0.1:8000/workbench/` for the packaged review-only Workbench. It edits Workflow
+JSON and external layer names, then presents the canonical catalog, plan, contract, graph, and
+explanation returned by the Server; it does not upload or execute feature data.
+
 Then run the standard-library reference handoff in another terminal:
 
 ```bash
@@ -194,9 +198,9 @@ Starshine Geo 0.8.0.dev0 is the current development snapshot.
 The latest stable release metadata remains 0.7.0. The public API remains intentionally
 bounded around auditable small-vector analysis, explicit CRS and input contracts, reproducible
 workflow execution, and independently checked distribution evidence. This development snapshot
-includes the optional Server adapter and HTTP reference handoff; the browser Workbench remains
-staged for separate integration and rendered acceptance. None of these Server/Web additions are
-part of the published 0.7.0 core release.
+includes the optional Server adapter, HTTP reference handoff, and review-only browser Workbench.
+The assisted editor and data-aware browser increments remain staged for separate integration.
+None of these Server/Web additions are part of the published 0.7.0 core release.
 
 See [ROADMAP.md](ROADMAP.md), [CONTRIBUTING.md](CONTRIBUTING.md),
 [SECURITY.md](SECURITY.md), and [architecture notes](docs/ARCHITECTURE.md).

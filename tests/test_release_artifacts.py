@@ -52,11 +52,14 @@ def test_rejects_invalid_member_sizes(size):
         inspector._validate_member_names([("module.py", size)], "probe.zip")
 
 
-def _wheel(tmp_path: Path, *, prefix="", mode=None, duplicate=False) -> Path:
+def _wheel(tmp_path: Path, *, prefix="", mode=None, duplicate=False, omit_asset=None) -> Path:
     path = tmp_path / f"{ROOT}-py3-none-any.whl"
     with zipfile.ZipFile(path, "w") as archive:
         for name in inspector._package_python_suffixes():
             archive.writestr(prefix + name, "# synthetic module\n")
+        for asset in ("index.html", "styles.css", "app.js", "api.js", "render.js"):
+            if asset != omit_asset:
+                archive.writestr(prefix + f"starshine_server/static/{asset}", "synthetic asset")
         metadata = f"{ROOT}.dist-info/METADATA"
         archive.writestr(metadata, f"Metadata-Version: 2.4\nVersion: {VERSION}\n")
         if duplicate:
@@ -72,6 +75,12 @@ def _wheel(tmp_path: Path, *, prefix="", mode=None, duplicate=False) -> Path:
 
 def test_canonical_wheel_still_passes(tmp_path):
     inspector._check_wheel(_wheel(tmp_path), VERSION)
+
+
+@pytest.mark.parametrize("asset", ["index.html", "styles.css", "app.js", "api.js", "render.js"])
+def test_wheel_requires_every_workbench_asset(tmp_path, asset):
+    with pytest.raises(RuntimeError, match="missing expected files"):
+        inspector._check_wheel(_wheel(tmp_path, omit_asset=asset), VERSION)
 
 
 def test_prefix_cannot_impersonate_installed_modules(tmp_path):
