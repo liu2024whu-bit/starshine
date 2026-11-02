@@ -113,6 +113,19 @@ Open `http://127.0.0.1:8000/workbench/` for the packaged review-only Workbench. 
 JSON and external layer names, then presents the canonical catalog, plan, contract, graph, and
 explanation returned by the Server; it does not upload or execute feature data.
 
+The catalog-assisted builder can append one **unvalidated draft** step to the editable JSON:
+choose an operator, enter input layer names and JSON parameter values, and select **Insert draft
+step**. Suggestions include declared external layers and existing step outputs, not verified
+references. Strings need double quotes (for example, `"EPSG:4326"`); malformed JSON blocks insertion.
+Insertion conservatively rejects nonfinite numbers and integers outside JavaScript's safe-integer
+range in both the existing JSON and draft parameters, without changing the textarea. Successful
+insertion normalizes JSON formatting and numeric spelling; this is not a lossless decimal editor.
+This drafting limit does not change Core or the manual Review API.
+Blank parameters are omitted so Core, not the browser, resolves defaults. Catalog geometry, CRS,
+field, and parameter hints are unresolved guidance. Run **Review workflow** after insertion to
+obtain current canonical validation and requirements. Insertion or manual edits invalidate prior
+review evidence, including responses still in flight.
+
 Then run the standard-library reference handoff in another terminal:
 
 ```bash
