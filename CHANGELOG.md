@@ -11,6 +11,9 @@ All notable public changes are documented here.
 
 ### Fixed
 
+- retain every input digest when a redacted manifest alias collides with a literal layer name,
+  using deterministic unique aliases without changing workflow or output digests.
+
 - preserve Markdown report structure for unusual inventory metadata and workflow labels using
   delimiter-safe code spans; render external Preflight diagnostics as literal text, without
   changing JSON reports or evidence digests.
