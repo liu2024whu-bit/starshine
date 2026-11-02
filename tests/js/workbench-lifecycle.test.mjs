@@ -52,7 +52,7 @@ const catalog = { operators: [{ name: "synthetic_operator", summary: "Synthetic 
   parameters: [{ name: "amount", required: true, schema: { type: "number" } },
     { name: "optional", default: false, schema: { type: "boolean" } }],
 }] };
-async function setup() {
+async function setup({ catalogUnavailable = false } = {}) {
   const elements = new Map();
   globalThis.document = {
     querySelector(selector) {
@@ -62,10 +62,17 @@ async function setup() {
     querySelectorAll() { return []; },
     createElement() { return new Element(); },
   };
+  document.querySelector("#builder-operator").disabled = true;
+  const loadingOption = document.createElement("option");
+  loadingOption.textContent = "Loading canonical catalog…";
+  document.querySelector("#builder-operator").appendChild(loadingOption);
+  document.querySelector("#add-step-button").disabled = true;
   const requests = [];
   globalThis.fetch = (path) => {
     if (path === "/healthz") return Promise.resolve(reply({ core_version: "test" }));
-    if (path === "/api/v1/operators") return Promise.resolve(reply(catalog));
+    if (path === "/api/v1/operators") return Promise.resolve(
+      catalogUnavailable ? reply({ message: "Catalog temporarily unavailable" }, false) : reply(catalog),
+    );
     return new Promise((resolve, reject) => requests.push({ path, resolve, reject }));
   };
   await import(`${pathToFileURL(join(moduleDirectory, "app.js"))}?test=${++instance}`);
@@ -318,3 +325,19 @@ for (const token of ["1e400", "9007199254740993"]) {
     assert.equal(context.requests.length, 0);
   });
 }
+
+
+test("catalog failure replaces loading placeholder, disables drafting, and permits manual review", async () => {
+  const context = await setup({ catalogUnavailable: true });
+  const select = context.element("builder-operator");
+  assert.equal(select.disabled, true);
+  assert.equal(select.textContent, "Catalog unavailable");
+  assert.equal(select.children.length, 1);
+  assert.equal(select.firstChild.value, "");
+  assert.equal(context.element("add-step-button").disabled, true);
+  assert.match(context.element("builder-status").textContent, /Catalog unavailable/);
+  assert.equal(context.element("review-button").disabled, false);
+  await succeed(context);
+  assert.equal(select.disabled, true);
+  assert.equal(select.textContent, "Catalog unavailable");
+});

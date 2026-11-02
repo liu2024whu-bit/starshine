@@ -11,11 +11,11 @@ function metaChip(text) {
   return textElement("span", text, "meta-chip");
 }
 
-export function populateOperatorSelect(select, catalog) {
+export function populateOperatorSelect(select, catalog, placeholderText = "Choose a canonical operator") {
   clearNode(select);
   const placeholder = document.createElement("option");
   placeholder.value = "";
-  placeholder.textContent = "Choose a canonical operator";
+  placeholder.textContent = placeholderText;
   select.appendChild(placeholder);
 
   const operators = catalog && Array.isArray(catalog.operators) ? catalog.operators : [];

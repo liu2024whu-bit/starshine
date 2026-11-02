@@ -161,6 +161,8 @@ async function loadServiceMetadata() {
     elements.serverVersion.textContent = `Core ${version}`;
   } catch (error) {
     elements.catalogStatus.textContent = "Catalog unavailable";
+    populateOperatorSelect(elements.builderOperator, null, "Catalog unavailable");
+    elements.addStepButton.disabled = true;
     setRequestStatus(elements.builderStatus, "Catalog unavailable; assisted editing is disabled.", true);
     setRequestStatus(elements.requestStatus, error.message, true);
     setReviewState(elements.reviewState, "Server unavailable", true);
