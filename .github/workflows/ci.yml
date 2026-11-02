@@ -78,7 +78,7 @@ jobs:
           for file in src/starshine_server/static/*.js; do
             node --input-type=module --check < "$file"
           done
-          node --test tests/js/workbench-lifecycle.test.mjs
+          node --test tests/js/*.test.mjs
       - run: >-
           python -m pytest -q tests/test_server_api.py tests/test_server_transport.py
           tests/test_server_execution.py tests/test_server_handoff.py

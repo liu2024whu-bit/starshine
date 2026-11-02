@@ -186,12 +186,26 @@ call Preflight or execution endpoints yet, does not persist state, and does not 
 
 Each new review and each input edit invalidates the previous reports immediately. Responses from
 older requests cannot restore stale evidence or re-enable controls owned by a newer request.
-`node --test tests/js/workbench-lifecycle.test.mjs` exercises the shipped JavaScript modules with a
+`node --test tests/js/*.test.mjs` exercises the shipped JavaScript modules with a
 controlled DOM and HTTP replies, including retry failures and out-of-order completion; it is not a
 substitute for rendered browser acceptance.
 
-That boundary leaves the next 0.8C increments explicit: operator-assisted editing from canonical
-catalog metadata, bounded feature-data assurance, and only then a map/result surface.
+That boundary leaves later 0.8C increments explicit: bounded feature-data assurance, and only then
+a map/result surface.
+
+### Bounded assisted authoring
+
+The review-only Workbench lowers research/teaching handoff cost with a catalog-driven draft builder.
+It shows input roles, parameter schemas/defaults, and unresolved geometry/CRS/field declarations;
+existing external and produced layer names are suggestions only. It appends one unvalidated step
+without materializing defaults or resolving GIS requirements. Strict JSON syntax prevents accidental
+string fallback. Canonical Review remains the authority, and all JSON/layer edits and insertions
+invalidate prior evidence, including in-flight responses. This does not introduce data uploads,
+Preflight, execution, persistence, maps, or another semantics implementation.
+
+Acceptance includes generic DOM-free transformations, actual-app request ownership races, Core
+agreement for generated drafts, and exact-wheel asset/Server smoke checks. Browser interaction and
+narrow-view checks are separate from Node lifecycle tests.
 
 ## Next platform increments
 

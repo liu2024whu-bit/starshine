@@ -1,3 +1,9 @@
+import {
+  appendDraftStep, buildDraftStep, findCatalogOperator, layerSuggestions, parseDraftJson,
+} from "./editor.js";
+import {
+  populateOperatorSelect, renderStepBuilder, updateLayerSuggestions,
+} from "./render_editor.js";
 import { ENDPOINTS, requestJson } from "./api.js";
 import {
   initializeTabs,
@@ -23,6 +29,10 @@ const elements = {
   serverVersion: document.querySelector("#server-version"),
   catalogStatus: document.querySelector("#catalog-status"),
   operatorCatalog: document.querySelector("#operator-catalog"),
+  builderOperator: document.querySelector("#builder-operator"),
+  builderFields: document.querySelector("#step-builder-fields"),
+  addStepButton: document.querySelector("#add-step-button"),
+  builderStatus: document.querySelector("#builder-status"),
   overview: document.querySelector("#overview-content"),
   contract: document.querySelector("#contract-content"),
   graph: document.querySelector("#graph-content"),
@@ -50,6 +60,16 @@ function parseLayerNames() {
     .filter((value) => value.length > 0);
 }
 
+function currentLayerSuggestions() {
+  let workflow = null;
+  try {
+    workflow = parseWorkflow();
+  } catch {
+    workflow = null;
+  }
+  return layerSuggestions(workflow, parseLayerNames());
+}
+
 function assertEvidenceChain(plan, contract, graph, explain) {
   const planDigest = plan.plan_digest;
   if (
@@ -62,6 +82,71 @@ function assertEvidenceChain(plan, contract, graph, explain) {
   }
 }
 
+function selectedOperator() {
+  return findCatalogOperator(state.catalog, elements.builderOperator.value);
+}
+
+function renderSelectedOperator() {
+  const operator = selectedOperator();
+  renderStepBuilder(elements.builderFields, operator, currentLayerSuggestions());
+  elements.addStepButton.disabled = operator === null;
+  setRequestStatus(
+    elements.builderStatus,
+    operator
+      ? "Draft fields come from the canonical catalog; Server validation remains authoritative."
+      : "Choose a canonical operator to draft one step.",
+  );
+}
+
+function collectDraftValues() {
+  const inputs = Object.create(null);
+  const parameters = Object.create(null);
+
+  for (const control of elements.builderFields.querySelectorAll("[data-step-input]")) {
+    inputs[control.dataset.stepInput] = control.value;
+  }
+  for (const control of elements.builderFields.querySelectorAll("[data-step-parameter]")) {
+    parameters[control.dataset.stepParameter] = control.value;
+  }
+
+  const output = elements.builderFields.querySelector("[data-step-output]");
+  return {
+    inputs,
+    parameters,
+    output: output ? output.value : "",
+  };
+}
+
+function insertDraftStep() {
+  try {
+    const workflow = parseDraftJson(elements.workflow.value, "Workflow JSON");
+    const operator = selectedOperator();
+    if (!operator) {
+      throw new Error("Choose a canonical operator before inserting a draft step.");
+    }
+
+    const draft = collectDraftValues();
+    const step = buildDraftStep(
+      operator,
+      draft.inputs,
+      draft.parameters,
+      draft.output,
+    );
+    const updated = appendDraftStep(workflow, step);
+    elements.workflow.value = JSON.stringify(updated, null, 2);
+
+    invalidateReview();
+    setRequestStatus(elements.requestStatus, "Unvalidated draft inserted. Review again for current evidence.");
+    renderSelectedOperator();
+    setRequestStatus(
+      elements.builderStatus,
+      "Draft inserted into Workflow JSON. Review it before treating the step as valid.",
+    );
+  } catch (error) {
+    setRequestStatus(elements.builderStatus, error.message, true);
+  }
+}
+
 async function loadServiceMetadata() {
   try {
     const [health, catalog] = await Promise.all([
@@ -70,10 +155,13 @@ async function loadServiceMetadata() {
     ]);
     state.catalog = catalog;
     renderCatalog(elements.operatorCatalog, elements.catalogStatus, catalog);
+    populateOperatorSelect(elements.builderOperator, catalog);
+    setRequestStatus(elements.builderStatus, "Choose a canonical operator to draft one step.");
     const version = health.core_version || "unknown";
     elements.serverVersion.textContent = `Core ${version}`;
   } catch (error) {
     elements.catalogStatus.textContent = "Catalog unavailable";
+    setRequestStatus(elements.builderStatus, "Catalog unavailable; assisted editing is disabled.", true);
     setRequestStatus(elements.requestStatus, error.message, true);
     setReviewState(elements.reviewState, "Server unavailable", true);
   }
@@ -87,6 +175,7 @@ function invalidateReview() {
   elements.reviewButton.disabled = false;
   setRequestStatus(elements.requestStatus, "Inputs changed. Review again for current evidence.");
   setReviewState(elements.reviewState, "Not reviewed");
+  updateLayerSuggestions(elements.builderFields, currentLayerSuggestions());
 }
 
 async function reviewWorkflow() {
@@ -137,5 +226,7 @@ async function reviewWorkflow() {
 elements.workflow.addEventListener("input", invalidateReview);
 elements.layerNames.addEventListener("input", invalidateReview);
 elements.reviewButton.addEventListener("click", reviewWorkflow);
+elements.builderOperator.addEventListener("change", renderSelectedOperator);
+elements.addStepButton.addEventListener("click", insertDraftStep);
 initializeTabs();
 loadServiceMetadata();

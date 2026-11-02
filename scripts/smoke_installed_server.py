@@ -227,6 +227,15 @@ def main() -> int:
     assert "/api/v1/workflows/preflight" not in workbench_api.text
     assert "/api/v1/workflows/execute" not in workbench_api.text
 
+    for asset, marker in (
+        ("editor.js", "appendDraftStep"),
+        ("render_editor.js", "Unresolved catalog contract guidance"),
+    ):
+        response = client.get(f"/workbench/{asset}")
+        assert response.status_code == 200
+        assert marker in response.text
+    assert 'id="builder-operator"' in workbench.text
+
     workbench_render = client.get("/workbench/render.js")
     workbench_render.raise_for_status()
     assert "textContent" in workbench_render.text

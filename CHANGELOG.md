@@ -6,6 +6,9 @@ All notable public changes are documented here.
 
 ### Added
 
+- catalog-assisted Workbench draft authoring with strict JSON parameter syntax, unresolved contract
+  guidance, layer-name suggestions, and one-step insertion that invalidates previous review evidence.
+
 - read-only `verify_result_manifest()` and `starshine verify-result` for offline selected-output
   digest/declared-CRS consistency checks, with explicit limits and meaningful CLI exit codes.
 
