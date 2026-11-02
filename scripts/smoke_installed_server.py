@@ -47,6 +47,9 @@ def _check_execution_response(response: httpx.Response) -> None:
                     for key, allowed in (
                         ("reason", {"missing", "zombie", "access_denied", "other"}),
                         ("stage", {"process_lookup", "tree_memory"}),
+                        ("substage", {
+                            "root_memory", "children_enumeration", "descendant_memory",
+                        }),
                     ):
                         value = payload.get(key)
                         if isinstance(value, str) and value in allowed:

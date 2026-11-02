@@ -6,10 +6,16 @@ All notable public changes are documented here.
 
 ### Added
 
+- fixed, allowlisted supervision substages distinguish root memory inspection, child enumeration,
+  and descendant memory inspection failures without changing fail-closed worker handling.
+
 - read-only `verify_result_manifest()` and `starshine verify-result` for offline selected-output
   digest/declared-CRS consistency checks, with explicit limits and meaningful CLI exit codes.
 
 ### Fixed
+
+- retain every input digest when a redacted manifest alias collides with a literal layer name,
+  using deterministic unique aliases without changing workflow or output digests.
 
 - preserve Markdown report structure for unusual inventory metadata and workflow labels using
   delimiter-safe code spans; render external Preflight diagnostics as literal text, without

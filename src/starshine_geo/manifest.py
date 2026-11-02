@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from collections.abc import Iterable
 from copy import deepcopy
 from typing import Any
 
@@ -89,6 +90,29 @@ def _safe_layer_name(name: str, *, kind: str, index: int) -> str:
     return str(safe_name)
 
 
+def _input_layer_names(names: Iterable[str]) -> dict[str, str]:
+    """Allocate aliases without stealing literal names or other default aliases."""
+    aliases = {
+        name: _safe_layer_name(name, kind="input", index=index)
+        for index, name in enumerate(sorted(names))
+    }
+    reserved = set(aliases.values())
+    used = {name for name, alias in aliases.items() if name == alias}
+    for name, alias in aliases.items():
+        if name == alias:
+            continue
+        if alias in used:
+            suffix = 1
+            candidate = f"{alias[:-1]}-{suffix}>"
+            while candidate in reserved:
+                suffix += 1
+                candidate = f"{alias[:-1]}-{suffix}>"
+            aliases[name] = candidate
+            reserved.add(candidate)
+        used.add(aliases[name])
+    return aliases
+
+
 def _declared_crs(layer: FeatureCollection) -> str | None:
     crs = layer.get("starshine:crs")
     return crs if isinstance(crs, str) and crs.strip() else None
@@ -110,12 +134,13 @@ def build_manifest(
     """
     safe_workflow = _sanitize(workflow)
     steps = safe_workflow.get("steps", [])
+    input_names = _input_layer_names(input_layers)
     safe_input_layers = {
-        _safe_layer_name(name, kind="input", index=index): {
+        input_names[name]: {
             "digest": digest_json(layer),
             "crs": _declared_crs(layer),
         }
-        for index, (name, layer) in enumerate(sorted(input_layers.items()))
+        for name, layer in sorted(input_layers.items())
     }
 
     return {
