@@ -1,10 +1,10 @@
-function clearNode(node) {
+export function clearNode(node) {
   while (node.firstChild) {
     node.removeChild(node.firstChild);
   }
 }
 
-function textElement(tag, text, className = "") {
+export function textElement(tag, text, className = "") {
   const element = document.createElement(tag);
   element.textContent = String(text);
   if (className) {

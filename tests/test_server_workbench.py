@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import base64
+import json
+import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -9,6 +13,7 @@ pytest.importorskip("httpx")
 
 from fastapi.testclient import TestClient
 
+import starshine_geo
 from starshine_server import create_app
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -112,3 +117,61 @@ def test_workbench_invalidates_review_responses_after_input_edits() -> None:
     assert "if (requestId !== state.reviewRequestId) return;" in script
     assert "if (requestId === state.reviewRequestId)" in script
 
+
+
+def test_assisted_editor_assets_and_catalog_independence() -> None:
+    client = _client()
+    for name in ("editor.js", "render_editor.js"):
+        response = client.get(f"/workbench/{name}")
+        assert response.status_code == 200
+        assert "javascript" in response.headers["content-type"]
+    editor = (STATIC_ROOT / "editor.js").read_text(encoding="utf-8")
+    for operator in starshine_geo.operator_catalog()["operators"]:
+        assert json.dumps(operator["name"]) not in editor
+    assert "parameter.default" not in editor
+
+
+@pytest.mark.parametrize("distance,valid", [("2", True), ('"wrong type"', False), ("", False)])
+def test_catalog_draft_agrees_with_canonical_core_and_http(distance, valid) -> None:
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node is required to execute the shipped draft transformer")
+    source = base64.b64encode((STATIC_ROOT / "editor.js").read_bytes()).decode("ascii")
+    catalog = starshine_geo.operator_catalog()
+    script = """
+      import { readFileSync } from 'node:fs';
+      const { source, catalog, distance } = JSON.parse(readFileSync(0, 'utf8'));
+      const { buildDraftStep, appendDraftStep, findCatalogOperator } =
+        await import(`data:text/javascript;base64,${source}`);
+      const step = buildDraftStep(findCatalogOperator(catalog, 'buffer'), { input: 'source' },
+        { distance, source_crs: '\"EPSG:4326\"', work_crs: '\"EPSG:3857\"' }, 'result');
+      console.log(JSON.stringify(appendDraftStep({version: 1, steps: []}, step)));
+    """
+    completed = subprocess.run(
+        [node, "--input-type=module", "-e", script],
+        input=json.dumps({"source": source, "catalog": catalog, "distance": distance}),
+        text=True, capture_output=True, check=True,
+    )
+    workflow = json.loads(completed.stdout)
+    assert set(workflow["steps"][0]["parameters"]) <= {
+        "distance", "source_crs", "work_crs",
+    }
+    request = {"workflow": workflow, "layer_names": ["source"]}
+    response = _client().post("/api/v1/workflows/validate", json=request)
+    if valid:
+        starshine_geo.validate_workflow(workflow, ["source"])
+        assert response.status_code == 200
+        assert response.json()["valid"] is True
+        for endpoint, build in (
+            ("plan", starshine_geo.plan_workflow),
+            ("contract", starshine_geo.build_workflow_contract),
+            ("graph", starshine_geo.build_workflow_graph),
+            ("explain", starshine_geo.explain_workflow),
+        ):
+            report = _client().post(f"/api/v1/workflows/{endpoint}", json=request)
+            assert report.status_code == 200
+            assert report.json() == build(workflow, ["source"])
+    else:
+        with pytest.raises(starshine_geo.ValidationError):
+            starshine_geo.validate_workflow(workflow, ["source"])
+        assert response.status_code == 422

@@ -153,6 +153,7 @@ HTTP handlers; it is to make the existing auditable core usable from a service a
 
 - [x] expose canonical contract/graph/explain JSON reports before browser code owns review semantics
 - [x] package a same-origin review-only Workbench and verify its assets from the exact Server wheel
+- [x] draft one catalog-driven step with strict JSON decoding and unresolved hints, then require canonical Review
 - [ ] build operator selection and Workflow editing from the canonical catalog/contracts
 - [ ] surface plan/graph/explain and Preflight findings before execution
 - [ ] add map preview without reproducing spatial-analysis semantics in JavaScript
