@@ -132,3 +132,22 @@ def test_unknown_supervision_reason_and_stage_are_not_echoed(value):
     }))
     assert "reason" not in diagnostic
     assert "stage" not in diagnostic
+
+
+@pytest.mark.parametrize("substage", ["root_memory", "children_enumeration", "descendant_memory"])
+def test_known_supervision_substage_is_safe(substage):
+    diagnostic = failure_diagnostic(response(json={
+        "error": "execution_boundary", "code": "worker_supervision_failed",
+        "substage": substage, "message": SECRET,
+    }))
+    assert diagnostic["substage"] == substage
+    assert SECRET not in str(diagnostic)
+
+
+@pytest.mark.parametrize("value", [SECRET, [], {}, None, 1, True])
+def test_unknown_supervision_substage_is_not_echoed(value):
+    diagnostic = failure_diagnostic(response(json={
+        "error": "execution_boundary", "code": "worker_supervision_failed",
+        "substage": value,
+    }))
+    assert "substage" not in diagnostic

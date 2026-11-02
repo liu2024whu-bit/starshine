@@ -531,3 +531,71 @@ def test_owner_checks_exit_status_and_response_after_terminal_inspection_race(
     assert len(children) == 1
     assert children[0].returncode == exit_code
     assert measured == [children[0].pid]
+
+
+@pytest.mark.parametrize("substage", ["root_memory", "children_enumeration", "descendant_memory"])
+@pytest.mark.parametrize("error_kind", ["missing", "zombie", "access_denied", "other"])
+@pytest.mark.parametrize("terminal", [False, True])
+def test_tree_inspection_substage_preserves_owned_child_policy(
+    monkeypatch, sleeping_worker, substage, error_kind, terminal,
+):
+    from types import SimpleNamespace
+
+    import psutil
+
+    child = sleeping_worker
+    errors = {
+        "missing": psutil.NoSuchProcess(pid=child.pid),
+        "zombie": psutil.ZombieProcess(pid=child.pid),
+        "access_denied": psutil.AccessDenied(pid=child.pid),
+        "other": psutil.Error("private exception/path detail"),
+    }
+    measured = []
+
+    def failure(*args, **kwargs):
+        measured.append(substage)
+        if terminal:
+            child.terminate()
+            child.wait(timeout=2)
+        raise errors[error_kind]
+
+    descendant = SimpleNamespace(memory_info=failure)
+    process = SimpleNamespace(
+        memory_info=failure if substage == "root_memory" else lambda: SimpleNamespace(rss=7),
+        children=failure if substage == "children_enumeration" else lambda **kw: [descendant],
+    )
+    original_measurement = execution_module._process_tree_rss
+    monkeypatch.setattr(
+        execution_module, "_process_tree_rss", lambda real: original_measurement(process),
+    )
+    # Disappeared descendants retain their existing ignore policy. Terminate
+    # only after that measurement succeeds so this case cannot poll forever.
+    ignored = substage == "descendant_memory" and error_kind in {"missing", "zombie"}
+    if ignored and not terminal:
+        def finish_after_measurement(real):
+            assert original_measurement(process) == 7
+            child.terminate()
+            child.wait(timeout=2)
+            return 7
+        monkeypatch.setattr(execution_module, "_process_tree_rss", finish_after_measurement)
+    if terminal or ignored:
+        _supervise_process(child, timeout_seconds=2, memory_limit_bytes=1024)
+    else:
+        with pytest.raises(ExecutionBoundaryError) as caught:
+            _supervise_process(child, timeout_seconds=2, memory_limit_bytes=1024)
+        assert caught.value.as_dict() == {
+            "error": "execution_boundary", "code": "worker_supervision_failed",
+            "message": "The execution worker could not be supervised safely.",
+            "reason": error_kind, "stage": "tree_memory", "substage": substage,
+        }
+    assert measured == [substage]
+    assert child.poll() is not None
+
+
+@pytest.mark.parametrize("value", ["private exception/path detail", [], {}, None, 1, True])
+def test_supervision_substage_never_includes_arbitrary_values(value):
+    error = ExecutionBoundaryError(
+        code="worker_supervision_failed", message="fixed safe message", status_code=500,
+        substage=value,
+    )
+    assert "substage" not in error.as_dict()
