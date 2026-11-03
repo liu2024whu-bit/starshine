@@ -68,12 +68,12 @@ async function setup({ catalogUnavailable = false } = {}) {
   document.querySelector("#builder-operator").appendChild(loadingOption);
   document.querySelector("#add-step-button").disabled = true;
   const requests = [];
-  globalThis.fetch = (path) => {
+  globalThis.fetch = (path, init) => {
     if (path === "/healthz") return Promise.resolve(reply({ core_version: "test" }));
     if (path === "/api/v1/operators") return Promise.resolve(
       catalogUnavailable ? reply({ message: "Catalog temporarily unavailable" }, false) : reply(catalog),
     );
-    return new Promise((resolve, reject) => requests.push({ path, resolve, reject }));
+    return new Promise((resolve, reject) => requests.push({ path, init, resolve, reject }));
   };
   await import(`${pathToFileURL(join(moduleDirectory, "app.js"))}?test=${++instance}`);
   await settle();
@@ -82,7 +82,7 @@ async function setup({ catalogUnavailable = false } = {}) {
   element("layer-names").value = "source";
   return { element, requests, click: () => element("review-button").dispatch("click") };
 }
-function reply(payload, ok = true) { return { ok, status: ok ? 200 : 503, json: async () => payload }; }
+function reply(payload, ok = true) { return { ok, status: ok ? 200 : 503, text: async () => JSON.stringify(payload) }; }
 async function settle() { for (let i = 0; i < 8; i += 1) await Promise.resolve(); }
 function resolveReports(requests, digest = "current-plan") {
   for (const request of requests.splice(0)) {
@@ -340,4 +340,51 @@ test("catalog failure replaces loading placeholder, disables drafting, and permi
   await succeed(context);
   assert.equal(select.disabled, true);
   assert.equal(select.textContent, "Catalog unavailable");
+});
+
+test("review snapshots exact input for all requests and Evidence keeps original response text", async () => {
+  const context = await setup();
+  const rawWorkflow = '{"version":1.0,"steps":[],"values":[8.0,-0.0,9007199254740993,1e400]}';
+  context.element("workflow-editor").value = rawWorkflow;
+  context.element("layer-names").value = 'quote"\\layer';
+  const done = context.click();
+  const validation = context.requests.shift();
+  const body = `{"workflow":${rawWorkflow},"layer_names":["quote\\\"\\\\layer"]}`;
+  assert.equal(validation.init.body, body);
+  const validationRaw = ' {"valid":true,"workflow_version":1.0}\n';
+  validation.resolve({ ok: true, text: async () => validationRaw });
+  // Programmatic changes without input events must not mix request snapshots.
+  context.element("workflow-editor").value = '{}';
+  context.element("layer-names").value = 'different';
+  await settle();
+  const raw = ' {"plan_digest":"exact","graph_digest":"graph","steps":[{"parameters":[{"name":"nested","value":{"array":[9007199254740993,-0.0,8.0]},"source":"supplied"}]}],"html":"<img src=x onerror=alert(1)>"}\n';
+  for (const request of context.requests.splice(0)) {
+    assert.equal(request.init.body, body);
+    request.resolve({ ok: true, text: async () => raw });
+  }
+  await done;
+  assert.equal(context.element("review-state").textContent, "Reviewed");
+  const blocks = context.element("evidence-content").children.filter((node) => node.className === "raw-block");
+  assert.equal(blocks.length, 5);
+  assert.equal(blocks[0].textContent, validationRaw);
+  for (const block of blocks.slice(1)) {
+    assert.equal(block.textContent, raw);
+    assert.equal(block.children.length, 0); // JSON HTML remains text, not DOM.
+  }
+  assert.doesNotMatch(context.element("explain-content").textContent, /9007199254740992/);
+  assert.match(context.element("explain-content").textContent, /See exact JSON in Evidence/);
+  for (const id of ["overview", "contract", "graph", "explain"]) {
+    assert.match(context.element(`${id}-content`).textContent, /numeric spelling may be normalized/);
+  }
+});
+
+test("Evidence never fabricates exact JSON when original response text is unavailable", async () => {
+  const context = await setup();
+  const { renderReports } = await import(pathToFileURL(join(moduleDirectory, "render.js")));
+  const containers = Object.fromEntries(["overview", "contract", "graph", "explain", "evidence"]
+    .map((name) => [name, context.element(`${name}-content`)]));
+  renderReports(containers, { validation: {}, plan: {}, contract: {}, graph: {}, explain: {} });
+  const blocks = containers.evidence.children.filter((node) => node.className === "raw-block");
+  assert.equal(blocks.length, 5);
+  for (const block of blocks) assert.equal(block.textContent, "Original response unavailable.");
 });

@@ -14,6 +14,10 @@ All notable public changes are documented here.
 
 ### Fixed
 
+- preserve original Workflow JSON tokens through Workbench Review transport and retain exact Server
+  responses in Evidence, avoiding changed numeric parameters, validation results, and report digests.
+  Structured views disclose numeric normalization and refer unsafe integers to exact Evidence.
+
 - preserve Markdown report structure for unusual inventory metadata and workflow labels using
   delimiter-safe code spans; render external Preflight diagnostics as literal text, without
   changing JSON reports or evidence digests.

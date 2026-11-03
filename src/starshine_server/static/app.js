@@ -190,22 +190,20 @@ async function reviewWorkflow() {
 
   try {
     const request = {
-      workflow: parseWorkflow(),
-      layer_names: parseLayerNames(),
+      method: "POST",
+      workflowText: elements.workflow.value,
+      layerNames: parseLayerNames(),
     };
 
-    const validation = await requestJson(ENDPOINTS.validate, {
-      method: "POST",
-      body: request,
-    });
+    const validation = await requestJson(ENDPOINTS.validate, request);
     if (requestId !== state.reviewRequestId) return;
 
     setRequestStatus(elements.requestStatus, "Building canonical review reports…");
     const [plan, contract, graph, explain] = await Promise.all([
-      requestJson(ENDPOINTS.plan, { method: "POST", body: request }),
-      requestJson(ENDPOINTS.contract, { method: "POST", body: request }),
-      requestJson(ENDPOINTS.graph, { method: "POST", body: request }),
-      requestJson(ENDPOINTS.explain, { method: "POST", body: request }),
+      requestJson(ENDPOINTS.plan, request),
+      requestJson(ENDPOINTS.contract, request),
+      requestJson(ENDPOINTS.graph, request),
+      requestJson(ENDPOINTS.explain, request),
     ]);
 
     if (requestId !== state.reviewRequestId) return;
