@@ -64,13 +64,17 @@ def _observe(response, expected: dict) -> dict:
     row = {"outcome": "failed", "http_status": response.status_code}
     if response.status_code == 200:
         payload = response.json()
-        matches = (
-            payload.get("status") == "succeeded"
-            and payload.get("result") == expected["result"]
-            and payload.get("manifest") == expected["manifest"]
-            and payload.get("preflight") == expected["preflight"]
-            and payload.get("execution_policy", {}).get("mode") == "isolated_subprocess"
-        )
+        comparisons = {
+            "status_matches": payload.get("status") == "succeeded",
+            "result_digest_matches": starshine_geo.digest_json(payload.get("result"))
+            == starshine_geo.digest_json(expected["result"]),
+            "manifest_matches": payload.get("manifest") == expected["manifest"],
+            "preflight_matches": payload.get("preflight") == expected["preflight"],
+            "execution_mode_matches": payload.get("execution_policy", {}).get("mode")
+            == "isolated_subprocess",
+        }
+        row.update(comparisons)
+        matches = all(comparisons.values())
         row.update(outcome="succeeded" if matches else "failed", evidence_matches=matches)
         return row
     if len(response.content) <= 4096:

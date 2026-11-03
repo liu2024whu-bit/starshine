@@ -146,6 +146,8 @@ def test_real_success_response_validation():
                "execution_policy": {"mode": "isolated_subprocess"}}
     assert observation._observe(httpx.Response(200, json=payload), expected) == {
         "outcome": "succeeded", "http_status": 200, "evidence_matches": True,
+        "status_matches": True, "result_digest_matches": True, "manifest_matches": True,
+        "preflight_matches": True, "execution_mode_matches": True,
     }
     payload["manifest"] = {}
     assert observation._observe(httpx.Response(200, json=payload), expected)["outcome"] == "failed"
@@ -159,3 +161,58 @@ def test_malformed_success_stops(tmp_path, payload):
     report = json.loads(output.read_text())
     assert report["observation"] == "incomplete"
     assert client.calls == 1
+
+
+def test_real_testclient_json_roundtrip_preserves_core_digest(monkeypatch):
+    # Real HTTP serialization of a real Core result, not a handcrafted tuple fixture.
+    import importlib
+
+    request = observation._request()
+    result = observation.starshine_geo.run_workflow(
+        request["workflow"], request["layers"],
+    )["clipped"]
+    expected = {
+        "result": result,
+        "manifest": observation.starshine_geo.build_manifest(
+            request["workflow"], request["layers"],
+            output_layer_name="clipped", output_layer=result,
+        ),
+        "preflight": observation.starshine_geo.preflight_workflow_inputs(
+            request["workflow"], request["layers"],
+        ),
+    }
+    payload = {**expected, "status": "succeeded",
+               "execution_policy": {"mode": "isolated_subprocess"}}
+    app_module = importlib.import_module("starshine_server.app")
+    monkeypatch.setattr(app_module, "execute_inline_workflow", lambda *a, **kw: payload)
+    with observation.TestClient(observation.create_app()) as client:
+        response = client.post("/api/v1/workflows/execute", json=request)
+    assert response.status_code == 200
+    assert response.json()["result"] != expected["result"]  # tuples become JSON arrays
+    row = observation._observe(response, expected)
+    assert row["outcome"] == "succeeded"
+    assert row["result_digest_matches"] is True
+    assert row["evidence_matches"] is True
+
+
+@pytest.mark.parametrize("field, changed, comparison", [
+    ("status", "failed", "status_matches"),
+    ("result", {"changed": True}, "result_digest_matches"),
+    ("manifest", {"changed": True}, "manifest_matches"),
+    ("preflight", {"valid": False}, "preflight_matches"),
+    ("execution_policy", {"mode": "other"}, "execution_mode_matches"),
+])
+def test_each_original_acceptance_comparison_remains_required(field, changed, comparison):
+    expected = {"result": {"coordinates": (0.0, 0.0)}, "manifest": {"version": 1},
+                "preflight": {"valid": True}}
+    payload = {**expected, "status": "succeeded",
+               "execution_policy": {"mode": "isolated_subprocess"}}
+    payload[field] = changed
+    row = observation._observe(httpx.Response(200, json=payload), expected)
+    assert row[comparison] is False
+    assert row["outcome"] == "failed"
+    assert row["evidence_matches"] is False
+    assert sum(row[key] is False for key in (
+        "status_matches", "result_digest_matches", "manifest_matches", "preflight_matches",
+        "execution_mode_matches",
+    )) == 1
