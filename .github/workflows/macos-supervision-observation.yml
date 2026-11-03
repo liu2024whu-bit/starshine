@@ -1,0 +1,56 @@
+name: macOS supervision observation (not acceptance)
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/macos-supervision-observation.yml"
+      - "scripts/diagnose_macos_supervision.py"
+      - "tests/test_macos_supervision_observation.py"
+
+permissions:
+  contents: read
+
+jobs:
+  fixed-sample-observation:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14.10"
+          architecture: arm64
+      - name: Build exact candidate wheel
+        run: |
+          python -m pip install --constraint requirements/ci-validation.txt build
+          python -m build --wheel
+      - name: Install candidate with incident psutil version
+        run: |
+          python -c "import pathlib, subprocess, sys; wheel = next(pathlib.Path('dist').glob('*.whl')); subprocess.check_call([sys.executable, '-m', 'pip', 'install', str(wheel) + '[server,server-test]', 'psutil==7.2.2'])"
+      - name: Observe exactly 50 executions without retries
+        shell: bash
+        env:
+          STARSHINE_OBSERVATION_REVISION: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python - <<'PYTHON'
+          import runpy
+          import sys
+          import warnings
+          warnings.simplefilter("ignore")
+          sys.path.insert(0, "scripts")
+          try:
+              runpy.run_path("scripts/diagnose_macos_supervision.py", run_name="__main__")
+          except Exception:
+              print("Diagnostic startup failed; no raw error retained.")
+              sys.exit(1)
+          PYTHON
+      - name: Retain bounded observations even on failure
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: macos-supervision-observation
+          path: macos-supervision-observation.json
+          if-no-files-found: warn
+          retention-days: 14
