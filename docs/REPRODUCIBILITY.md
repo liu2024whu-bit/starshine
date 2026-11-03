@@ -40,6 +40,13 @@ parameter fields, credential-bearing URLs, and parameters whose names indicate p
 tokens, API keys, secrets, DSNs, credentials, or private keys are redacted before workflow
 hashing and step reporting.
 
+Input records retain ordinary layer names. Redacted input aliases are deterministic and unique,
+even when a literal input name already resembles a generated alias. On collision, the generated
+alias gains a numeric suffix; literal names and other default aliases are reserved first. Content
+digests and CRS values are unchanged. Workflow hashing, step references, and selected-output naming
+retain their existing sanitization rules: redacted step references are not unique input-record
+identifiers, and input aliases do not establish a complete dependency/provenance graph.
+
 A manifest is not a cryptographic signature, proof of authorship, or substitute for archiving
 the referenced inputs. It is a deterministic description that helps reviewers detect changes
 and reproduce a workflow with separately supplied data.

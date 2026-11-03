@@ -14,6 +14,9 @@ All notable public changes are documented here.
 
 ### Fixed
 
+- retain every input digest when a redacted manifest alias collides with a literal layer name,
+  using deterministic unique aliases without changing workflow or output digests.
+
 - preserve original Workflow JSON tokens through Workbench Review transport and retain exact Server
   responses in Evidence, avoiding changed numeric parameters, validation results, and report digests.
   Structured views disclose numeric normalization and refer unsafe integers to exact Evidence.
