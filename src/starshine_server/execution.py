@@ -56,7 +56,6 @@ class ExecutionBoundaryError(Exception):
         actual: int | None = None,
         reason: str | None = None,
         stage: str | None = None,
-        substage: str | None = None,
     ) -> None:
         self.code = code
         self.status_code = status_code
@@ -64,7 +63,6 @@ class ExecutionBoundaryError(Exception):
         self.actual = actual
         self.reason = reason
         self.stage = stage
-        self.substage = substage
         super().__init__(message)
 
     def as_dict(self) -> dict[str, Any]:
@@ -83,10 +81,6 @@ class ExecutionBoundaryError(Exception):
             payload["reason"] = self.reason
         if isinstance(self.stage, str) and self.stage in {"process_lookup", "tree_memory"}:
             payload["stage"] = self.stage
-        if isinstance(self.substage, str) and self.substage in {
-            "root_memory", "children_enumeration", "descendant_memory",
-        }:
-            payload["substage"] = self.substage
         return payload
 
 
@@ -104,26 +98,13 @@ def _safe_worker_environment() -> dict[str, str]:
 
 def _process_tree_rss(process: psutil.Process) -> int:
     """Count live resident bytes; inability to inspect a live process is not zero."""
-    # Preserve exception identity and policy; attach only fixed operation provenance.
-    try:
-        total = process.memory_info().rss
-    except psutil.Error as exc:
-        exc._starshine_substage = "root_memory"
-        raise
-    try:
-        descendants = process.children(recursive=True)
-    except psutil.Error as exc:
-        exc._starshine_substage = "children_enumeration"
-        raise
-    for descendant in descendants:
+    total = process.memory_info().rss
+    for descendant in process.children(recursive=True):
         try:
             total += descendant.memory_info().rss
         except psutil.NoSuchProcess:
             # A descendant can exit between enumeration and measurement.
             continue
-        except psutil.Error as exc:
-            exc._starshine_substage = "descendant_memory"
-            raise
     return total
 
 
@@ -248,7 +229,6 @@ def _supervise_process(
                 status_code=500,
                 reason=reason,
                 stage=stage,
-                substage=getattr(exc, "_starshine_substage", None),
             ) from None
     finally:
         if child.poll() is None:

@@ -1,10 +1,12 @@
-function clearNode(node) {
+import { responseJsonText } from "./api.js";
+
+export function clearNode(node) {
   while (node.firstChild) {
     node.removeChild(node.firstChild);
   }
 }
 
-function textElement(tag, text, className = "") {
+export function textElement(tag, text, className = "") {
   const element = document.createElement(tag);
   element.textContent = String(text);
   if (className) {
@@ -169,6 +171,19 @@ function renderGraph(container, graph) {
   container.appendChild(edges);
 }
 
+function displayParameter(value) {
+  // These are convenience views, not a lossless JSON parser. Never present an
+  // unsafe integer (including one nested in a value) as an exact server value.
+  return JSON.stringify(value, (_key, item) => {
+    if (typeof item === "number" && (
+      !Number.isFinite(item) || (Number.isInteger(item) && !Number.isSafeInteger(item))
+    )) {
+      return "See exact JSON in Evidence";
+    }
+    return item;
+  });
+}
+
 function renderExplanation(container, explanation) {
   clearNode(container);
   const stack = document.createElement("div");
@@ -187,7 +202,7 @@ function renderExplanation(container, explanation) {
 
     const parameterLines = Array.isArray(step.parameters)
       ? step.parameters.map(
-          (item) => `${item.name} = ${JSON.stringify(item.value)} (${item.source})`,
+          (item) => `${item.name} = ${displayParameter(item.value)} (${item.source})`,
         )
       : [];
     appendList(card, "Resolved parameters", parameterLines);
@@ -198,10 +213,14 @@ function renderExplanation(container, explanation) {
 
 function renderEvidence(container, reports) {
   clearNode(container);
-  const pre = document.createElement("pre");
-  pre.className = "raw-block";
-  pre.textContent = JSON.stringify(reports, null, 2);
-  container.appendChild(pre);
+  container.appendChild(textElement("p", "Original Server JSON responses, preserved without reserialization."));
+  for (const name of ["validation", "plan", "contract", "graph", "explain"]) {
+    container.appendChild(textElement("h3", name));
+    const pre = document.createElement("pre");
+    pre.className = "raw-block";
+    pre.textContent = responseJsonText(reports[name]) ?? "Original response unavailable.";
+    container.appendChild(pre);
+  }
 }
 
 export function renderReports(containers, reports) {
@@ -220,6 +239,11 @@ export function renderReports(containers, reports) {
   renderGraph(containers.graph, reports.graph);
   renderExplanation(containers.explain, reports.explain);
   renderEvidence(containers.evidence, reports);
+  for (const name of ["overview", "contract", "graph", "explain"]) {
+    containers[name].appendChild(textElement("p",
+      "Convenience view: numeric spelling may be normalized. Use Evidence for exact Server JSON.",
+      "muted"));
+  }
 }
 
 function activatePanel(button) {

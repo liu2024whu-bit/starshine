@@ -6,8 +6,8 @@ All notable public changes are documented here.
 
 ### Added
 
-- fixed, allowlisted supervision substages distinguish root memory inspection, child enumeration,
-  and descendant memory inspection failures without changing fail-closed worker handling.
+- catalog-assisted Workbench draft authoring with strict JSON parameter syntax, unresolved contract
+  guidance, layer-name suggestions, and one-step insertion that invalidates previous review evidence.
 
 - read-only `verify_result_manifest()` and `starshine verify-result` for offline selected-output
   digest/declared-CRS consistency checks, with explicit limits and meaningful CLI exit codes.
@@ -16,6 +16,10 @@ All notable public changes are documented here.
 
 - retain every input digest when a redacted manifest alias collides with a literal layer name,
   using deterministic unique aliases without changing workflow or output digests.
+
+- preserve original Workflow JSON tokens through Workbench Review transport and retain exact Server
+  responses in Evidence, avoiding changed numeric parameters, validation results, and report digests.
+  Structured views disclose numeric normalization and refer unsafe integers to exact Evidence.
 
 - preserve Markdown report structure for unusual inventory metadata and workflow labels using
   delimiter-safe code spans; render external Preflight diagnostics as literal text, without
