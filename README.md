@@ -125,6 +125,9 @@ Blank parameters are omitted so Core, not the browser, resolves defaults. Catalo
 field, and parameter hints are unresolved guidance. Run **Review workflow** after insertion to
 obtain current canonical validation and requirements. Insertion or manual edits invalidate prior
 review evidence, including responses still in flight.
+Review sends the original Workflow JSON without rewriting numeric tokens. The Evidence panel
+retains exact Server response JSON; structured panels are convenience views that may normalize
+numeric spelling and refer unsafe integer values to Evidence rather than displaying rounded values.
 
 Then run the standard-library reference handoff in another terminal:
 
