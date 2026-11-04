@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import json
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -82,7 +83,7 @@ def test_workbench_has_no_external_browser_runtime_or_dynamic_html_sink() -> Non
         assert forbidden not in script
 
 
-def test_workbench_first_slice_uses_review_endpoints_only() -> None:
+def test_workbench_uses_only_review_and_inline_preflight_endpoints() -> None:
     script = "\n".join(
         path.read_text(encoding="utf-8")
         for path in sorted(STATIC_ROOT.glob("*.js"))
@@ -91,19 +92,36 @@ def test_workbench_first_slice_uses_review_endpoints_only() -> None:
     expected = {
         "/healthz",
         "/api/v1/operators",
+        "/api/v1/limits",
         "/api/v1/workflows/validate",
         "/api/v1/workflows/plan",
         "/api/v1/workflows/contract",
         "/api/v1/workflows/graph",
         "/api/v1/workflows/explain",
+        "/api/v1/workflows/preflight",
     }
-    for path in expected:
-        assert path in script
+    paths = set(re.findall(r'[\"\'](/(?:api/[^\"\']+|healthz))[\"\']', script))
+    assert paths == expected
 
-    assert "/api/v1/workflows/preflight" not in script
     assert "/api/v1/workflows/execute" not in script
     assert "starshine_geo" not in script
     assert "starshine_server" not in script
+    for forbidden in ("FormData", "FileReader", "indexedDB", "serviceWorker"):
+        assert forbidden not in script
+    index = (STATIC_ROOT / "index.html").read_text(encoding="utf-8")
+    assert 'type="file"' not in index
+
+
+def test_inline_preflight_assets_are_served_with_the_workbench() -> None:
+    client = _client()
+    for name in ("assurance.js", "render_preflight.js"):
+        response = client.get(f"/workbench/{name}")
+        assert response.status_code == 200
+        assert "javascript" in response.headers["content-type"]
+    script = (STATIC_ROOT / "app.js").read_text(encoding="utf-8")
+    assert 'from "./assurance.js"' in script
+    assert 'from "./render_preflight.js"' in script
+
 
 def test_workbench_invalidates_review_responses_after_input_edits() -> None:
     script = (STATIC_ROOT / "app.js").read_text(encoding="utf-8")
@@ -259,3 +277,203 @@ def test_review_transport_preserves_server_rejections(raw: str, status: int, cod
         payload = response.json()
         actual_code = payload.get("diagnostic", {}).get("code", payload.get("code", payload["error"]))
         assert actual_code == code
+
+
+def _nearest_workflow_text(number: str = "1.0", source_name: str = "sources") -> str:
+    return (
+        ' {"version":1.0,"steps":[{"operation":"nearest","inputs":{"source":'
+        + json.dumps(source_name, ensure_ascii=False)
+        + ',"candidates":"candidates"},"parameters":{"candidate_id_field":"id",'
+        '"max_distance":' + number + '},"output":"matched"}]}\n'
+    )
+
+def _collection_text(ids: tuple[str, ...] = ('"source"',)) -> str:
+    features = [
+        '{"type":"Feature","properties":{"id":' + value + '},'
+        '"geometry":{"type":"Point","coordinates":[1.0,-0.0]}}'
+        for value in ids
+    ]
+    return (
+        ' \n{"type":"FeatureCollection","starshine:crs":"EPSG:3857","features":['
+        + ",".join(features) + ']}\t'
+    )
+
+
+def _canonical_review_reports(raw: str, names: list[str]) -> dict:
+    workflow = json.loads(raw)
+    return {
+        "plan": starshine_geo.plan_workflow(workflow, names),
+        "contract": starshine_geo.build_workflow_contract(workflow, names),
+    }
+
+
+def _browser_preflight_body(raw: str, layer_texts: list[tuple[str, str]], reports: dict) -> str:
+    """Exercise both shipped helper and HTTP transport, preserving their exact bytes."""
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node is required to exercise the shipped inline Preflight transport")
+    sources = {
+        name: base64.b64encode((STATIC_ROOT / name).read_bytes()).decode("ascii")
+        for name in ("api.js", "assurance.js")
+    }
+    script = """
+      import assert from 'node:assert/strict';
+      import { readFileSync } from 'node:fs';
+      const { sources, raw, layerTexts, reports } = JSON.parse(readFileSync(0, 'utf8'));
+      const { ENDPOINTS, requestJson } =
+        await import(`data:text/javascript;base64,${sources['api.js']}`);
+      const { buildPreflightRequest } =
+        await import(`data:text/javascript;base64,${sources['assurance.js']}`);
+      globalThis.fetch = async (path, init) => {
+        assert.equal(path, '/api/v1/workflows/preflight');
+        assert.equal(init.method, 'POST');
+        assert.equal(init.headers['content-type'], 'application/json');
+        process.stdout.write(init.body);
+        return { ok: true, text: async () => '{"valid":true}' };
+      };
+      await requestJson(ENDPOINTS.preflight,
+        buildPreflightRequest(raw, reports, new Map(layerTexts)));
+    """
+    return subprocess.run(
+        [node, "--input-type=module", "-e", script],
+        input=json.dumps({
+            "sources": sources, "raw": raw, "layerTexts": layer_texts, "reports": reports,
+        }),
+        text=True, capture_output=True, check=True,
+    ).stdout
+
+
+def _post_preflight_body(body: str):
+    return _client().post(
+        "/api/v1/workflows/preflight", content=body,
+        headers={"content-type": "application/json"},
+    )
+
+
+@pytest.mark.parametrize("number", ["1.0", "-0.0", "9007199254740993"])
+def test_preflight_transport_keeps_typed_identifiers_and_canonical_nearest_pass(number: str) -> None:
+    raw = _nearest_workflow_text(number)
+    reports = _canonical_review_reports(raw, ["sources", "candidates"])
+    layer_texts = [
+        ("sources", _collection_text()),
+        ("candidates", _collection_text((
+            "1", "1.0", "-0.0", "0.0", "9007199254740992", "9007199254740993",
+        ))),
+    ]
+    body = _browser_preflight_body(raw, layer_texts, reports)
+    texts = dict(layer_texts)
+    expected_entries = ",".join(
+        json.dumps(name) + ":" + texts[name]
+        for name in reports["plan"]["required_external_layers"]
+    )
+    assert body == '{"workflow":' + raw + ',"layers":{' + expected_entries + "}}"
+    assert set(json.loads(body)) == {"workflow", "layers"}
+    layers = {name: json.loads(value) for name, value in layer_texts}
+    response = _post_preflight_body(body)
+    assert response.status_code == 200
+    report = response.json()
+    assert report == starshine_geo.preflight_workflow_inputs(json.loads(raw), layers)
+    assert report["valid"] is True
+    assert report["error_count"] == 0
+    assert report["checked_layer_count"] == 2
+    assert report["workflow_digest"] == reports["plan"]["workflow_digest"]
+    assert report["plan_digest"] == reports["plan"]["plan_digest"]
+    assert report["contract_digest"] == reports["contract"]["contract_digest"]
+    for layer in report["layers"]:
+        assert layer["collection_digest"] == starshine_geo.digest_json(layers[layer["name"]])
+
+
+@pytest.mark.parametrize("name", ["__proto__", "constructor", 'quote"', "back\\slash", "河流😀"])
+def test_preflight_transport_keeps_unusual_layer_names_as_ordinary_json_keys(name: str) -> None:
+    raw = _nearest_workflow_text(source_name=name)
+    reports = _canonical_review_reports(raw, [name, "candidates"])
+    layer_texts = [(name, _collection_text()), ("candidates", _collection_text(("1",)))]
+    body = _browser_preflight_body(raw, layer_texts, reports)
+    assert set(json.loads(body)["layers"]) == {name, "candidates"}
+    assert json.dumps(name, ensure_ascii=False) + ":" in body
+    response = _post_preflight_body(body)
+    assert response.status_code == 200
+    assert response.json() == starshine_geo.preflight_workflow_inputs(
+        json.loads(raw), {key: json.loads(value) for key, value in layer_texts},
+    )
+    assert response.json()["valid"] is True
+
+
+@pytest.mark.parametrize("location", ["workflow", "layer"])
+@pytest.mark.parametrize(
+    "value,status,code",
+    [
+        ("1e400", 400, "invalid_json"),
+        ("[" * 66 + "0" + "]" * 66, 413, "json_nesting_too_deep"),
+        (" " * (2 * 1024 * 1024) + "0", 413, "request_body_too_large"),
+    ],
+    ids=["overflow", "depth", "body-size"],
+)
+def test_preflight_transport_preserves_server_boundaries(
+    location: str, value: str, status: int, code: str,
+) -> None:
+    raw = _nearest_workflow_text()
+    reports = _canonical_review_reports(raw, ["sources", "candidates"])
+    layer_texts = [("sources", _collection_text()), ("candidates", _collection_text(("1",)))]
+    if location == "workflow":
+        raw = raw.rstrip()[:-1] + ',"transport_probe":' + value + "}"
+    else:
+        layer_texts[0] = ("sources", '{"transport_probe":' + value + "}")
+    body = _browser_preflight_body(raw, layer_texts, reports)
+    assert value in body
+    response = _post_preflight_body(body)
+    assert response.status_code == status
+    payload = response.json()
+    assert payload.get("code", payload["error"]) == code
+
+
+@pytest.mark.parametrize("value", ["null", "[]", "1.0", "true", '"not GeoJSON"'])
+def test_preflight_layer_root_shape_is_rejected_by_server_not_browser(value: str) -> None:
+    raw = _nearest_workflow_text()
+    reports = _canonical_review_reports(raw, ["sources", "candidates"])
+    body = _browser_preflight_body(
+        raw, [("sources", value), ("candidates", _collection_text(("1",)))], reports,
+    )
+    assert '"sources":' + value in body
+    response = _post_preflight_body(body)
+    assert response.status_code == 422
+    assert response.json()["detail"][0]["loc"] == ["body", "layers", "sources"]
+    assert response.json()["detail"][0]["type"] == "dict_type"
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "{}",
+        '{"type":"FeatureCollection","features":"not-a-list"}',
+        '{"type":"FeatureCollection","features":[],"starshine:crs":"not-a-crs"}',
+        '{"type":"FeatureCollection","features":[]}',
+    ],
+)
+def test_preflight_invalid_geojson_reaches_canonical_core_fail_report(value: str) -> None:
+    raw = _nearest_workflow_text()
+    reports = _canonical_review_reports(raw, ["sources", "candidates"])
+    layer_texts = [("sources", value), ("candidates", _collection_text(("1",)))]
+    body = _browser_preflight_body(raw, layer_texts, reports)
+    response = _post_preflight_body(body)
+    assert response.status_code == 200
+    assert response.json() == starshine_geo.preflight_workflow_inputs(
+        json.loads(raw), {name: json.loads(text) for name, text in layer_texts},
+    )
+    assert response.json()["valid"] is False
+    assert response.json()["error_count"] > 0
+
+
+@pytest.mark.parametrize("blank", ["", " \n\t"])
+def test_preflight_blank_draft_is_omitted_and_missing_layer_is_server_owned(blank: str) -> None:
+    raw = _nearest_workflow_text()
+    reports = _canonical_review_reports(raw, ["sources", "candidates"])
+    body = _browser_preflight_body(raw, [
+        ("sources", blank), ("candidates", _collection_text(("1",))),
+        ("not-required", "not JSON and must not be submitted"),
+    ], reports)
+    assert set(json.loads(body)["layers"]) == {"candidates"}
+    response = _post_preflight_body(body)
+    assert response.status_code == 422
+    assert response.json()["diagnostic"]["code"] == "unknown_input_layer"
+    assert response.json()["diagnostic"]["path"] == "steps[0].inputs.source"

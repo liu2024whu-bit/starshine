@@ -57,7 +57,7 @@ def _wheel(tmp_path: Path, *, prefix="", mode=None, duplicate=False, omit_asset=
     with zipfile.ZipFile(path, "w") as archive:
         for name in inspector._package_python_suffixes():
             archive.writestr(prefix + name, "# synthetic module\n")
-        for asset in ("index.html", "styles.css", "app.js", "api.js", "render.js", "editor.js", "render_editor.js"):
+        for asset in ("index.html", "styles.css", "app.js", "api.js", "render.js", "editor.js", "render_editor.js", "assurance.js", "render_preflight.js"):
             if asset != omit_asset:
                 archive.writestr(prefix + f"starshine_server/static/{asset}", "synthetic asset")
         metadata = f"{ROOT}.dist-info/METADATA"
@@ -77,7 +77,7 @@ def test_canonical_wheel_still_passes(tmp_path):
     inspector._check_wheel(_wheel(tmp_path), VERSION)
 
 
-@pytest.mark.parametrize("asset", ["index.html", "styles.css", "app.js", "api.js", "render.js", "editor.js", "render_editor.js"])
+@pytest.mark.parametrize("asset", ["index.html", "styles.css", "app.js", "api.js", "render.js", "editor.js", "render_editor.js", "assurance.js", "render_preflight.js"])
 def test_wheel_requires_every_workbench_asset(tmp_path, asset):
     with pytest.raises(RuntimeError, match="missing expected files"):
         inspector._check_wheel(_wheel(tmp_path, omit_asset=asset), VERSION)
