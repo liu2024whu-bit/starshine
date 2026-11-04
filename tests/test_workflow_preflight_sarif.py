@@ -1,6 +1,7 @@
 import json
 from copy import deepcopy
 from pathlib import Path
+from urllib.parse import urljoin, urlsplit
 
 import pytest
 
@@ -178,6 +179,84 @@ def test_passing_preflight_produces_empty_results_and_rules():
 def test_sarif_rejects_absolute_parent_or_missing_artifact_uris(artifact_uris):
     with pytest.raises(ValidationError, match="SARIF artifact URI"):
         build_workflow_preflight_sarif(_failing_report(), artifact_uris)
+
+
+@pytest.mark.parametrize(
+    "uri",
+    [
+        ".//private/points.geojson",
+        "././/private/points.geojson",
+        ".///host/share/points.geojson",
+        "./././//host/share/points.geojson",
+        ".////private/points.geojson",
+        r".\\private\points.geojson",
+        r".\.\\private\points.geojson",
+        r".\\\host\share\points.geojson",
+        r"./\private/points.geojson",
+        r".\//host/share/points.geojson",
+        "  .//private/points.geojson  ",
+    ],
+)
+@pytest.mark.parametrize("has_findings", [True, False])
+def test_sarif_rejects_paths_that_become_rooted_after_normalization(uri, has_findings):
+    report = (
+        _failing_report() if has_findings else preflight_workflow_inputs(
+            _join_workflow(),
+            {
+                "points": _collection([_point(1, 1)]),
+                "zones": _collection([_square(0, 0, zone_id="zone-a")]),
+            },
+        )
+    )
+    original = deepcopy(report)
+    artifact_uris = {"points": uri, "zones": "zones.geojson"}
+    with pytest.raises(ValidationError, match="must be repository-relative"):
+        build_workflow_preflight_sarif(report, artifact_uris)
+    assert report == original
+    assert artifact_uris == {"points": uri, "zones": "zones.geojson"}
+
+
+@pytest.mark.parametrize(
+    ("uri", "expected"),
+    [
+        ("points.geojson", "points.geojson"),
+        ("././data/points.geojson", "data/points.geojson"),
+        (r".\.\data\points.geojson", "data/points.geojson"),
+        ("data//./points.geojson", "data/points.geojson"),
+        (" ./data/input points.geojson ", "data/input%20points.geojson"),
+        ("./数据/测点.geojson", "%E6%95%B0%E6%8D%AE/%E6%B5%8B%E7%82%B9.geojson"),
+        ("./data/points%20raw.geojson", "data/points%2520raw.geojson"),
+        ("./name:points.geojson", "name%3Apoints.geojson"),
+        ("data/points?#.geojson", "data/points%3F%23.geojson"),
+    ],
+)
+def test_sarif_keeps_normalized_relative_path_semantics(uri, expected):
+    report = _failing_report()
+    original = deepcopy(report)
+    mapping = {"points": uri, "zones": "zones.geojson"}
+    sarif = build_workflow_preflight_sarif(report, mapping)
+    canonical = build_workflow_preflight_sarif(
+        report, {"points": "points.geojson", "zones": "zones.geojson"}
+    )
+    for result, canonical_result in zip(
+        sarif["runs"][0]["results"], canonical["runs"][0]["results"], strict=True
+    ):
+        location = result["locations"][0]["physicalLocation"]["artifactLocation"]
+        output_uri = location["uri"]
+        assert output_uri == (
+            expected if result["properties"]["layer"] == "points" else "zones.geojson"
+        )
+        assert location["uriBaseId"] == "%SRCROOT%"
+        assert not output_uri.startswith("/")
+        assert not urlsplit(output_uri).scheme
+        assert not urlsplit(output_uri).netloc
+        assert urljoin("https://example.test/repository/", output_uri).startswith(
+            "https://example.test/repository/"
+        )
+        assert result["partialFingerprints"] == canonical_result["partialFingerprints"]
+    assert report == original
+    assert mapping == {"points": uri, "zones": "zones.geojson"}
+    assert build_workflow_preflight_sarif(report, mapping) == sarif
 
 
 def test_sarif_rejects_malformed_preflight_reports():

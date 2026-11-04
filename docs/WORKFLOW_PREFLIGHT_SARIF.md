@@ -50,6 +50,13 @@ sarif = build_workflow_preflight_sarif(
 Artifact URIs are explicit adapter inputs. The converter never derives them from hidden process state
 or copies CLI paths into the canonical preflight report.
 
+Paths must remain repository-relative after separator and leading `./` normalization. Spellings such
+as `.//data/points.geojson` or `.///host/share/points.geojson`, including backslash equivalents, are
+rejected because removing their dot prefix would produce a rooted path or URI authority reference.
+Ordinary relative paths, repeated `./` prefixes, Unicode, spaces, and literal percent characters keep
+their existing normalization and percent encoding. These checks validate serialized locations only;
+the converter does not open the supplied paths or contact URI hosts.
+
 ## Finding mapping
 
 Each aggregated preflight finding becomes one SARIF result:
