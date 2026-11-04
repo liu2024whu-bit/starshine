@@ -89,6 +89,9 @@ def _normalize_uri(value: str) -> str:
     while normalized.startswith("./"):
         normalized = normalized[2:]
     path = PurePosixPath(normalized)
+    # Removing a dot prefix can expose a root or authority (for example, .// or .///).
+    if path.is_absolute():
+        raise ValidationError("SARIF artifact URIs must be repository-relative")
     if not normalized or path.as_posix() == "." or ".." in path.parts:
         raise ValidationError("SARIF artifact URIs must remain inside the repository root")
     return quote(path.as_posix(), safe="/-._~")

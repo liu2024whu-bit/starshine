@@ -14,6 +14,9 @@ All notable public changes are documented here.
 
 ### Fixed
 
+- reject SARIF artifact paths that become rooted or authority references after leading dot-prefix
+  normalization, preserving repository-relative output and existing valid path encoding.
+
 - retain every input digest when a redacted manifest alias collides with a literal layer name,
   using deterministic unique aliases without changing workflow or output digests.
 

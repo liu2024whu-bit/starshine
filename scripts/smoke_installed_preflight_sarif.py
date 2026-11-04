@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import starshine_geo
+from starshine_geo.errors import ValidationError
 
 _PACKAGE_NAME = "starshine-geo"
 
@@ -120,6 +121,31 @@ def main() -> int:
     )
     if passing_sarif["runs"][0]["results"] != []:
         raise RuntimeError(f"passing preflight produced SARIF results: {passing_sarif}")
+
+    for checked_report in (report, passing_report):
+        for invalid_uri in (
+            ".//private/points.geojson",
+            "././/private/points.geojson",
+            ".///host/share/points.geojson",
+            r".\\private\points.geojson",
+        ):
+            try:
+                starshine_geo.build_workflow_preflight_sarif(
+                    checked_report, {"points": invalid_uri, "zones": "data/zones.geojson"}
+                )
+            except ValidationError:
+                pass
+            else:
+                raise RuntimeError("installed SARIF adapter accepted a rooted normalized path")
+
+    encoded_sarif = starshine_geo.build_workflow_preflight_sarif(
+        report, {"points": "././数据/input points%.geojson", "zones": "data/zones.geojson"}
+    )
+    for result in encoded_sarif["runs"][0]["results"]:
+        if result["properties"]["layer"] == "points":
+            uri = result["locations"][0]["physicalLocation"]["artifactLocation"]["uri"]
+            if uri != "%E6%95%B0%E6%8D%AE/input%20points%25.geojson":
+                raise RuntimeError("installed SARIF adapter changed relative path encoding")
 
     with tempfile.TemporaryDirectory(prefix="starshine-sarif-smoke-") as directory:
         root = Path(directory)
