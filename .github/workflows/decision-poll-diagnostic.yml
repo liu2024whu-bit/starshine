@@ -1,0 +1,83 @@
+name: Bounded macOS decision-poll diagnostic
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/decision-poll-diagnostic.yml"
+      - "scripts/decision_poll.py"
+      - "scripts/observe_macos_decision_poll.py"
+      - "scripts/smoke_installed_server.py"
+      - "tests/test_decision_poll.py"
+      - "tests/test_macos_decision_experiment.py"
+
+permissions:
+  contents: read
+
+jobs:
+  decision-poll-diagnostic:
+    if: github.event.pull_request.head.ref == 'diagnostic/decision-poll-20261105'
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 2
+      - name: Select only the designated experiment commit
+        id: plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$(git rev-parse HEAD^)" = 'ef64ef8bd5121b84b161a1465e36e5ec438a0ff4' ]; then
+            echo 'run=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'run=false' >> "$GITHUB_OUTPUT"
+            echo 'No sampling: this is not the designated experiment commit.'
+          fi
+      - uses: actions/setup-python@v7
+        if: steps.plan.outputs.run == 'true'
+        with:
+          python-version: "3.14.10"
+      - name: Build the exact candidate wheel
+        if: steps.plan.outputs.run == 'true'
+        run: |
+          python -m pip install --constraint requirements/ci-validation.txt build
+          python -m build
+      - name: Install the candidate in a clean environment
+        if: steps.plan.outputs.run == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m venv .diagnostic-env
+          wheel="$(find dist -name '*.whl' -print -quit)"
+          test -n "$wheel"
+          .diagnostic-env/bin/python -m pip install \
+            --constraint requirements/ci-validation.txt \
+            "${wheel}[server]" 'httpx>=0.28,<1' 'psutil==7.2.2' pytest
+      - name: Require exact private implementation and deterministic controls
+        if: steps.plan.outputs.run == 'true'
+        run: |
+          .diagnostic-env/bin/python -W ignore -c "from scripts.decision_poll import require_supported_runtime; from starshine_server import execution; require_supported_runtime(execution)"
+          .diagnostic-env/bin/python -W ignore -m pytest -q tests/test_decision_poll.py tests/test_macos_decision_experiment.py
+      - name: Observe exactly 50 requests without retries
+        if: steps.plan.outputs.run == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          revision="$(git rev-parse HEAD)"
+          test "$revision" = "${{ github.event.pull_request.head.sha }}"
+          wheel="$(find dist -name '*.whl' -print -quit)"
+          test -n "$wheel"
+          mkdir decision-poll-evidence
+          .diagnostic-env/bin/python -W ignore -m scripts.observe_macos_decision_poll \
+            --wheel "$wheel" --revision "$revision" \
+            --output decision-poll-evidence/decision-poll.json
+      - uses: actions/upload-artifact@v7
+        if: always() && steps.plan.outputs.run == 'true'
+        with:
+          name: macos-decision-poll-evidence
+          path: |
+            decision-poll-evidence/decision-poll.json
+            dist/*.whl
+          if-no-files-found: warn
+          retention-days: 14

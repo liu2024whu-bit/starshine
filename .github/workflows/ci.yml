@@ -71,6 +71,8 @@ jobs:
           ruff check src/starshine_server examples/server_handoff.py
           tests/test_server_api.py tests/test_server_transport.py tests/test_server_execution.py
           tests/test_server_handoff.py tests/test_server_workbench.py tests/test_server_architecture.py
+          scripts/decision_poll.py tests/test_decision_poll.py
+          scripts/observe_macos_decision_poll.py tests/test_macos_decision_experiment.py
       - name: Check Workbench JavaScript syntax and lifecycle
         shell: bash
         run: |
@@ -83,6 +85,8 @@ jobs:
           python -m pytest -q tests/test_server_api.py tests/test_server_transport.py
           tests/test_server_execution.py tests/test_server_handoff.py
           tests/test_server_workbench.py tests/test_server_architecture.py
+          tests/test_decision_poll.py
+          tests/test_macos_decision_experiment.py
 
   geopackage:
     runs-on: ubuntu-latest
