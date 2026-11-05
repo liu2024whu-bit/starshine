@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import errno
+import inspect
 import json
 import os
 import subprocess
@@ -17,7 +18,12 @@ from scripts import decision_poll as diagnostic
 from starshine_server import execution
 
 SECRET = "private diagnostic text must not escape"
-POSIX = pytest.mark.skipif(os.name != "posix", reason="actual CPython POSIX implementation")
+POSIX = pytest.mark.skipif(
+    os.name != "posix" or tuple(inspect.signature(subprocess.Popen._internal_poll).parameters) != (
+        "self", "_deadstate", "_del_safe",
+    ),
+    reason="actual POSIX _del_safe implementation; older private signatures are unsupported",
+)
 
 
 @pytest.mark.parametrize("outcome,path", [
@@ -259,6 +265,19 @@ def test_guard_refuses_other_runtime_before_patching(monkeypatch):
     with pytest.raises(RuntimeError, match="^unsupported_poll_observation_runtime$"):
         diagnostic.require_supported_runtime(execution)
     assert execution._supervise_process is original
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX signature guard")
+def test_guard_refuses_incompatible_private_signature(monkeypatch):
+    monkeypatch.setattr(diagnostic.sys, "version_info", (3, 14, 10))
+    monkeypatch.setattr(diagnostic.platform, "python_implementation", lambda: "CPython")
+
+    def incompatible(self, _deadstate=None):
+        raise AssertionError("unsupported implementation must never run")
+
+    monkeypatch.setattr(subprocess.Popen, "_internal_poll", incompatible)
+    with pytest.raises(RuntimeError, match="^unsupported_poll_observation_signature$"):
+        diagnostic.require_supported_runtime(execution)
 
 
 def test_source_guard_ignores_docstrings_and_indentation_but_not_code():

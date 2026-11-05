@@ -148,8 +148,8 @@ def _arm_next_poll(child, observations: list[dict]) -> object:
 def observe_supervision(execution, observations: list[dict]):
     """Scope hooks to a serial diagnostic harness, never a deployed Server.
 
-    The caller must first use require_supported_runtime. Tests also exercise the
-    unchanged local POSIX implementation on the other supported Python versions.
+    The caller must first use require_supported_runtime. Tests can also exercise
+    a local POSIX implementation with the same _del_safe private signature.
     Only an RSS Psutil error arms the next poll in the guarded supervisor's except
     branch. Initial/loop/finally/cleanup polls remain the original bound method.
     """
