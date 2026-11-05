@@ -261,6 +261,15 @@ def test_guard_refuses_other_runtime_before_patching(monkeypatch):
     assert execution._supervise_process is original
 
 
+def test_source_guard_ignores_docstrings_and_indentation_but_not_code():
+    original = 'def poll():\n    """first docs"""\n    return None\n'
+    reformatted = '    def poll():\n        """other docs"""\n        return None\n'
+    assert diagnostic._source_fingerprint(original) == diagnostic._source_fingerprint(reformatted)
+    assert diagnostic._source_fingerprint(original) != diagnostic._source_fingerprint(
+        original.replace("return None", "return 0")
+    )
+
+
 @POSIX
 @pytest.mark.parametrize("terminal", [False, True])
 @pytest.mark.parametrize("error_type", [

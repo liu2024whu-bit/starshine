@@ -9,6 +9,7 @@ import ast
 import errno
 import hashlib
 import inspect
+import json
 import os
 import platform
 import subprocess
@@ -20,17 +21,40 @@ from unittest.mock import patch
 
 import psutil
 
-# AST fingerprints ignore checkout line endings/comments, not executable changes.
+# Fingerprints ignore line endings/comments/docstrings and empty AST fields added
+# across Python versions, not executable changes.
 # CPython v3.14.10 Lib/subprocess.py, POSIX Popen._internal_poll.
-_POLL_AST_SHA256 = "727465c4b6954b50a8bb31e245cf243a431f66f540372e0754ab173bbe90298b"
+_POLL_AST_SHA256 = "be2e7dbaebb5429acca00be68f7f7a8a731e970a7397a2c48e55b9dde40ee6c8"
 # main 24d61b94172e1a2057da782a27d3ad06da1eb267.
-_SUPERVISOR_AST_SHA256 = "8f4757807cbfe3a626aa0b93ceff4f09874b546206fc9eb4c3803edb1f9716b6"
+_SUPERVISOR_AST_SHA256 = "a3bd6b3770a99d177150bb8f760ef1fede40c35957d6d8eb28740ed906fbb206"
+
+
+def _source_fingerprint(source: str) -> str:
+    tree = ast.parse(textwrap.dedent(source))
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+            and ast.get_docstring(node) is not None
+        ):
+            node.body.pop(0)
+
+    def canonical(value):
+        if isinstance(value, ast.AST):
+            fields = {
+                key: canonical(item) for key, item in ast.iter_fields(value)
+                if item is not None and not (isinstance(item, list) and not item)
+            }
+            return [type(value).__name__, fields]
+        if isinstance(value, list):
+            return [canonical(item) for item in value]
+        return value
+
+    encoded = json.dumps(canonical(tree), sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
 
 def _fingerprint(function) -> str:
-    source = textwrap.dedent(inspect.getsource(function))
-    tree = ast.dump(ast.parse(source), include_attributes=False)
-    return hashlib.sha256(tree.encode("utf-8")).hexdigest()
+    return _source_fingerprint(inspect.getsource(function))
 
 
 def require_supported_runtime(execution) -> None:
