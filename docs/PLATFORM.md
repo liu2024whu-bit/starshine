@@ -109,6 +109,16 @@ that case. A supervised process tree is not an OS sandbox or a global concurrenc
 No client filesystem path, URL, module name,
 shell fragment, or plugin identifier is accepted by this execution surface.
 
+Investigation #187 remains open for macOS monitoring failures. The experiment-only
+`scripts/decision_poll.py` observes the single existing decision poll after an RSS Psutil
+exception, through a temporary instance method and the original CPython `_del_safe` delegate.
+It never replaces global `waitpid` or the `Popen` class, adds a poll, retries a memory query,
+or changes limits or cleanup. The original method runs with the same arguments, return value
+and exception behavior; only fixed branch categories and syscall counts are retained.
+Use requires exact CPython 3.14.10 and reviewed source/signature fingerprints. Deterministic
+controls compare the original POSIX implementation with observation, including supervision
+and cleanup ordering. This is diagnostic evidence, not a runtime repair or release acceptance.
+
 This is intentionally synchronous. A queue is not added until measured workloads demonstrate that
 the bounded 10-second service is insufficient.
 

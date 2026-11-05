@@ -132,3 +132,36 @@ def test_unknown_supervision_reason_and_stage_are_not_echoed(value):
     }))
     assert "reason" not in diagnostic
     assert "stage" not in diagnostic
+
+
+def test_bounded_failure_artifact_is_written_without_masking_http_failure(tmp_path):
+    artifact = tmp_path / "server-wheel-smoke-execution.log"
+    reply = response(json={
+        "error": "execution_boundary", "code": "worker_supervision_failed",
+        "reason": "missing", "stage": "tree_memory", "message": SECRET,
+    })
+    with pytest.raises(httpx.HTTPStatusError) as caught:
+        _check_execution_response(reply, diagnostic_path=artifact)
+    assert caught.value.response is reply
+    assert json.loads(artifact.read_text(encoding="utf-8")) == {
+        "status": 500, "error": "execution_boundary", "code": "worker_supervision_failed",
+        "reason": "missing", "stage": "tree_memory",
+    }
+    assert SECRET not in artifact.read_text(encoding="utf-8")
+
+
+def test_artifact_write_error_retains_original_http_failure(tmp_path, capsys):
+    reply = response(json={"error": "execution_boundary", "code": "worker_failed"})
+    with pytest.raises(httpx.HTTPStatusError) as caught:
+        _check_execution_response(reply, diagnostic_path=tmp_path / SECRET / "missing.log")
+    assert caught.value.response is reply
+    assert caught.value.__suppress_context__
+    rendered = "".join(traceback.format_exception(caught.value))
+    assert SECRET not in rendered
+    assert capsys.readouterr().err == "Installed server diagnostic file unavailable.\n"
+
+
+def test_success_does_not_create_failure_artifact(tmp_path):
+    artifact = tmp_path / "server-wheel-smoke-execution.log"
+    _check_execution_response(response(200, text=SECRET), diagnostic_path=artifact)
+    assert not artifact.exists()

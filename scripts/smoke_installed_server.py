@@ -27,7 +27,9 @@ _BOUNDARY_CODES = frozenset({
 })
 
 
-def _check_execution_response(response: httpx.Response) -> None:
+def _check_execution_response(
+    response: httpx.Response, *, diagnostic_path: Path | None = None,
+) -> None:
     """Keep HTTP failure fatal while exposing only bounded, known diagnostics."""
     try:
         response.raise_for_status()
@@ -55,9 +57,16 @@ def _check_execution_response(response: httpx.Response) -> None:
                         value = payload.get(key)
                         if type(value) is int and 0 <= value <= 2**63 - 1:
                             diagnostic[key] = value
+        encoded = json.dumps(diagnostic, sort_keys=True)
+        if diagnostic_path is not None:
+            try:
+                diagnostic_path.write_text(encoded + "\n", encoding="utf-8")
+            except OSError:
+                # Preserve the HTTP failure if evidence cannot be persisted.
+                print("Installed server diagnostic file unavailable.", file=sys.stderr)
         # Do not chain httpx's original exception: its message includes the request URL.
         raise httpx.HTTPStatusError(
-            "Installed server execution failed: " + json.dumps(diagnostic, sort_keys=True),
+            "Installed server execution failed: " + encoded,
             request=response.request,
             response=response,
         ) from None
@@ -313,7 +322,9 @@ def main() -> int:
                 "output_layer": "clipped",
             },
         )
-        _check_execution_response(execution)
+        _check_execution_response(
+            execution, diagnostic_path=Path("server-wheel-smoke-execution.log"),
+        )
         execution_payload = execution.json()
         expected_context = starshine_geo.run_workflow(workflow, layers)
         expected_result = expected_context["clipped"]
