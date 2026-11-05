@@ -27,6 +27,34 @@ _BOUNDARY_CODES = frozenset({
 })
 
 
+def _execution_failure_diagnostic(response: httpx.Response) -> dict[str, object]:
+    """One allowlist owner for ordinary smoke and bounded diagnostic experiments."""
+    diagnostic: dict[str, object] = {"status": response.status_code}
+    body = response.content
+    if len(body) <= 4096:
+        try:
+            payload = json.loads(body)
+        except (ValueError, RecursionError):
+            payload = None
+        if isinstance(payload, dict) and payload.get("error") == "execution_boundary":
+            code = payload.get("code")
+            if isinstance(code, str) and code in _BOUNDARY_CODES:
+                diagnostic["error"] = "execution_boundary"
+                diagnostic["code"] = code
+                for key, allowed in (
+                    ("reason", {"missing", "zombie", "access_denied", "other"}),
+                    ("stage", {"process_lookup", "tree_memory"}),
+                ):
+                    value = payload.get(key)
+                    if isinstance(value, str) and value in allowed:
+                        diagnostic[key] = value
+                for key in ("limit", "actual"):
+                    value = payload.get(key)
+                    if type(value) is int and 0 <= value <= 2**63 - 1:
+                        diagnostic[key] = value
+    return diagnostic
+
+
 def _check_execution_response(
     response: httpx.Response, *, diagnostic_path: Path | None = None,
 ) -> None:
@@ -34,30 +62,7 @@ def _check_execution_response(
     try:
         response.raise_for_status()
     except httpx.HTTPStatusError:
-        diagnostic: dict[str, object] = {"status": response.status_code}
-        body = response.content
-        if len(body) <= 4096:
-            try:
-                payload = json.loads(body)
-            except (ValueError, RecursionError):
-                payload = None
-            if isinstance(payload, dict) and payload.get("error") == "execution_boundary":
-                code = payload.get("code")
-                if isinstance(code, str) and code in _BOUNDARY_CODES:
-                    diagnostic["error"] = "execution_boundary"
-                    diagnostic["code"] = code
-                    for key, allowed in (
-                        ("reason", {"missing", "zombie", "access_denied", "other"}),
-                        ("stage", {"process_lookup", "tree_memory"}),
-                    ):
-                        value = payload.get(key)
-                        if isinstance(value, str) and value in allowed:
-                            diagnostic[key] = value
-                    for key in ("limit", "actual"):
-                        value = payload.get(key)
-                        if type(value) is int and 0 <= value <= 2**63 - 1:
-                            diagnostic[key] = value
-        encoded = json.dumps(diagnostic, sort_keys=True)
+        encoded = json.dumps(_execution_failure_diagnostic(response), sort_keys=True)
         if diagnostic_path is not None:
             try:
                 diagnostic_path.write_text(encoded + "\n", encoding="utf-8")

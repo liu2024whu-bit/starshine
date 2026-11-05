@@ -119,6 +119,19 @@ Use requires exact CPython 3.14.10 and reviewed source/signature fingerprints. D
 controls compare the original POSIX implementation with observation, including supervision
 and cleanup ordering. This is diagnostic evidence, not a runtime repair or release acceptance.
 
+After those controls passed, draft #207 adds one fixed 50-request macOS arm64 experiment using
+an exact candidate wheel in a clean environment. Its hypothesis distinguishes decision-time
+waitpid zero, lock skip, fixed error categories and terminal state. It does not identify the
+RSS substage, so new `tree_memory` observations must remain distinct from #199's historical
+`root_memory` localization. Every attempt is recorded before execution; known supervision
+failures are retained and force failure, while cleanup or unclassified failures stop incomplete.
+No recurrence means inconclusive. This reduced clip-request probe does not replay the historical
+full smoke timing, prove an OS cause, establish a population rate, or resolve #187.
+The observer adds Python bookkeeping and can perturb timing; deterministic control equivalence
+does not claim identical wall-clock race timing or retrospectively identify earlier poll branches.
+The workflow accepts only this draft branch's direct child of the verified transparency
+commit `ef64ef8bd5121b84b161a1465e36e5ec438a0ff4`; later commits do not sample automatically.
+
 This is intentionally synchronous. A queue is not added until measured workloads demonstrate that
 the bounded 10-second service is insufficient.
 
