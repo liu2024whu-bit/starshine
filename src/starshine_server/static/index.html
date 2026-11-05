@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
-  <meta name="description" content="Review Starshine workflows before loading or executing spatial data.">
+  <meta name="description" content="Review Starshine workflows and explicitly preflight inline spatial data.">
   <title>Starshine Workbench</title>
   <link rel="stylesheet" href="./styles.css">
 </head>
@@ -20,7 +20,7 @@
       </p>
     </div>
     <div class="header-badges" aria-label="Workbench status">
-      <span class="badge badge-safe">Review only</span>
+      <span class="badge badge-safe">Review + Preflight</span>
       <span class="badge" id="server-version">Core version pending</span>
     </div>
   </header>
@@ -113,10 +113,36 @@
         </div>
 
         <aside class="boundary-note" aria-label="Workbench boundary">
-          <strong>No feature data is sent by this screen.</strong>
-          This first workbench slice uses only data-free review endpoints. Preflight, execution,
-          uploads, persistence, and maps remain outside this surface.
+          <strong>Review sends Workflow JSON and layer names, not the pasted layer drafts.</strong>
+          Pasted layer data is sent only when you explicitly click Run Preflight below. This screen
+          does not execute workflows, upload files, persist drafts, or show maps.
         </aside>
+
+        <section class="preflight-section" aria-labelledby="preflight-heading">
+          <h2 id="preflight-heading">Inline data Preflight</h2>
+          <p class="muted">Review first. Required layer slots and preparation hints come only from
+            canonical Plan and Contract reports. Paste JSON; Server/Core checks its meaning.</p>
+          <aside class="boundary-note">
+            <strong>Clicking Run Preflight sends the current Workflow and pasted required layer JSON
+              over HTTP to this same-origin Server.</strong>
+            Drafts stay in this page's memory until that click, with no typing-time transmission or
+            browser storage. Closing or reloading the page loses drafts. Server errors and findings
+            may echo supplied content. Use a trusted local, loopback Server; do not paste secrets.
+          </aside>
+          <div id="preflight-bindings" class="report-stack">
+            <p class="muted">Review the Workflow to create required layer slots.</p>
+          </div>
+          <div class="editor-actions">
+            <button id="preflight-button" class="primary-button" type="button" disabled>Run Preflight</button>
+            <span id="preflight-status" class="request-status" role="status" aria-live="polite">
+              Review the Workflow before running Preflight.
+            </span>
+          </div>
+          <details class="preflight-limit-details">
+            <summary>Server inline Preflight limits</summary>
+            <div id="preflight-limits"><p class="muted">Loading Server limits…</p></div>
+          </details>
+        </section>
       </section>
 
       <section class="review-panel panel" aria-labelledby="review-heading">
@@ -149,6 +175,10 @@
             aria-controls="evidence-panel" id="evidence-tab" data-panel-target="evidence-panel">
             Evidence
           </button>
+          <button class="tab-button" type="button" role="tab" aria-selected="false"
+            aria-controls="preflight-panel" id="preflight-tab" data-panel-target="preflight-panel">
+            Preflight
+          </button>
         </div>
 
         <section class="tab-panel" id="overview-panel" role="tabpanel" aria-labelledby="overview-tab">
@@ -178,6 +208,12 @@
         <section class="tab-panel" id="evidence-panel" role="tabpanel" aria-labelledby="evidence-tab" hidden>
           <div id="evidence-content" class="empty-state">
             <p>Machine-readable review evidence will appear here.</p>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="preflight-panel" role="tabpanel" aria-labelledby="preflight-tab" hidden>
+          <div id="preflight-content" class="report-stack">
+            <p class="muted">No current Preflight evidence. Run Preflight after Review.</p>
           </div>
         </section>
       </section>

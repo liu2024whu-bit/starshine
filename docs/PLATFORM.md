@@ -175,14 +175,14 @@ the same origin as the API. It has no Node build, CDN, third-party browser runti
 separate deployment process. The same HTML/CSS/JavaScript assets are required in both the wheel and
 source distribution and are exercised by the installed-wheel Server smoke.
 
-This first slice is deliberately data-free. A user can edit Workflow JSON and external layer names,
+The Review stage is data-free. A user can edit Workflow JSON and external layer names,
 inspect the canonical operator catalog, validate the Workflow, and review plan/contract/graph/explain
 reports. The browser verifies that the reports share the same canonical plan/graph evidence chain,
 but it does not derive that chain itself.
 
 Browser rendering uses DOM element creation and `textContent` for report/user text. The source
-boundary tests reject dynamic HTML/code sinks and external browser runtimes. The Workbench does not
-call Preflight or execution endpoints yet, does not persist state, and does not contain a GIS library.
+boundary tests reject dynamic HTML/code sinks and external browser runtimes. The Workbench does not call execution endpoints, persist state, or contain a GIS library.
+Its explicit inline Preflight stage reuses the existing Server endpoint.
 
 Each new review and each input edit invalidates the previous reports immediately. Responses from
 older requests cannot restore stale evidence or re-enable controls owned by a newer request.
@@ -190,22 +190,55 @@ older requests cannot restore stale evidence or re-enable controls owned by a ne
 controlled DOM and HTTP replies, including retry failures and out-of-order completion; it is not a
 substitute for rendered browser acceptance.
 
-That boundary leaves later 0.8C increments explicit: bounded feature-data assurance, and only then
-a map/result surface.
+Execution and any map/result surface remain separate, unimplemented browser increments.
 
 ### Bounded assisted authoring
 
-The review-only Workbench lowers research/teaching handoff cost with a catalog-driven draft builder.
+The Workbench lowers research/teaching handoff cost with a catalog-driven draft builder.
 It shows input roles, parameter schemas/defaults, and unresolved geometry/CRS/field declarations;
 existing external and produced layer names are suggestions only. It appends one unvalidated step
 without materializing defaults or resolving GIS requirements. Strict JSON syntax prevents accidental
 string fallback. Canonical Review remains the authority, and all JSON/layer edits and insertions
-invalidate prior evidence, including in-flight responses. This does not introduce data uploads,
-Preflight, execution, persistence, maps, or another semantics implementation.
+invalidate prior evidence, including in-flight responses. Assisted authoring itself does not introduce data uploads, execution, persistence, maps, or another
+semantics implementation.
 
 Acceptance includes generic DOM-free transformations, actual-app request ownership races, Core
 agreement for generated drafts, and exact-wheel asset/Server smoke checks. Browser interaction and
 narrow-view checks are separate from Node lifecycle tests.
+
+### Review-bound inline Preflight
+
+After a successful canonical Review, required paste slots come only from
+`plan.required_external_layers`, with preparation hints from the returned Contract. Draft text is
+held in a browser `Map`, never browser storage. Matching drafts survive another Review; unmatched
+drafts remain visibly retained and unbound, and are not sent. Closing/reloading loses those drafts.
+
+`Run Preflight` is an explicit HTTP transmission of the reviewed Workflow and nonblank required
+layer JSON to the same-origin Server. Typing, changing tabs, and Review do not send pasted layers.
+Both Workflow and layer JSON retain their original numeric tokens; JSON parsing checks syntax only.
+Safely encoded object keys preserve names such as `__proto__`. The browser does not check geometry,
+CRS, fields, feature counts, or limits. `GET /api/v1/limits` exposes Server limits as information only.
+
+Review declarations that the canonical plan marks unused must be removed by the user and reviewed
+again before Preflight. The UI neither fabricates substitute data nor weakens digest continuity.
+Blank required slots are omitted; partial binding can fail at the Server transport/validation
+boundary instead of producing a canonical report. HTTP failure is distinct from a canonical FAIL.
+
+Returned Workflow, Plan, and Contract digests must match the current Review before Preflight evidence
+is displayed. Data edits invalidate Preflight; Workflow/name edits and a new Review invalidate both.
+Late success, failure, and cleanup from obsolete requests cannot restore evidence or enable controls
+owned by a newer request. This invalidates browser ownership, not already-started Server work.
+
+The report presents canonical status, layer summaries, findings and occurrence counts, remaining
+checks, digests, and the original Server JSON response without reserialization. PASS does not promise
+execution success. Preflight is synchronous and is not isolated by the execution worker supervisor.
+Errors and findings may echo input content: page-memory-only is not a local-only privacy guarantee.
+Use the existing trusted local/loopback Server guidance and do not paste secrets.
+
+This implements the bounded scope of #140 on current main, replacing the early stacked #141
+implementation without importing its later execution, preview, or persistence branches. Node tests
+cover representation and request races; Core/HTTP comparisons, real-browser interaction, and exact
+wheel/sdist asset and installed-Server checks remain separate acceptance evidence.
 
 ## Next platform increments
 

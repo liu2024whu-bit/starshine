@@ -664,3 +664,12 @@ label {
 
 .builder-heading, .builder-label-row { flex-wrap: wrap; }
 .builder-field { min-width: 0; }
+
+.preflight-section { margin-top: 28px; border-top: 1px solid var(--line); }
+.preflight-section .report-stack { margin-top: 16px; }
+.preflight-section .report-card, .review-panel, .editor-panel { min-width: 0; }
+.preflight-editor { min-height: 160px; }
+.preflight-limit-details { margin-top: 18px; }
+.preflight-digest, .preflight-section label, .report-card { overflow-wrap: anywhere; }
+summary { cursor: pointer; margin-bottom: 10px; }
+summary:focus-visible { outline: 3px solid rgba(18, 107, 87, 0.24); outline-offset: 2px; }
