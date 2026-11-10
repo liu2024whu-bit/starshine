@@ -238,11 +238,14 @@ def main() -> int:
     workbench_api = client.get("/workbench/api.js")
     workbench_api.raise_for_status()
     assert "/api/v1/workflows/contract" in workbench_api.text
-    assert "/api/v1/workflows/preflight" not in workbench_api.text
+    assert "/api/v1/workflows/preflight" in workbench_api.text
+    assert "/api/v1/limits" in workbench_api.text
     assert "/api/v1/workflows/execute" not in workbench_api.text
 
     for asset, marker in (
         ("editor.js", "appendDraftStep"),
+        ("assurance.js", "buildPreflightRequest"),
+        ("render_preflight.js", "Canonical findings"),
         ("render_editor.js", "Unresolved catalog contract guidance"),
     ):
         response = client.get(f"/workbench/{asset}")

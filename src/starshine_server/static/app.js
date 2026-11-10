@@ -4,7 +4,11 @@ import {
 import {
   populateOperatorSelect, renderStepBuilder, updateLayerSuggestions,
 } from "./render_editor.js";
-import { ENDPOINTS, requestJson } from "./api.js";
+import { ENDPOINTS, requestJson, responseJsonText } from "./api.js";
+import { buildPreflightRequest, assertPreflightEvidence, unusedLayerNames } from "./assurance.js";
+import {
+  renderPreflightBindings, renderPreflightLimits, renderPreflightReport,
+} from "./render_preflight.js";
 import {
   initializeTabs,
   renderCatalog,
@@ -18,6 +22,10 @@ const state = {
   reports: null,
   // A response may update the page only while it owns the latest review request.
   reviewRequestId: 0,
+  preflightRequestId: 0,
+  preflightPending: false,
+  workflowText: null,
+  layerDrafts: new Map(),
 };
 
 const elements = {
@@ -38,6 +46,11 @@ const elements = {
   graph: document.querySelector("#graph-content"),
   explain: document.querySelector("#explain-content"),
   evidence: document.querySelector("#evidence-content"),
+  preflightButton: document.querySelector("#preflight-button"),
+  preflightStatus: document.querySelector("#preflight-status"),
+  preflightBindings: document.querySelector("#preflight-bindings"),
+  preflightContent: document.querySelector("#preflight-content"),
+  preflightLimits: document.querySelector("#preflight-limits"),
 };
 
 function parseWorkflow() {
@@ -169,9 +182,70 @@ async function loadServiceMetadata() {
   }
 }
 
+async function loadPreflightLimits() {
+  try {
+    renderPreflightLimits(elements.preflightLimits, await requestJson(ENDPOINTS.limits));
+  } catch (error) {
+    setRequestStatus(elements.preflightLimits, `Limits unavailable: ${error.message}`, true);
+  }
+}
+
+function updatePreflightButton() {
+  elements.preflightButton.disabled = !state.reports || state.preflightPending ||
+    unusedLayerNames(state.reports).length > 0;
+}
+
+function invalidatePreflight() {
+  state.preflightRequestId += 1;
+  state.preflightPending = false;
+  renderPreflightReport(elements.preflightContent, null);
+  setRequestStatus(elements.preflightStatus, state.reports
+    ? "Data changed. Run Preflight for current evidence."
+    : "Review the Workflow before running Preflight.");
+  updatePreflightButton();
+}
+
+function renderBindings() {
+  renderPreflightBindings(elements.preflightBindings, state.reports, state.layerDrafts,
+    (name, raw) => {
+      state.layerDrafts.set(name, raw);
+      invalidatePreflight();
+    });
+}
+
+async function runPreflight() {
+  invalidatePreflight();
+  const requestId = state.preflightRequestId;
+  state.preflightPending = true;
+  updatePreflightButton();
+  setRequestStatus(elements.preflightStatus, "Sending inline data for canonical Preflight…");
+  try {
+    const request = buildPreflightRequest(state.workflowText, state.reports, state.layerDrafts);
+    const report = await requestJson(ENDPOINTS.preflight, request);
+    if (requestId !== state.preflightRequestId) return;
+    assertPreflightEvidence(report, state.reports);
+    renderPreflightReport(elements.preflightContent, report, responseJsonText(report));
+    setRequestStatus(elements.preflightStatus,
+      report.valid ? "Canonical Preflight complete: PASS." : "Canonical Preflight complete: FAIL.",
+      !report.valid);
+  } catch (error) {
+    if (requestId !== state.preflightRequestId) return;
+    setRequestStatus(elements.preflightStatus,
+      `Preflight request failed; no current evidence. ${error.message}`, true);
+  } finally {
+    if (requestId === state.preflightRequestId) {
+      state.preflightPending = false;
+      updatePreflightButton();
+    }
+  }
+}
+
 function invalidateReview() {
   state.reviewRequestId += 1;
   state.reports = null;
+  state.workflowText = null;
+  invalidatePreflight();
+  renderBindings();
   renderReports(elements, null);
   // The invalidated request no longer owns the button's disabled state.
   elements.reviewButton.disabled = false;
@@ -183,6 +257,9 @@ function invalidateReview() {
 async function reviewWorkflow() {
   const requestId = ++state.reviewRequestId;
   state.reports = null;
+  state.workflowText = null;
+  invalidatePreflight();
+  renderBindings();
   renderReports(elements, null);
   elements.reviewButton.disabled = true;
   setRequestStatus(elements.requestStatus, "Validating workflow…");
@@ -209,6 +286,12 @@ async function reviewWorkflow() {
     if (requestId !== state.reviewRequestId) return;
     assertEvidenceChain(plan, contract, graph, explain);
     state.reports = { validation, plan, contract, graph, explain };
+    state.workflowText = request.workflowText;
+    renderBindings();
+    updatePreflightButton();
+    setRequestStatus(elements.preflightStatus, unusedLayerNames(state.reports).length
+      ? "Remove unused external layer declarations and Review again before Preflight."
+      : "Paste required layers, then explicitly run Preflight. Blank slots are omitted; missing inputs may fail at the Server boundary.");
     renderReports(elements, state.reports);
     setRequestStatus(elements.requestStatus, "Canonical review complete.");
     setReviewState(elements.reviewState, "Reviewed");
@@ -228,5 +311,8 @@ elements.layerNames.addEventListener("input", invalidateReview);
 elements.reviewButton.addEventListener("click", reviewWorkflow);
 elements.builderOperator.addEventListener("change", renderSelectedOperator);
 elements.addStepButton.addEventListener("click", insertDraftStep);
+elements.preflightButton.addEventListener("click", runPreflight);
 initializeTabs();
+updatePreflightButton();
 loadServiceMetadata();
+loadPreflightLimits();

@@ -1,11 +1,13 @@
 export const ENDPOINTS = Object.freeze({
   health: "/healthz",
   operators: "/api/v1/operators",
+  limits: "/api/v1/limits",
   validate: "/api/v1/workflows/validate",
   plan: "/api/v1/workflows/plan",
   contract: "/api/v1/workflows/contract",
   graph: "/api/v1/workflows/graph",
   explain: "/api/v1/workflows/explain",
+  preflight: "/api/v1/workflows/preflight",
 });
 
 // Keep exact response text separate from convenience objects and their lifetime.
@@ -15,7 +17,7 @@ export function responseJsonText(payload) {
   return responseTexts.get(payload);
 }
 
-function workflowRequestBody(raw, layerNames = []) {
+function workflowRequestBody(raw, layerNames = [], layerTexts) {
   if (typeof raw !== "string") {
     throw new Error("Workflow JSON must be text.");
   }
@@ -33,6 +35,21 @@ function workflowRequestBody(raw, layerNames = []) {
   }
   // Parsing checks syntax/root shape only. Reserializing would change numeric
   // values and Core validation (for example 8.0, -0.0, large integers, 1e400).
+  if (layerTexts !== undefined) {
+    if (!Array.isArray(layerTexts)) throw new Error("Layer drafts must be named JSON texts.");
+    const seen = new Set();
+    const entries = layerTexts.map((entry) => {
+      if (!Array.isArray(entry) || entry.length !== 2 ||
+        typeof entry[0] !== "string" || typeof entry[1] !== "string" || seen.has(entry[0])) {
+        throw new Error("Layer drafts must have unique names and JSON text values.");
+      }
+      const [name, text] = entry;
+      seen.add(name);
+      JSON.parse(text); // Syntax only. Do not reserialize the parsed value.
+      return `${JSON.stringify(name)}:${text}`;
+    });
+    return `{"workflow":${raw},"layers":{${entries.join(",")}}}`;
+  }
   return `{"workflow":${raw},"layer_names":${JSON.stringify(layerNames)}}`;
 }
 
@@ -59,7 +76,7 @@ export async function requestJson(path, options = {}) {
 
   if (options.workflowText !== undefined) {
     init.headers["content-type"] = "application/json";
-    init.body = workflowRequestBody(options.workflowText, options.layerNames);
+    init.body = workflowRequestBody(options.workflowText, options.layerNames, options.layerTexts);
   } else if (options.body !== undefined) {
     init.headers["content-type"] = "application/json";
     init.body = JSON.stringify(options.body);
